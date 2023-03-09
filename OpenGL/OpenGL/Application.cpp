@@ -2,6 +2,10 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 
+#include <chrono>
+using namespace std::chrono;
+
+
 // https://docs.gl/
 
 int main(void)
@@ -41,10 +45,13 @@ int main(void)
          0.5f, -0.5f,
     };
 
+    // The origin point of the refernce system of the position
+    // is in bot-left corner of the window
+
     unsigned int buffer;
     // Generate 1 vertex buffer
     glGenBuffers(1, &buffer);
-    // Selcer buffer by BINDING
+    // Selcet buffer by BINDING
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     // Specify the data
     glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(float), positions, GL_STATIC_DRAW);
@@ -64,10 +71,13 @@ int main(void)
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
+        // Time evaluation
+        auto start = high_resolution_clock::now();
+
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // Draw wiothout an index array (Number of vertexes
+        // Draw without an index array (Number of vertexes
         glDrawArrays(GL_TRIANGLES, 0, 3);
         // glDrawElements() // used if we have and index buffer
 
