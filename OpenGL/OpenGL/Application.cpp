@@ -2,10 +2,6 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 
-#include <chrono>
-using namespace std::chrono;
-
-
 // https://docs.gl/
 
 int main(void)
@@ -71,9 +67,6 @@ int main(void)
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
-        // Time evaluation
-        auto start = high_resolution_clock::now();
-
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
 
