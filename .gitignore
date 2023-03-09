@@ -747,3 +747,6 @@ OpenGL/OpenGL/Debug/OpenGL.vcxproj.FileListAbsolute.txt
 OpenGL/OpenGL/Debug/vc143.idb
 OpenGL/OpenGL/Debug/vc143.pdb
 /.vs/
+OpenGL/OpenGL/.vs/OpenGL/v17/.suo
+*.db
+OpenGL/OpenGL/.vs/OpenGL/v17/.suo
