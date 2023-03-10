@@ -1,2 +1,5 @@
 ﻿  Application.cpp
-  OpenGL.vcxproj -> D:\ANDREA\UNI\MAGISTRALE\ANNO 2\II Semestre\REAL-TIME GP\RTGP\OpenGL\OpenGL\Debug\OpenGL.exe
+LINK : warning LNK4098: defaultlib 'LIBCMT' conflicts with use of other libs; use /NODEFAULTLIB:library
+LINK : warning LNK4098: defaultlib 'MSVCRT' conflicts with use of other libs; use /NODEFAULTLIB:library
+glew32s.lib(glew.obj) : warning LNK4099: PDB 'vc120.pdb' was not found with 'glew32s.lib(glew.obj)' or at 'E:\andrea\UNI\MAGISTRALE\ANNO2\RTGP\RTGP\RTGP\RTGP\OpenGL\OpenGL\Debug\vc120.pdb'; linking object as if no debug info
+  OpenGL.vcxproj -> E:\andrea\UNI\MAGISTRALE\ANNO2\RTGP\RTGP\RTGP\RTGP\OpenGL\OpenGL\Debug\OpenGL.exe
