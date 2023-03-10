@@ -127,15 +127,23 @@ int main(void)
     // One of the can be the position
 
     // 2 index for each vertex
-    float positions[6] = {
-        -0.5f, -0.5f,
-         0.0f,  0.5f,
-         0.5f, -0.5f,
+    float positions[] = {
+        -0.5f, -0.5f, // 0
+         0.5f, -0.5f, // 1
+         0.5f,  0.5f, // 2
+        -0.5f,  0.5f, // 3
+    };
+    
+    // Not to keep multiple instances of the same vertex, we can just keep and index of them and reuse them
+    unsigned int indicies[] = {
+        0, 1, 2, // first triangle
+        2, 3, 0  // second triangle
     };
 
     // The origin point of the refernce system of the position
     // is in bot-left corner of the window
 
+    // VERTEX BUFFER
     // Creating a buffer
     unsigned int buffer;
     // Generate 1 vertex buffer
@@ -143,7 +151,7 @@ int main(void)
     // Selcet buffer by BINDING
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     // Specify the data
-    glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(float), positions, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, 6 * 2 * sizeof(float), positions, GL_STATIC_DRAW);
 
     // 0 => First index
     // 2 => number of index of each vertex position
@@ -153,6 +161,13 @@ int main(void)
     // the offset
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, (const void*)0);
+
+    // INDEX BUFFER
+    // we want to send it to the GPU
+    unsigned int ibo; // index buffer object
+    glGenBuffers(1, &ibo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), indicies, GL_STATIC_DRAW);
 
     ShaderProgramSource source = ParseShader("res/shaders/Basic.shader");
     std::cout << "VertexSource" << std::endl;
@@ -171,8 +186,8 @@ int main(void)
         glClear(GL_COLOR_BUFFER_BIT);
 
         // Draw without an index array (Number of vertexes
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-        // glDrawElements() // used if we have and index buffer
+        // glDrawArrays(GL_TRIANGLES, 0, 6);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr); // used if we have and index buffer
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
