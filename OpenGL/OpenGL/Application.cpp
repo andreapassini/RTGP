@@ -12,6 +12,7 @@
 // ASSERT, when found insert a break point
 // __debugbreak works only on MVSC not wiht gcc or other compilers
 #define ASSERT(x) if (!(x)) __debugbreak();
+
 // GlCall will be attached to every gl funcitons that we are gona use to chek for errors
 // __FILE__ and __LINE__ are intrinsic to all compilers
 // It will not work for single line if
@@ -126,32 +127,30 @@ int main(void)
 {
     GLFWwindow* window;
 
-    GlCall(
-        /* Initialize the library */
-        if (!glfwInit())
-            return -1;
-    );
+    /* Initialize the library */
+    if (!glfwInit())
+        return -1;
+    
 
-    GlCall(
-        /* Create a windowed mode window and its OpenGL context */
-        window = glfwCreateWindow(640, 480, "First Triangle", NULL, NULL);
-        if (!window)
-        {
-            glfwTerminate();
-            return -1;
-        }
-    );
+    /* Create a windowed mode window and its OpenGL context */
+    window = glfwCreateWindow(640, 480, "First Triangle", NULL, NULL);
+    if (!window)
+    {
+        glfwTerminate();
+        return -1;
+    }
     
 
     /* Make the window's context current */
-    GlCall(glfwMakeContextCurrent(window));
+    glfwMakeContextCurrent(window);
 
-    GlCall(
-        // Make sure glew is ok (look at glew documentation)
-        if (glewInit() != GLEW_OK) {
-            std::cout << "GLEW Error!" << std::endl;
-        }
-    );
+    /* Sync with monitor refresh rate */ 
+    glfwSwapInterval(1);
+
+    // Make sure glew is ok (look at glew documentation)
+    if (glewInit() != GLEW_OK) {
+        std::cout << "GLEW Error!" << std::endl;
+    }
 
     std::cout << glGetString(GL_VERSION) << std::endl;
 
@@ -207,33 +206,45 @@ int main(void)
     std::cout << source.VertexSource << std::endl;
     std::cout << "FragmentSource" << std::endl;
     std::cout << source.FragmentSource << std::endl;
-
-
     unsigned int shader = CreateShader(source.VertexSource, source.FragmentSource);
     GlCall(glUseProgram(shader));
 
+    // Get the location of the uniform
+    int location = glGetUniformLocation(shader, "u_Color"); // retrive the unform named u_Color
+    ASSERT(location != -1); // if -1 not found uniform
+    GlCall(glUniform4f(location, 0.8f, 0.3f, 0.8f, 1.0f));  // sending 4 floats
+
+    float r = 0.0f; // RED channel
+    float increment = 0.05f;
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
         /* Render here */
         GlCall(glClear(GL_COLOR_BUFFER_BIT));
 
-        // Clear errors before calling the specific function
-        GlClearError();
-
+        GlCall(glUniform4f(location, r, 0.3f, 0.8f, 1.0f));  // sending 4 floats
         // Draw without an index array (Number of vertexes
         // glDrawArrays(GL_TRIANGLES, 0, 6);
         GlCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr)); // used if we have and index buffer
 
+        if (r > 1.0f) {
+            increment = -0.05f;
+        }
+        else if (r < 0.0f) {
+            increment = 0.05f;
+        }
+
+        r += increment;
+
         /* Swap front and back buffers */
-        GlCall(glfwSwapBuffers(window));
+        glfwSwapBuffers(window);
 
         /* Poll for and process events */
-        GlCall(glfwPollEvents());
+        glfwPollEvents();
     }
 
-    GlCall(glDeleteProgram(shader));
+    glDeleteProgram(shader);
 
-    GlCall(glfwTerminate());
+    glfwTerminate();
     return 0;
 }
