@@ -223,7 +223,7 @@ int main(void)
 
         // Draw without an index array (Number of vertexes
         // glDrawArrays(GL_TRIANGLES, 0, 6);
-        GlCall(glDrawElements(GL_TRIANGLES, 6, GL_INT, nullptr)); // used if we have and index buffer
+        GlCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr)); // used if we have and index buffer
 
         /* Swap front and back buffers */
         GlCall(glfwSwapBuffers(window));
