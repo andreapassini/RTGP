@@ -131,6 +131,10 @@ int main(void)
     if (!glfwInit())
         return -1;
     
+    // Create from the core (whatever that means)
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);  // opengl version 3.3
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  
 
     /* Create a windowed mode window and its OpenGL context */
     window = glfwCreateWindow(640, 480, "First Triangle", NULL, NULL);
@@ -172,6 +176,11 @@ int main(void)
         2, 3, 0  // second triangle
     };
 
+    // Creating a vertex object array
+    unsigned int vao;
+    GlCall(glGenVertexArrays(1, &vao));
+    GlCall(glBindVertexArray(vao));
+
     // The origin point of the refernce system of the position
     // is in bot-left corner of the window
 
@@ -183,7 +192,7 @@ int main(void)
     // Selcet buffer by BINDING
     GlCall(glBindBuffer(GL_ARRAY_BUFFER, buffer));
     // Specify the data
-    GlCall(glBufferData(GL_ARRAY_BUFFER, 6 * 2 * sizeof(float), positions, GL_STATIC_DRAW));
+    GlCall(glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(float), positions, GL_STATIC_DRAW));
 
     // 0 => First index
     // 2 => number of index of each vertex position
@@ -192,7 +201,7 @@ int main(void)
     // size to get tot the next vertex
     // the offset
     GlCall(glEnableVertexAttribArray(0));
-    GlCall(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, (const void*)0));
+    GlCall(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, (const void*)0)); // Link the buffer (the last one) to the vao in vao[0]
 
     // INDEX BUFFER
     // we want to send it to the GPU
@@ -214,6 +223,13 @@ int main(void)
     ASSERT(location != -1); // if -1 not found uniform
     GlCall(glUniform4f(location, 0.8f, 0.3f, 0.8f, 1.0f));  // sending 4 floats
 
+    // unbound everything
+    // like we have multiple objects to render
+    GlCall(glBindVertexArray(0));
+    GlCall(glUseProgram(0));
+    GlCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
+    GlCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
+
     float r = 0.0f; // RED channel
     float increment = 0.05f;
     /* Loop until the user closes the window */
@@ -222,7 +238,13 @@ int main(void)
         /* Render here */
         GlCall(glClear(GL_COLOR_BUFFER_BIT));
 
-        GlCall(glUniform4f(location, r, 0.3f, 0.8f, 1.0f));  // sending 4 floats
+        GlCall(glUseProgram(shader));   // Bind shader
+        GlCall(glUniform4f(location, r, 0.3f, 0.8f, 1.0f));  // sending 4 float
+
+        GlCall(glBindVertexArray(vao));
+
+        GlCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo));
+
         // Draw without an index array (Number of vertexes
         // glDrawArrays(GL_TRIANGLES, 0, 6);
         GlCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr)); // used if we have and index buffer
