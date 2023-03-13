@@ -26,3 +26,22 @@ In our example we associated vertex shader with the position and fragment shader
 
 ## **Uniforms**
 Piece of data that we send to the GPU that will be used for the shader. In our example we used them to change, in real time, the color of the square.
+
+
+
+# **Abstraction**
+
+Creating classes for handling more easily multiple objects to render.
+
+Idealy we want to pick up a piece of geometry and call rendering function, specifying some parameters, and the renderer will take care of everything.
+
+Following the example we will create:
+
+- Vertex Buffer
+- Index Buffer
+- Renderer
+- Vertex Array
+    That will tight togheter vertex buffer with the layout specified.
+    The layout might be on the GPU. but might be useful to keep it also in the CPU.
+- Buffer Layout Object
+
