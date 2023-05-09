@@ -11,6 +11,12 @@
 		{
 			"name": "work01",
 			"path": "work/work01"
+		},
+		{
+			"path": "work/work02"
+		},
+		{
+			"path": "work/work03"
 		}
 	],
 	"settings": {
