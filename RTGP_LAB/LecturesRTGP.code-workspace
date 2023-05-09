@@ -1,0 +1,25 @@
+{
+	"folders": [
+		{
+			"name": "IncludeDir",
+			"path": "include"
+		},
+		{
+			"name": "test",
+			"path": "work/test"
+		},
+		{
+			"name": "work01",
+			"path": "work/work01"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"string": "cpp",
+			"iosfwd": "cpp",
+			"vector": "cpp",
+			"string.h": "c",
+			"xiosbase": "cpp"
+		}
+	}
+}
