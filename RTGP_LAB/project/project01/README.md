@@ -1,5 +1,12 @@
 # **CLOTH SIMULATION**
 
+# Summary
+
+Simulate a cloth, fixed on top-left and top-right corner.
+Add a sphere in the scene and make it go through the cloth.
+Add Wind force to the cloth.
+
+Prof req. => Add some sort of color modification based on the force or displacement of the single particles of the cloth, in shaders.
 
 ## FIX
 
@@ -38,3 +45,8 @@ Since the only other object in the scene is a sphere, the collision with the sph
 Project the particle on the surface of the sphere, with a displacement big enough that the problem of triangle-sphere cannot happen
 
 
+# Implementation
+
+
+Generate the cloth particles.
+Add constraints to a particle and its particles at distance 1 and distance 2.
