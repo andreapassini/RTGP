@@ -1,5 +1,4 @@
 #include <math.h>
-
 class Vec3 // a minimal vector class of 3 floats and overloaded math operators
 {	
 public:

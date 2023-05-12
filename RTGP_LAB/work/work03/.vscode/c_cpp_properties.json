@@ -20,7 +20,7 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder:IncludeDir}/**",
-                "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\14.35.32215\\include**"
+                "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\14.35.32215\\include"
             ],
             "defines": [
                 "_DEBUG",
