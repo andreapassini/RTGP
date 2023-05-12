@@ -163,5 +163,5 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 {
     // if ESC is pressed, we close the application
     if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, GL_TRUE);
+        glfwSetWindowShouldClose(window, GL_TRUE);        
 }
