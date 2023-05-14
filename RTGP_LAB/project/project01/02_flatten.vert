@@ -1,6 +1,6 @@
 /*
 
-00_basic.vert : basic Vertex shader
+02_flatten.vert: the Vertex shader modifies one of the vertex coordinates, "flattening" the final model
 
 author: Davide Gadia
 
@@ -9,7 +9,6 @@ Master degree in Computer Science
 Universita' degli Studi di Milano
 
 */
-
 
 #version 410 core
 
@@ -27,6 +26,10 @@ uniform mat4 projectionMatrix;
 
 void main()
 {
-    // transformations are applied to each vertex
-    gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0f);
+	// Original vertex position is copied in a local variable.
+	vec3 flattened = position;
+	// Z coordinate is set at 0
+	flattened.z = 0.0;
+	// transformations are applied to the modified vertex
+	gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4( flattened, 1.0 );
 }

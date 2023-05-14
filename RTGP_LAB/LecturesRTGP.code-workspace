@@ -23,6 +23,15 @@
 		},
 		{
 			"path": "project/project01"
+		},
+		{
+			"path": "lectures_final/lecture03a"
+		},
+		{
+			"path": "lectures_final/lecture03b"
+		},
+		{
+			"path": "lectures_final/lecture03c"
 		}
 	],
 	"settings": {

@@ -19,13 +19,13 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder:IncludeDir}/**",
-                "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\14.35.32215\\include**"
+                "D:\\Programmi\\Microsoft Visual Studio\\BuildTools2022\\VC\\Tools\\MSVC\\14.35.32215\\include"
             ],
             "defines": [
                 "_DEBUG",
                 "UNICODE"
             ],
-            "compilerPath": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\14.35.32215\\bin\\Hostx64\\x64\\cl.exe",
+            "compilerPath": "D:\\Programmi\\Microsoft Visual Studio\\BuildTools2022\\VC\\Tools\\MSVC\\14.35.32215\\bin\\Hostx64\\x64\\cl.exe",
             "cStandard": "c11",
             "cppStandard": "c++17",
             "intelliSenseMode": "msvc-x64"

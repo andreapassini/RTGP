@@ -48,5 +48,13 @@ Project the particle on the surface of the sphere, with a displacement big enoug
 # Implementation
 
 
-Generate the cloth particles.
-Add constraints to a particle and its particles at distance 1 and distance 2.
+- Generate the cloth particles.
+- Add constraints to a particle and its particles at distance 1 and distance 2.
+- Load the model of the sphere
+
+## Rendering Loop
+
+- Move sphere
+- Detect Collisions
+- Respond to the collisions
+- Adjust the distance of the particles based on their *distance* and the *standard_distance*

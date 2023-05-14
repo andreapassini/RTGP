@@ -1,5 +1,9 @@
 #include <Constraint.h>
 #include <vector>
+#include <glad/glad.h>
+
+// GLFW
+#include <glfw/glfw3.h>
 
 class Cloth
 {
@@ -47,6 +51,7 @@ private:
 	/* A private method used by drawShaded(), that draws a single triangle p1,p2,p3 with a color*/
 	void drawTriangle(Particle *p1, Particle *p2, Particle *p3, const Vec3 color)
 	{
+
 		glColor3fv( (GLfloat*) &color );
 
 		glNormal3fv((GLfloat *) &(p1->getNormal().normalized() ));
