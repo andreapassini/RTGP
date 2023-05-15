@@ -113,6 +113,112 @@ GLfloat weight = 0.2f;
 GLfloat speed = 5.0f;
 
 
+#include <utils/Cloth.h>
+
+// Just below are three global variables holding the actual animated stuff; Cloth and Ball 
+Cloth cloth1(14,10,55,45); // one Cloth object of the Cloth class
+Vec3 ball_pos(7,-5,0); // the center of our one ball
+float ball_radius = 2; // the radius of our one ball
+
+
+
+/***** Below are functions Init(), display(), reshape(), keyboard(), arrow_keys(), main() *****/
+
+/* This is where all the standard Glut/OpenGL stuff is, and where the methods of Cloth are called; 
+addForce(), windForce(), timeStep(), ballCollision(), and drawShaded()*/
+
+
+void init(GLvoid)
+{
+	glShadeModel(GL_SMOOTH);
+	glClearColor(0.2f, 0.2f, 0.4f, 0.5f);				
+	glClearDepth(1.0f);
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL);
+	glEnable(GL_COLOR_MATERIAL);
+	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+	
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+	GLfloat lightPos[4] = {-1.0,1.0,0.5,0.0};
+	glLightfv(GL_LIGHT0,GL_POSITION,(GLfloat *) &lightPos);
+
+	glEnable(GL_LIGHT1);
+
+	GLfloat lightAmbient1[4] = {0.0,0.0,0.0,0.0};
+	GLfloat lightPos1[4] = {1.0,0.0,-0.2,0.0};
+	GLfloat lightDiffuse1[4] = {0.5,0.5,0.3,0.0};
+
+	glLightfv(GL_LIGHT1,GL_POSITION,(GLfloat *) &lightPos1);
+	glLightfv(GL_LIGHT1,GL_AMBIENT,(GLfloat *) &lightAmbient1);
+	glLightfv(GL_LIGHT1,GL_DIFFUSE,(GLfloat *) &lightDiffuse1);
+
+	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE,GL_TRUE);
+}
+
+
+float ball_time = 0; // counter for used to calculate the z position of the ball below
+
+/* display method called each frame*/
+void display(void)
+{
+	// calculating positions
+
+	ball_time++;
+	ball_pos.f[2] = cos(ball_time/50.0)*7;
+
+	cloth1.addForce(Vec3(0,-0.2,0)*TIME_STEPSIZE2); // add gravity each frame, pointing down
+	cloth1.windForce(Vec3(0.5,0,0.2)*TIME_STEPSIZE2); // generate some wind each frame
+	cloth1.timeStep(); // calculate the particle positions of the next frame
+	cloth1.ballCollision(ball_pos,ball_radius); // resolve collision with the ball
+
+
+
+	// drawing
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glLoadIdentity();
+
+	glDisable(GL_LIGHTING); // drawing some smooth shaded background - because I like it ;)
+	glBegin(GL_POLYGON);
+	glColor3f(0.8f,0.8f,1.0f);
+	glVertex3f(-200.0f,-100.0f,-100.0f);
+	glVertex3f(200.0f,-100.0f,-100.0f);
+	glColor3f(0.4f,0.4f,0.8f);	
+	glVertex3f(200.0f,100.0f,-100.0f);
+	glVertex3f(-200.0f,100.0f,-100.0f);
+	glEnd();
+	glEnable(GL_LIGHTING);
+
+	glTranslatef(-6.5,6,-9.0f); // move camera out and center on the cloth
+	glRotatef(25,0,1,0); // rotate a bit to see the cloth from the side
+	cloth1.drawShaded(); // finally draw the cloth with smooth shading
+	
+	// glPushMatrix(); // to draw the ball we use glutSolidSphere, and need to draw the sphere at the position of the ball
+	// glTranslatef(ball_pos.f[0],ball_pos.f[1],ball_pos.f[2]); // hence the translation of the sphere onto the ball position
+	// glColor3f(0.4f,0.8f,0.5f);
+	// glutSolidSphere(ball_radius-0.1,50,50); // draw the ball, but with a slightly lower radius, otherwise we could get ugly visual artifacts of cloth penetrating the ball slightly
+	// glPopMatrix();
+
+	// glutSwapBuffers();
+	// glutPostRedisplay();
+}
+
+void reshape(int w, int h)  
+{
+	glViewport(0, 0, w, h);
+	glMatrixMode(GL_PROJECTION); 
+	glLoadIdentity();  
+	// if (h==0)  
+	// 	gluPerspective(80,(float)w,1.0,5000.0);
+	// else
+	// 	gluPerspective (80,( float )w /( float )h,1.0,5000.0 );
+	glMatrixMode(GL_MODELVIEW);  
+	glLoadIdentity(); 
+}
+
+
+
 /////////////////// MAIN function ///////////////////////
 int main()
 {
@@ -168,11 +274,6 @@ int main()
     // we create the Shader Programs used in the application
     SetupShaders();
 
-    // we load the model(s) (code of Model class is in include/utils/model.h)
-    Model cubeModel("../../models/cube.obj");
-    Model sphereModel("../../models/sphere.obj");
-    Model bunnyModel("../../models/bunny_lp.obj");
-
     // we print on console the name of the first shader used
     PrintCurrentShader(current_program);
 
@@ -183,13 +284,7 @@ int main()
     // View matrix (=camera): position, view direction, camera "up" vector
     glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 7.0f), glm::vec3(0.0f, 0.0f, -7.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-    // Model and Normal transformation matrices for the objects in the scene: we set to identity
-    glm::mat4 sphereModelMatrix = glm::mat4(1.0f);
-    glm::mat3 sphereNormalMatrix = glm::mat3(1.0f);
-    glm::mat4 cubeModelMatrix = glm::mat4(1.0f);
-    glm::mat3 cubeNormalMatrix = glm::mat3(1.0f);
-    glm::mat4 bunnyModelMatrix = glm::mat4(1.0f);
-    glm::mat3 bunnyNormalMatrix = glm::mat3(1.0f);
+    init();
 
     // Rendering loop: this code is executed at each frame
     while(!glfwWindowShouldClose(window))
@@ -243,64 +338,8 @@ int main()
         glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
 
-        //SPHERE
-        /*
-          we create the transformation matrix
-          N.B.) the last defined is the first applied
-
-          We need also the matrix for normals transformation, which is the inverse of the transpose of the 3x3 submatrix (upper left) of the modelview.
-          We do not consider the 4th column because we do not need translations for normals.
-          An explanation (where XT means the transpose of X, etc):
-            "Two column vectors X and Y are perpendicular if and only if XT.Y=0.
-            If we're going to transform X by a matrix M, we need to transform Y by some matrix N so that (M.X)T.(N.Y)=0.
-            Using the identity (A.B)T=BT.AT, this becomes (XT.MT).(N.Y)=0 => XT.(MT.N).Y=0.
-            If MT.N is the identity matrix then this reduces to XT.Y=0.
-            And MT.N is the identity matrix if and only if N=(MT)-1, i.e. N is the inverse of the transpose of M.
-
-        */
-        // we reset to identity at each frame
-        sphereModelMatrix = glm::mat4(1.0f);
-        sphereNormalMatrix = glm::mat3(1.0f);
-        sphereModelMatrix = glm::translate(sphereModelMatrix, glm::vec3(-3.0f, 0.0f, 0.0f));
-        sphereModelMatrix = glm::rotate(sphereModelMatrix, glm::radians(orientationY), glm::vec3(0.0f, 1.0f, 0.0f));
-        sphereModelMatrix = glm::scale(sphereModelMatrix, glm::vec3(0.8f, 0.8f, 0.8f));	// It's a bit too big for our scene, so scale it down
-        // if we cast a mat4 to a mat3, we are automatically considering the upper left 3x3 submatrix
-        sphereNormalMatrix = glm::inverseTranspose(glm::mat3(view*sphereModelMatrix));
-        glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(sphereModelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(sphereNormalMatrix));
-
-        // we render the sphere
-        sphereModel.Draw();
-
-        //CUBE
-        // we create the transformation matrix and the normals transformation matrix
-        // we reset to identity at each frame
-        cubeModelMatrix = glm::mat4(1.0f);
-        cubeNormalMatrix = glm::mat3(1.0f);
-        cubeModelMatrix = glm::translate(cubeModelMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
-        cubeModelMatrix = glm::rotate(cubeModelMatrix, glm::radians(orientationY), glm::vec3(0.0f, 1.0f, 0.0f));
-        cubeModelMatrix = glm::scale(cubeModelMatrix, glm::vec3(0.8f, 0.8f, 0.8f));	// It's a bit too big for our scene, so scale it down
-        cubeNormalMatrix = glm::inverseTranspose(glm::mat3(view*cubeModelMatrix));
-        glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(cubeModelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(cubeNormalMatrix));
-
-        // we render the cube
-        cubeModel.Draw();
-
-        //BUNNY
-        // we create the transformation matrix and the normals transformation matrix
-        // we reset to identity at each frame
-        bunnyModelMatrix = glm::mat4(1.0f);
-        bunnyNormalMatrix = glm::mat3(1.0f);
-        bunnyModelMatrix = glm::translate(bunnyModelMatrix, glm::vec3(3.0f, 0.0f, 0.0f));
-        bunnyModelMatrix = glm::rotate(bunnyModelMatrix, glm::radians(orientationY), glm::vec3(0.0f, 1.0f, 0.0f));
-        bunnyModelMatrix = glm::scale(bunnyModelMatrix, glm::vec3(0.3f, 0.3f, 0.3f));	// It's a bit too big for our scene, so scale it down
-        bunnyNormalMatrix = glm::inverseTranspose(glm::mat3(view*bunnyModelMatrix));
-        glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(bunnyModelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(bunnyNormalMatrix));
-
-        // we render the bunny
-        bunnyModel.Draw();
+        display();
+        reshape(screenWidth, screenHeight);
 
         // Swapping back and front buffers
         glfwSwapBuffers(window);

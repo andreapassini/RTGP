@@ -1,4 +1,4 @@
-#include <Vec3.h>
+#include <utils/Vec3.h>
 
 /* Some physics constants */
 #define DAMPING 0.01 // how much to damp the cloth simulation each frame

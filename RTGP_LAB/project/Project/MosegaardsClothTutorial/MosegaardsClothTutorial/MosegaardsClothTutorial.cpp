@@ -5,7 +5,7 @@ You may use the code in any way you see fit. Please leave a comment on the blog
 or send me an email if the code or tutorial was somehow helpful.
 
 Everything needed is defined in this file, it is probably best read from the 
-bottom and up, since dependancy is from the bottom and up
+bottom and up, since dependency is from the bottom and up
 
 A short overview of this file is;
 * includes
