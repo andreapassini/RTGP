@@ -102,21 +102,21 @@ GLfloat planeColor[] = {0.0,0.5,0.0};
 /////////////////// MAIN function ///////////////////////
 int main()
 {
-  // Initialization of OpenGL context using GLFW
-  glfwInit();
-  // We set OpenGL specifications required for this application
-  // In this case: 4.1 Core
-  // If not supported by your graphics HW, the context will not be created and the application will close
-  // N.B.) creating GLAD code to load extensions, try to take into account the specifications and any extensions you want to use,
-  // in relation also to the values indicated in these GLFW commands
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-  // we set if the window is resizable
-  glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+    // Initialization of OpenGL context using GLFW
+    glfwInit();
+    // We set OpenGL specifications required for this application
+    // In this case: 4.1 Core
+    // If not supported by your graphics HW, the context will not be created and the application will close
+    // N.B.) creating GLAD code to load extensions, try to take into account the specifications and any extensions you want to use,
+    // in relation also to the values indicated in these GLFW commands
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    // we set if the window is resizable
+    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
-  // we create the application's window
+    // we create the application's window
     GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "RGP_work04", nullptr, nullptr);
     if (!window)
     {
@@ -414,4 +414,8 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
             PrintCurrentShader(current_subroutine);
         }
     }
+}
+
+void SetUpEnvironment(){
+    
 }

@@ -68,6 +68,9 @@ positive Z axis points "outside" the screen
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+// My classes
+#include <Transform.h>
+
 // dimensions of application's window
 GLuint screenWidth = 1200, screenHeight = 900;
 
@@ -184,12 +187,17 @@ int main()
     glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 7.0f), glm::vec3(0.0f, 0.0f, -7.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     // Model and Normal transformation matrices for the objects in the scene: we set to identity
-    glm::mat4 sphereModelMatrix = glm::mat4(1.0f);
-    glm::mat3 sphereNormalMatrix = glm::mat3(1.0f);
-    glm::mat4 cubeModelMatrix = glm::mat4(1.0f);
-    glm::mat3 cubeNormalMatrix = glm::mat3(1.0f);
-    glm::mat4 bunnyModelMatrix = glm::mat4(1.0f);
-    glm::mat3 bunnyNormalMatrix = glm::mat3(1.0f);
+    // glm::mat4 sphereModelMatrix = glm::mat4(1.0f);
+    // glm::mat3 sphereNormalMatrix = glm::mat3(1.0f);
+    Transform* sphereTransform();
+
+    // glm::mat4 cubeModelMatrix = glm::mat4(1.0f);
+    // glm::mat3 cubeNormalMatrix = glm::mat3(1.0f);
+    Transform* cubeTransform();
+
+    // glm::mat4 bunnyModelMatrix = glm::mat4(1.0f);
+    // glm::mat3 bunnyNormalMatrix = glm::mat3(1.0f);
+    Transform* bunnyTransform();
 
     // Rendering loop: this code is executed at each frame
     while(!glfwWindowShouldClose(window))
@@ -259,6 +267,11 @@ int main()
 
         */
         // we reset to identity at each frame
+        sphereTransform->Transformation(
+            glm::vec3(0.8f, 0.8f, 0.8f),
+            glm::radians(orientationY), glm::vec3(0.0f, 1.0f, 0.0f),
+            glm::vec3(-3.0f, 0.0f, 0.0f)
+        );
         sphereModelMatrix = glm::mat4(1.0f);
         sphereNormalMatrix = glm::mat3(1.0f);
         sphereModelMatrix = glm::translate(sphereModelMatrix, glm::vec3(-3.0f, 0.0f, 0.0f));

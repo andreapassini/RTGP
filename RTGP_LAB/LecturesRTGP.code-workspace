@@ -40,7 +40,8 @@
 			"iosfwd": "cpp",
 			"vector": "cpp",
 			"string.h": "c",
-			"xiosbase": "cpp"
+			"xiosbase": "cpp",
+			"sstream": "cpp"
 		}
 	}
 }
