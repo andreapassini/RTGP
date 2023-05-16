@@ -12,8 +12,6 @@
 class Transform
 {
 private:
-    glm::mat4 modelMatrix;
-    glm::mat3 normalMatrix;
     void ResetToIdentity();
     void InverseTranspose(glm::mat4 &viewMatrix);
 
@@ -25,6 +23,8 @@ private:
     void Translate(glm::vec3 &translationVector);
     void Translate(glm::f32 x, glm::f32 y, glm::f32 z);
 public:
+    glm::mat4 modelMatrix;
+    glm::mat3 normalMatrix;
     Transform(glm::mat4 model, glm::mat3 normal);
     Transform();
     ~Transform();
@@ -56,6 +56,7 @@ void Transform::Transformation(glm::vec3 &scaleVector,
                         )
 {
     ResetToIdentity();
+    
     Translate(translationVector);
     Rotate(angleInGrades, axis);
     Scale(scaleVector);
