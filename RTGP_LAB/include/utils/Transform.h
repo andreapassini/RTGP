@@ -22,13 +22,22 @@ private:
 
     void Translate(glm::vec3 &translationVector);
     void Translate(glm::f32 x, glm::f32 y, glm::f32 z);
+
+
 public:
     glm::mat4 modelMatrix;
     glm::mat3 normalMatrix;
-    Transform(glm::mat4 model, glm::mat3 normal);
+    glm::mat4 viewMatrix;
+
+    Transform(glm::mat4 &model, glm::mat3 &normal, glm::mat4 &viewMatrix);
     Transform();
     ~Transform();
 
+    void Transformation(glm::vec3 &scaleVector,
+                        glm::f32 angleInGrades, glm::vec3 &axis,
+                        glm::vec3 &translationVector
+                        );
+                        
     void Transformation(glm::vec3 &scaleVector,
                         glm::f32 angleInGrades, glm::vec3 &axis,
                         glm::vec3 &translationVector,
@@ -36,10 +45,11 @@ public:
                         );
 };
 
-Transform::Transform(glm::mat4 model, glm::mat3 normal)
+Transform::Transform(glm::mat4 &model, glm::mat3 &normal, glm::mat4 &viewMatrix)
 {
     this->modelMatrix = model;
     this->normalMatrix = normal;
+    this->viewMatrix = viewMatrix;
 }
 Transform::Transform(){
     this->modelMatrix = glm::mat4(1.0f);
@@ -49,6 +59,21 @@ Transform::~Transform()
 {
 }
 
+
+void Transform::Transformation(glm::vec3 &scaleVector,
+                        glm::f32 angleInGrades, glm::vec3 &axis,
+                        glm::vec3 &translationVector
+                        )
+{
+    ResetToIdentity();
+
+    Translate(translationVector);
+    Rotate(angleInGrades, axis);
+    Scale(scaleVector);
+
+    InverseTranspose(this->viewMatrix);
+}
+
 void Transform::Transformation(glm::vec3 &scaleVector,
                         glm::f32 angleInGrades, glm::vec3 &axis,
                         glm::vec3 &translationVector,
@@ -56,7 +81,7 @@ void Transform::Transformation(glm::vec3 &scaleVector,
                         )
 {
     ResetToIdentity();
-    
+
     Translate(translationVector);
     Rotate(angleInGrades, axis);
     Scale(scaleVector);
@@ -90,3 +115,9 @@ void Transform::Translate(glm::f32 x, glm::f32 y, glm::f32 z){
 void Transform::InverseTranspose(glm::mat4 &viewMatrix){
     this->normalMatrix = glm::inverseTranspose(glm::mat3(viewMatrix * this->modelMatrix));
 }
+
+struct Rotation
+{
+    glm::f32 angleInGrades; 
+    glm::vec3 &axis;
+};
