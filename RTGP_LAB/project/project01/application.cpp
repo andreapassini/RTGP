@@ -72,7 +72,8 @@ positive Z axis points "outside" the screen
 #include <utils/Transform.h>
 
 // Cloth classes
-#include <utils/Cloth.h>
+#include <physics/physicEngine.h>
+//#include <cloth/Cloth.h>
 
 // dimensions of application's window
 GLuint screenWidth = 1200, screenHeight = 900;

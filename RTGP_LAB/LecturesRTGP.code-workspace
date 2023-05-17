@@ -32,6 +32,9 @@
 		},
 		{
 			"path": "lectures_final/lecture03c"
+		},
+		{
+			"path": "../../Examples/MosegaardsClothTutorial/MosegaardsClothTutorial"
 		}
 	],
 	"settings": {
@@ -41,7 +44,8 @@
 			"vector": "cpp",
 			"string.h": "c",
 			"xiosbase": "cpp",
-			"sstream": "cpp"
+			"sstream": "cpp",
+			"cmath": "cpp"
 		}
 	}
 }

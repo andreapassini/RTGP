@@ -28,7 +28,7 @@ positive Z axis points "outside" the screen
 // Std. Includes
 #include <string>
 
-// Loader estensions OpenGL
+// Loader extensions OpenGL
 // http://glad.dav1d.de/
 // THIS IS OPTIONAL AND NOT REQUIRED, ONLY USE THIS IF YOU DON'T WANT GLAD TO INCLUDE windows.h
 // GLAD will include windows.h for APIENTRY if it was not previously defined.
@@ -51,6 +51,7 @@ positive Z axis points "outside" the screen
 // classes developed during lab lectures to manage shaders and to load models
 #include <utils/shader.h>
 #include <utils/model.h>
+#include <utils/camera.h>
 
 // we load the GLM classes used in the application
 #include <glm/glm.hpp>
@@ -58,11 +59,22 @@ positive Z axis points "outside" the screen
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+// My Classes
+#include <utils/Transform.h>
+
 // dimensions of application's window
 GLuint screenWidth = 1200, screenHeight = 900;
 
 // callback function for keyboard events
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void apply_camera_movement();
+
+bool keys[1024];
+GLfloat lastX, lastY;
+bool firstMouse = true;
+
+Camera camera(glm::vec3(0.0, 0.0, 7.0f), GL_TRUE);
 
 // index of the current shader subroutine (= 0 in the beginning)
 GLuint current_subroutine = 0;
@@ -88,6 +100,24 @@ GLboolean spinning = GL_TRUE;
 
 // boolean to activate/deactivate wireframe rendering
 GLboolean wireframe = GL_FALSE;
+
+glm::vec3 lightPos0 = glm::vec3(5.0f, 10.0f, 10.0f);
+GLfloat diffuseColor[] = {1.0, 0.0, 0.0};
+GLfloat specularColor[] = {1.0, 1.0, 1.0};
+GLfloat ambientColor[] = {0.1, 0.1, 0.1};
+
+// The sum is 1, for the law of cons. of energy
+GLfloat Kd = 0.5f;
+GLfloat Ks = 0.4f;
+GLfloat Ka = 0.1f;
+
+GLfloat shininess = 25.0f;  // Exp in the formula
+
+// GGX Model
+GLfloat alpha = 0.2f;   // For the distribution
+GLfloat F0 = 0.9f; //Fresnel reflectance
+
+
 
 // Uniforms to pass to shaders
 // frequency and power parameters for noise generation (for all subroutines)
@@ -128,6 +158,7 @@ int main()
 
     // we put in relation the window and the callbacks
     glfwSetKeyCallback(window, key_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
 
     // we disable the mouse cursor
     //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -151,7 +182,7 @@ int main()
     glClearColor(0.26f, 0.46f, 0.98f, 1.0f);
 
     // we create the Shader Program used for the plane
-    Shader plane_shader("00_basic.vert", "01_fullcolor.frag");
+    // Shader plane_shader("00_basic.vert", "01_fullcolor.frag");
 
     // we create the Shader Program used for objects (which presents different subroutines we can switch)
     Shader noise_shader = Shader("06_procedural_base.vert", "08_random_patterns.frag");
@@ -170,15 +201,19 @@ int main()
     // Projection matrix: FOV angle, aspect ratio, near and far planes
     glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);
     // View matrix (=camera): position, view direction, camera "up" vector
-    glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 7.0f), glm::vec3(0.0f, 0.0f, -7.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 view = glm::mat4(1.0f);
 
     // Model and Normal transformation matrices for the objects in the scene: we set to identity
-    glm::mat4 sphereModelMatrix = glm::mat4(1.0f);
-    glm::mat3 sphereNormalMatrix = glm::mat3(1.0f);
-    glm::mat4 cubeModelMatrix = glm::mat4(1.0f);
-    glm::mat3 cubeNormalMatrix = glm::mat3(1.0f);
-    glm::mat4 bunnyModelMatrix = glm::mat4(1.0f);
-    glm::mat3 bunnyNormalMatrix = glm::mat3(1.0f);
+    // Model and Normal transformation matrices for the objects in the scene: we set to identity
+    Transform sphereTransform;
+    sphereTransform.viewMatrix = view;
+
+    Transform cubeTransform;
+    cubeTransform.viewMatrix = view;
+
+    Transform bunnyTransform;
+    bunnyTransform.viewMatrix = view;
+
     glm::mat4 planeModelMatrix = glm::mat4(1.0f);
 
     // Rendering loop: this code is executed at each frame
@@ -192,6 +227,8 @@ int main()
 
         // Check is an I/O event is happening
         glfwPollEvents();
+        apply_camera_movement();
+        view = camera.GetViewMatrix();
 
         // we "clear" the frame and z buffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -209,46 +246,57 @@ int main()
 
         /////////////////// PLANE ////////////////////////////////////////////////
         // We render a plane under the objects. We apply the fullcolor shader to the plane, and we do not apply the rotation applied to the other objects.
-        plane_shader.Use();
-        // we pass projection and view matrices to the Shader Program of the plane
-        glUniformMatrix4fv(glGetUniformLocation(plane_shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
-        glUniformMatrix4fv(glGetUniformLocation(plane_shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
+        noise_shader.Use();
+        GLuint index = glGetSubroutineIndex(noise_shader.Program, GL_FRAGMENT_SHADER, "Lambert");
+        glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &index);
 
-        // we determine the position in the Shader Program of the uniform variables
-        GLint planeColorLocation = glGetUniformLocation(plane_shader.Program, "colorIn");
+        // we pass projection and view matrices to the Shader Program of the plane
+        glUniformMatrix4fv(glGetUniformLocation(noise_shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
+        glUniformMatrix4fv(glGetUniformLocation(noise_shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
+
+        GLint pointLightLocation = glGetUniformLocation(noise_shader.Program, "pointLightPosition");
+        GLint matDiffuseLocation = glGetUniformLocation(noise_shader.Program, "diffuseColor");
+        GLint kdLocation = glGetUniformLocation(noise_shader.Program, "kd");
+
         // we assign the value to the uniform variables
-        glUniform3fv(planeColorLocation, 1, planeColor);
+        glUniform3fv(pointLightLocation, 1, glm::value_ptr(lightPos0));
+        glUniform3fv(matDiffuseLocation, 1, planeColor);
+        glUniform1f(kdLocation, Kd);
 
         // we create the transformation matrix
         // we reset to identity at each frame
         planeModelMatrix = glm::mat4(1.0f);
         planeModelMatrix = glm::translate(planeModelMatrix, glm::vec3(0.0f, -1.0f, 0.0f));
         planeModelMatrix = glm::scale(planeModelMatrix, glm::vec3(10.0f, 1.0f, 10.0f));
-        glUniformMatrix4fv(glGetUniformLocation(plane_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(planeModelMatrix));
+        glUniformMatrix4fv(glGetUniformLocation(noise_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(planeModelMatrix));
 
         // we render the plane
         planeModel.Draw();
 
 
         /////////////////// OBJECTS ////////////////////////////////////////////////
-        // We "install" the noise_shader Shader Program as part of the current rendering process
-        noise_shader.Use();
         // we search inside the Shader Program the name of the subroutine currently selected, and we get the numerical index
-        GLuint index = glGetSubroutineIndex(noise_shader.Program, GL_FRAGMENT_SHADER, shaders[current_subroutine].c_str());
+        index = glGetSubroutineIndex(noise_shader.Program, GL_FRAGMENT_SHADER, shaders[current_subroutine].c_str());
         // we activate the subroutine using the index (this is where shaders swapping happens)
         glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &index);
 
-        // we determine the position in the Shader Program of the uniform variables
-        GLint frequencyLocation = glGetUniformLocation(noise_shader.Program, "frequency");
-        GLint powerLocation = glGetUniformLocation(noise_shader.Program, "power");
-        GLint timerLocation = glGetUniformLocation(noise_shader.Program, "timer");
-        GLint harmonicsLocation = glGetUniformLocation(noise_shader.Program, "harmonics");
+        GLint matAmbientLocation = glGetUniformLocation(noise_shader.Program, "ambientColor");
+        GLint matSpecularLocation = glGetUniformLocation(noise_shader.Program, "specularColor");
+        GLint kaLocation = glGetUniformLocation(noise_shader.Program, "ka");
+        GLint ksLocation = glGetUniformLocation(noise_shader.Program, "ks");
+        GLint shineLocation = glGetUniformLocation(noise_shader.Program, "shininess");
+        GLint alphaLocation = glGetUniformLocation(noise_shader.Program, "alpha");
+        GLint f0Location = glGetUniformLocation(noise_shader.Program, "F0");
 
-        // we assign the value to the uniform variable
-        glUniform1f(frequencyLocation, frequency);
-        glUniform1f(powerLocation, power);
-        glUniform1f(timerLocation, currentFrame);
-        glUniform1f(harmonicsLocation, harmonics);
+        // we assign the value to the uniform variables
+        glUniform3fv(matDiffuseLocation, 1, diffuseColor);
+        glUniform3fv(matSpecularLocation, 1, ambientColor);
+        glUniform3fv(matSpecularLocation, 1, specularColor);
+        glUniform1f(kaLocation, Ka);
+        glUniform1f(ksLocation, Ks);
+        glUniform1f(shineLocation, shininess);
+        glUniform1f(alphaLocation, alpha);
+        glUniform1f(f0Location, F0);
 
         // we pass projection and view matrices to the Shader Program
         glUniformMatrix4fv(glGetUniformLocation(noise_shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
@@ -265,46 +313,41 @@ int main()
             "Two column vectors X and Y are perpendicular if and only if XT.Y=0. If We're going to transform X by a matrix M, we need to transform Y by some matrix N so that (M.X)T.(N.Y)=0. Using the identity (A.B)T=BT.AT, this becomes (XT.MT).(N.Y)=0 => XT.(MT.N).Y=0. If MT.N is the identity matrix then this reduces to XT.Y=0. And MT.N is the identity matrix if and only if N=(MT)-1, i.e. N is the inverse of the transpose of M.
 
         */
-        // we reset to identity at each frame
-        sphereModelMatrix = glm::mat4(1.0f);
-        sphereNormalMatrix = glm::mat3(1.0f);
-        sphereModelMatrix = glm::translate(sphereModelMatrix, glm::vec3(-3.0f, 0.0f, 0.0f));
-        sphereModelMatrix = glm::rotate(sphereModelMatrix, glm::radians(orientationY), glm::vec3(0.0f, 1.0f, 0.0f));
-        sphereModelMatrix = glm::scale(sphereModelMatrix, glm::vec3(0.8f, 0.8f, 0.8f));
-        // if we cast a mat4 to a mat3, we are automatically considering the upper left 3x3 submatrix
-        sphereNormalMatrix = glm::inverseTranspose(glm::mat3(view*sphereModelMatrix));
-        glUniformMatrix4fv(glGetUniformLocation(noise_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(sphereModelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(noise_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(sphereNormalMatrix));
+        //SPHERE
+        sphereTransform.Transformation(
+            glm::vec3(0.8f, 0.8f, 0.8f),
+            orientationY, glm::vec3(0.0f, 1.0f, 0.0f),
+            glm::vec3(-3.0f, 0.0f, 0.0f),
+            view
+        );
+        glUniformMatrix4fv(glGetUniformLocation(noise_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.modelMatrix));
+        glUniformMatrix3fv(glGetUniformLocation(noise_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.normalMatrix));
 
         // we render the model
         sphereModel.Draw();
 
-        //CUBE
-        // we create the transformation matrix and the normals transformation matrix
-        // we reset to identity at each frame
-        cubeModelMatrix = glm::mat4(1.0f);
-        cubeNormalMatrix = glm::mat3(1.0f);
-        cubeModelMatrix = glm::translate(cubeModelMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
-        cubeModelMatrix = glm::rotate(cubeModelMatrix, glm::radians(orientationY), glm::vec3(0.0f, 1.0f, 0.0f));
-        cubeModelMatrix = glm::scale(cubeModelMatrix, glm::vec3(0.8f, 0.8f, 0.8f));	// It's a bit too big for our scene, so scale it down
-        cubeNormalMatrix = glm::inverseTranspose(glm::mat3(view*cubeModelMatrix));
-        glUniformMatrix4fv(glGetUniformLocation(noise_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(cubeModelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(noise_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(cubeNormalMatrix));
+                //CUBE
+        cubeTransform.Transformation(
+            glm::vec3(0.8f, 0.8f, 0.8f),
+            orientationY, glm::vec3(0.0f, 1.0f, 0.0f),
+            glm::vec3(0.0f, 0.0f, 0.0f),
+            view
+        );
+        glUniformMatrix4fv(glGetUniformLocation(noise_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(cubeTransform.modelMatrix));
+        glUniformMatrix3fv(glGetUniformLocation(noise_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(cubeTransform.normalMatrix));
 
         // we render the cube
         cubeModel.Draw();
 
         //BUNNY
-        // we create the transformation matrix and the normals transformation matrix
-        // we reset to identity at each frame
-        bunnyModelMatrix = glm::mat4(1.0f);
-        bunnyNormalMatrix = glm::mat3(1.0f);
-        bunnyModelMatrix = glm::translate(bunnyModelMatrix, glm::vec3(3.0f, 0.0f, 0.0f));
-        bunnyModelMatrix = glm::rotate(bunnyModelMatrix, glm::radians(orientationY), glm::vec3(0.0f, 1.0f, 0.0f));
-        bunnyModelMatrix = glm::scale(bunnyModelMatrix, glm::vec3(0.3f, 0.3f, 0.3f));	// It's a bit too big for our scene, so scale it down
-        bunnyNormalMatrix = glm::inverseTranspose(glm::mat3(view*bunnyModelMatrix));
-        glUniformMatrix4fv(glGetUniformLocation(noise_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(bunnyModelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(noise_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(bunnyNormalMatrix));
+        bunnyTransform.Transformation(
+            glm::vec3(0.3f, 0.3f, 0.3f),
+            orientationY, glm::vec3(0.0f, 1.0f, 0.0f),
+            glm::vec3(3.0f, 0.0f, 0.0f),
+            view
+        );        
+        glUniformMatrix4fv(glGetUniformLocation(noise_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(bunnyTransform.modelMatrix));
+        glUniformMatrix3fv(glGetUniformLocation(noise_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(bunnyTransform.normalMatrix));
 
         // Swapping back and front buffers
         bunnyModel.Draw();
@@ -315,7 +358,6 @@ int main()
 
     // when I exit from the graphics loop, it is because the application is closing
     // we delete the Shader Programs
-    plane_shader.Delete();
     noise_shader.Delete();
     // we close and delete the created context
     glfwTerminate();
@@ -414,8 +456,34 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
             PrintCurrentShader(current_subroutine);
         }
     }
+
+    if(action == GLFW_PRESS){
+        keys[key] = true;
+    } else if(action == GLFW_RELEASE){
+        keys[key] = false;
+    }
 }
 
-void SetUpEnvironment(){
-    
+void apply_camera_movement(){
+    if(keys[GLFW_KEY_W])
+        camera.ProcessKeyboard(FORWARD, deltaTime);
+    if(keys[GLFW_KEY_S])
+        camera.ProcessKeyboard(FORWARD, deltaTime);
+    if(keys[GLFW_KEY_A])
+        camera.ProcessKeyboard(FORWARD, deltaTime);
+    if(keys[GLFW_KEY_D])
+        camera.ProcessKeyboard(FORWARD, deltaTime);
+}
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos){
+    if(firstMouse){
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+    }
+
+    GLfloat xoffset = xpos - lastX;
+    GLfloat yoffset = lastY - ypos; // Window ref system, y is pointing down
+
+    camera.ProcessMouseMovement(xoffset, yoffset);
 }
