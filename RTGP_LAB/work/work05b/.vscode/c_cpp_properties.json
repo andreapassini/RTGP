@@ -1,6 +1,21 @@
 {
     "configurations": [
         {
+            "name": "Mac",
+            "includePath": [
+                "${workspaceFolder:IncludeDir}/**"
+            ],
+            "defines": [],
+            "macFrameworkPath": [
+                "/System/Library/Frameworks",
+                "/Library/Frameworks"
+            ],
+            "compilerPath": "/usr/bin/clang++",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "clang-x64"
+        },
+        {
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
@@ -9,14 +24,12 @@
             ],
             "defines": [
                 "_DEBUG",
-                "UNICODE",
-                "_UNICODE"
+                "UNICODE"
             ],
             "compilerPath": "D:\\Programmi\\Microsoft Visual Studio\\BuildTools2022\\VC\\Tools\\MSVC\\14.35.32215\\bin\\Hostx64\\x64\\cl.exe",
             "cStandard": "c11",
             "cppStandard": "c++17",
-            "intelliSenseMode": "msvc-x64",
-            "configurationProvider": "ms-vscode.cmake-tools"
+            "intelliSenseMode": "msvc-x64"
         }
     ],
     "version": 4

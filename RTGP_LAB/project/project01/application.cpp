@@ -68,11 +68,8 @@ positive Z axis points "outside" the screen
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-// Game Engine classes
+// My classes
 #include <utils/Transform.h>
-
-// Cloth classes
-#include <utils/Cloth.h>
 
 // dimensions of application's window
 GLuint screenWidth = 1200, screenHeight = 900;
@@ -235,7 +232,6 @@ int main()
         }
         else if (current_program == WAVE)
         {
-
             // we determine the position in the Shader Program of the uniform variables
             GLint weightLocation = glGetUniformLocation(shaders[current_program].Program, "weight");
             GLint timerLocation = glGetUniformLocation(shaders[current_program].Program, "timer");
