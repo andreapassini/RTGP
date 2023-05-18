@@ -5,7 +5,7 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "D:\\Programmi\\Microsoft Visual Studio\\BuildTools2022\\VC\\Tools\\MSVC\\14.35.32215\\include",
-                "D:\\ANDREA\\UNI\\MAGISTRALE\\ANNO_2\\II_Semestre\\REAL-TIME_GP\\RTGP\\RTGP_LAB\\include"
+                "D:/ANDREA/UNI/MAGISTRALE/ANNO_2/II_Semestre/REAL-TIME_GP/RTGP/RTGP_LAB/include"
             ],
             "defines": [
                 "_DEBUG",

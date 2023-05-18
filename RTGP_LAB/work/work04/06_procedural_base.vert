@@ -15,41 +15,25 @@ Universita' degli Studi di Milano
 // vertex position in world coordinates
 layout (location = 0) in vec3 position;
 // UV texture coordinates
-layout (location = 1) in vec3 normal;
+layout (location = 2) in vec2 UV;
 // the numbers used for the location in the layout qualifier are the positions of the vertex attribute
 // as defined in the Mesh class
 
+// model matrix
 uniform mat4 modelMatrix;
+// view matrix
 uniform mat4 viewMatrix;
+// Projection matrix
 uniform mat4 projectionMatrix;
 
-// FOr the illumination model
-uniform mat3 normalMatrix;
-
-uniform vec3 pointLightPosition;
-
-out vec3 lightDir;
-out vec3 vNormal;
-out vec3 vViewPosition;
+// the output variable for UV coordinates
+out vec2 interp_UV;
 
 void main()
 {
-	// Convert the normal in the correct reference system
-	vNormal = normalize(normalMatrix * normal);
-	// mv => model view
-	// modelMat: local to world
-	// viewMat: world to view
-	vec4 mvPosition = viewMatrix * modelMatrix * vec4(position, 1.0f);
+	// I assign the values to a variable with "out" qualifier so to use the per-fragment interpolated values in the Fragment shader
+	interp_UV = UV;
 
-	// Transform pointLight from world to view
-	vec4 vLightPos = viewMatrix * vec4(pointLightPosition, 1.0f);
-
-	lightDir = normalize(vLightPos.xyz - mvPosition.xyz);
-
-	// In view space, Camera is at the origin
-	vViewPosition = - mvPosition.xyz;
-
-	// from view to image plane
-    gl_Position = projectionMatrix * mvPosition;
-
+	// transformations are applied to each vertex
+    gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0f);
 }

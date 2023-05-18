@@ -11,7 +11,7 @@ FILENAME = application
 CC = cl.exe
 
 # Include path
-IDIR = ../../include ../../include/cloth ../../include/utils 
+IDIR = ../../include
 
 # compiler flags:
 CCFLAGS  = /Od /Zi /EHsc /MT

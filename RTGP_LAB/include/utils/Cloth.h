@@ -1,5 +1,9 @@
-#include <physics/Constraint.h>
+#include <utils/Constraint.h>
 #include <vector>
+#include <glad/glad.h>
+
+// GLFW
+#include <glfw/glfw3.h>
 
 class Cloth
 {
@@ -20,33 +24,34 @@ private:
 	normal vector of the triangle defined by the position of the particles p1, p2, and p3.
 	The magnitude of the normal vector is equal to the area of the parallelogram defined by p1, p2 and p3
 	*/
-	glm::vec3 calcTriangleNormal(Particle *p1,Particle *p2,Particle *p3)
+	Vec3 calcTriangleNormal(Particle *p1,Particle *p2,Particle *p3)
 	{
-		glm::vec3 pos1 = p1->getPos();
-		glm::vec3 pos2 = p2->getPos();
-		glm::vec3 pos3 = p3->getPos();
+		Vec3 pos1 = p1->getPos();
+		Vec3 pos2 = p2->getPos();
+		Vec3 pos3 = p3->getPos();
 
-		glm::vec3 v1 = pos2-pos1;
-		glm::vec3 v2 = pos3-pos1;
+		Vec3 v1 = pos2-pos1;
+		Vec3 v2 = pos3-pos1;
 
-		return glm::cross(v1, v2); // v1.cross(v2);
+		return v1.cross(v2);
 	}
 
 	/* A private method used by windForce() to calcualte the wind force for a single triangle 
 	defined by p1,p2,p3*/
-	void addWindForcesForTriangle(Particle *p1,Particle *p2,Particle *p3, const glm::vec3 direction)
+	void addWindForcesForTriangle(Particle *p1,Particle *p2,Particle *p3, const Vec3 direction)
 	{
-		glm::vec3 normal = calcTriangleNormal(p1,p2,p3);
-		glm::vec3 d = glm::normalize(normal); // normal.normalized();
-		glm::vec3 force = normal*(glm::dot(d, direction)); //d.dot(direction)
+		Vec3 normal = calcTriangleNormal(p1,p2,p3);
+		Vec3 d = normal.normalized();
+		Vec3 force = normal*(d.dot(direction));
 		p1->addForce(force);
 		p2->addForce(force);
 		p3->addForce(force);
 	}
 
 	/* A private method used by drawShaded(), that draws a single triangle p1,p2,p3 with a color*/
-	void drawTriangle(Particle *p1, Particle *p2, Particle *p3, const glm::vec3 color)
+	void drawTriangle(Particle *p1, Particle *p2, Particle *p3, const Vec3 color)
 	{
+
 		glColor3fv( (GLfloat*) &color );
 
 		glNormal3fv((GLfloat *) &(p1->getNormal().normalized() ));
@@ -71,7 +76,7 @@ public:
 		{
 			for(int y=0; y<num_particles_height; y++)
 			{
-				glm::vec3 pos = glm::vec3(width * (x/(float)num_particles_width),
+				Vec3 pos = Vec3(width * (x/(float)num_particles_width),
 								-height * (y/(float)num_particles_height),
 								0);
 				particles[y*num_particles_width+x]= Particle(pos); // insert particle in column x at y'th row
@@ -106,10 +111,10 @@ public:
 		// making the upper left most three and right most three particles unmovable
 		for(int i=0;i<3; i++)
 		{
-			getParticle(0+i ,0)->offsetPos(glm::vec3(0.5,0.0,0.0)); // moving the particle a bit towards the center, to make it hang more natural - because I like it ;)
+			getParticle(0+i ,0)->offsetPos(Vec3(0.5,0.0,0.0)); // moving the particle a bit towards the center, to make it hang more natural - because I like it ;)
 			getParticle(0+i ,0)->makeUnmovable(); 
 
-			getParticle(0+i ,0)->offsetPos(glm::vec3(-0.5,0.0,0.0)); // moving the particle a bit towards the center, to make it hang more natural - because I like it ;)
+			getParticle(0+i ,0)->offsetPos(Vec3(-0.5,0.0,0.0)); // moving the particle a bit towards the center, to make it hang more natural - because I like it ;)
 			getParticle(num_particles_width-1-i ,0)->makeUnmovable();
 		}
 	}
@@ -138,7 +143,7 @@ public:
 		{
 			for(int y=0; y<num_particles_height-1; y++)
 			{
-				glm::vec3 normal = calcTriangleNormal(getParticle(x+1,y),getParticle(x,y),getParticle(x,y+1));
+				Vec3 normal = calcTriangleNormal(getParticle(x+1,y),getParticle(x,y),getParticle(x,y+1));
 				getParticle(x+1,y)->addToNormal(normal);
 				getParticle(x,y)->addToNormal(normal);
 				getParticle(x,y+1)->addToNormal(normal);
@@ -155,11 +160,11 @@ public:
 		{
 			for(int y=0; y<num_particles_height-1; y++)
 			{
-				glm::vec3 color(0,0,0);
+				Vec3 color(0,0,0);
 				if (x%2) // red and white color is interleaved according to which column number
-					color = glm::vec3(0.6f,0.2f,0.2f);
+					color = Vec3(0.6f,0.2f,0.2f);
 				else
-					color = glm::vec3(1.0f,1.0f,1.0f);
+					color = Vec3(1.0f,1.0f,1.0f);
 
 				drawTriangle(getParticle(x+1,y),getParticle(x,y),getParticle(x,y+1),color);
 				drawTriangle(getParticle(x+1,y+1),getParticle(x+1,y),getParticle(x,y+1),color);
@@ -190,7 +195,7 @@ public:
 	}
 
 	/* used to add gravity (or any other arbitrary vector) to all particles*/
-	void addForce(const glm::vec3 direction)
+	void addForce(const Vec3 direction)
 	{
 		std::vector<Particle>::iterator particle;
 		for(particle = particles.begin(); particle != particles.end(); particle++)
@@ -201,7 +206,7 @@ public:
 	}
 
 	/* used to add wind forces to all particles, is added for each triangle since the final force is proportional to the triangle area as seen from the wind direction*/
-	void windForce(const glm::vec3 direction)
+	void windForce(const Vec3 direction)
 	{
 		for(int x = 0; x<num_particles_width-1; x++)
 		{
@@ -217,16 +222,16 @@ public:
 	This is based on a very simples scheme where the position of each particle is simply compared to the sphere and corrected.
 	This also means that the sphere can "slip through" if the ball is small enough compared to the distance in the grid bewteen particles
 	*/
-	void ballCollision(const glm::vec3 center,const float radius )
+	void ballCollision(const Vec3 center,const float radius )
 	{
 		std::vector<Particle>::iterator particle;
 		for(particle = particles.begin(); particle != particles.end(); particle++)
 		{
-			glm::vec3 v = (*particle).getPos()-center;
+			Vec3 v = (*particle).getPos()-center;
 			float l = v.length();
 			if ( v.length() < radius) // if the particle is inside the ball
 			{
-				(*particle).offsetPos(glm::normalize(v)*(radius-l)); // project the particle to the surface of the ball
+				(*particle).offsetPos(v.normalized()*(radius-l)); // project the particle to the surface of the ball
 			}
 		}
 	}

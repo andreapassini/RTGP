@@ -39,7 +39,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ---------------------------------------------------------------------------
 */
 
-/** @file Camera.h
+/** @file camera.h
  *  @brief Defines the aiCamera data structure
  */
 
@@ -58,27 +58,27 @@ extern "C" {
 #endif
 
 // ---------------------------------------------------------------------------
-/** Helper structure to describe a virtual Camera.
+/** Helper structure to describe a virtual camera.
  *
  * Cameras have a representation in the node graph and can be animated.
- * An important aspect is that the Camera itself is also part of the
+ * An important aspect is that the camera itself is also part of the
  * scene-graph. This means, any values such as the look-at vector are not
  * *absolute*, they're <b>relative</b> to the coordinate system defined
- * by the node which corresponds to the Camera. This allows for Camera
+ * by the node which corresponds to the camera. This allows for camera
  * animations. For static cameras parameters like the 'look-at' or 'up' vectors
  * are usually specified directly in aiCamera, but beware, they could also
  * be encoded in the node transformation. The following (pseudo)code sample
  * shows how to do it: <br><br>
  * @code
- * // Get the Camera matrix for a Camera at a specific time
- * // if the node hierarchy for the Camera does not contain
+ * // Get the camera matrix for a camera at a specific time
+ * // if the node hierarchy for the camera does not contain
  * // at least one animated node this is a static computation
- * get-Camera-matrix (node sceneRoot, Camera cam) : matrix
+ * get-camera-matrix (node sceneRoot, camera cam) : matrix
  * {
- *    node   cnd = find-node-for-Camera(cam)
+ *    node   cnd = find-node-for-camera(cam)
  *    matrix cmt = identity()
  *
- *    // as usual - get the absolute Camera transformation for this frame
+ *    // as usual - get the absolute camera transformation for this frame
  *    for each node nd in hierarchy from sceneRoot to cnd
  *      matrix cur
  *      if (is-animated(nd))
@@ -87,46 +87,46 @@ extern "C" {
  *      cmt = mult-matrices( cmt, cur )
  *    end for
  *
- *    // now multiply with the Camera's own local transform
- *    cam = mult-matrices (cam, get-Camera-matrix(cmt) )
+ *    // now multiply with the camera's own local transform
+ *    cam = mult-matrices (cam, get-camera-matrix(cmt) )
  * }
  * @endcode
  *
  * @note some file formats (such as 3DS, ASE) export a "target point" -
- * the point the Camera is looking at (it can even be animated). Assimp
- * writes the target point as a subnode of the Camera's main node,
+ * the point the camera is looking at (it can even be animated). Assimp
+ * writes the target point as a subnode of the camera's main node,
  * called "<camName>.Target". However this is just additional information
- * then the transformation tracks of the Camera main node make the
- * Camera already look in the right direction.
+ * then the transformation tracks of the camera main node make the
+ * camera already look in the right direction.
  *
 */
 struct aiCamera {
-    /** The name of the Camera.
+    /** The name of the camera.
      *
      *  There must be a node in the scenegraph with the same name.
-     *  This node specifies the position of the Camera in the scene
+     *  This node specifies the position of the camera in the scene
      *  hierarchy and can be animated.
      */
     C_STRUCT aiString mName;
 
-    /** Position of the Camera relative to the coordinate space
+    /** Position of the camera relative to the coordinate space
      *  defined by the corresponding node.
      *
      *  The default value is 0|0|0.
      */
     C_STRUCT aiVector3D mPosition;
 
-    /** 'Up' - vector of the Camera coordinate system relative to
+    /** 'Up' - vector of the camera coordinate system relative to
      *  the coordinate space defined by the corresponding node.
      *
-     *  The 'right' vector of the Camera coordinate system is
+     *  The 'right' vector of the camera coordinate system is
      *  the cross product of  the up and lookAt vectors.
      *  The default value is 0|1|0. The vector
      *  may be normalized, but it needn't.
      */
     C_STRUCT aiVector3D mUp;
 
-    /** 'LookAt' - vector of the Camera coordinate system relative to
+    /** 'LookAt' - vector of the camera coordinate system relative to
      *  the coordinate space defined by the corresponding node.
      *
      *  This is the viewing direction of the user.
@@ -143,14 +143,14 @@ struct aiCamera {
      */
     float mHorizontalFOV;
 
-    /** Distance of the near clipping plane from the Camera.
+    /** Distance of the near clipping plane from the camera.
      *
      * The value may not be 0.f (for arithmetic reasons to prevent
      * a division through zero). The default value is 0.1f.
      */
     float mClipPlaneNear;
 
-    /** Distance of the far clipping plane from the Camera.
+    /** Distance of the far clipping plane from the camera.
      *
      * The far clipping plane must, of course, be further away than the
      * near clipping plane. The default value is 1000.f. The ratio
@@ -172,7 +172,7 @@ struct aiCamera {
     /** Half horizontal orthographic width, in scene units.
      *
      *  The orthographic width specifies the half width of the
-     *  orthographic view box. If non-zero the Camera is
+     *  orthographic view box. If non-zero the camera is
      *  orthographic and the mAspect should define to the
      *  ratio between the orthographic width and height
      *  and mHorizontalFOV should be set to 0.
@@ -190,7 +190,7 @@ struct aiCamera {
               mAspect(0.f),
               mOrthographicWidth(0.f) {}
 
-    /** @brief Get a *right-handed* Camera matrix from me
+    /** @brief Get a *right-handed* camera matrix from me
      *  @param out Camera matrix to be filled
      */
     void GetCameraMatrix(aiMatrix4x4 &out) const {

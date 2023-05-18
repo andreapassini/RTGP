@@ -1,6 +1,4 @@
-#include <physics/particle.h>
-
-#define CONSTRAINT_ITERATIONS 15 // how many iterations of constraint satisfaction each frame (more is rigid, less is soft)
+#include <utils/Particle.h>
 
 class Constraint
 {
