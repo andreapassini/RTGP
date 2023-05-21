@@ -173,7 +173,7 @@ int main()
 
     Transform planeTransform;
 
-    Cloth cloth(100.0f, 100.0f, 10, 10);
+    Cloth cloth(100.0f, 0.25f, glm::vec3(0.0f, -5.0f, 5.0f));
 
     bool once = false;
 
@@ -262,8 +262,7 @@ int main()
                 glm::vec3(0.8f, 0.8f, 0.8f),
                 orientationY, glm::vec3(0.0f, 1.0f, 0.0f),
                 glm::vec3( 0.0f, 0.0f, positionZ),
-                view
-            );
+                view);
             glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.modelMatrix));
             glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.normalMatrix));
             sphereModel.Draw();
@@ -273,16 +272,18 @@ int main()
         planeTransform.Transformation(
             glm::vec3(10.0f, 1.0f, 10.0f),
             0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
-            glm::vec3(0.0f, -2.0f, 0.0f)
+            glm::vec3(0.0f, -2.0f, 0.0f),
+            view
         );
         glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(planeTransform.modelMatrix));
         glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(planeTransform.normalMatrix));
         planeModel.Draw();
         
 
-        cloth.addForce(glm::vec3(0.0f, -1.0f, 0.0f));
+        //cloth.AddGravityForce();
         //cloth.windForce(glm::vec3(0.3f, 0.0f, 0.0f));
-        cloth.PhysicsSteps();
+        //cloth.PhysicsSteps();
+        cloth.Draw();
 
         if(instantiate && !once){
             once = true;
