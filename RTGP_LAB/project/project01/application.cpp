@@ -37,6 +37,7 @@ positive Z axis points "outside" the screen
 
 // Std. Includes
 #include <string>
+#include <iostream>
 
 // Loader for OpenGL extensions
 // http://glad.dav1d.de/
@@ -174,6 +175,8 @@ int main()
 
     Cloth cloth(100.0f, 100.0f, 10, 10);
 
+    bool once = false;
+
     // Rendering loop: this code is executed at each frame
     while(!glfwWindowShouldClose(window))
     {
@@ -280,7 +283,17 @@ int main()
         cloth.addForce(glm::vec3(0.0f, -1.0f, 0.0f));
         //cloth.windForce(glm::vec3(0.3f, 0.0f, 0.0f));
         cloth.PhysicsSteps();
-        cloth.drawShaded();
+
+        if(instantiate && !once){
+            once = true;
+            
+            std::vector<Particle>::iterator particle;
+            for(particle = cloth.particles.begin(); particle != cloth.particles.end(); particle++)
+            {
+                glm::vec3 pos = glm::vec3(particle->getPos());
+                std::cout << pos.x << " - " << pos.y << " - " << pos.z << " - "<< std::endl;
+            }
+        }
 
         // Swapping back and front buffers
         glfwSwapBuffers(window);
