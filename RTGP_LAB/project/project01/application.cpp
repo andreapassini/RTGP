@@ -37,6 +37,7 @@ positive Z axis points "outside" the screen
 
 // Std. Includes
 #include <string>
+#include <iostream>
 
 // Loader for OpenGL extensions
 // http://glad.dav1d.de/
@@ -72,7 +73,7 @@ positive Z axis points "outside" the screen
 
 // My classes
 #include <utils/Transform.h>
-//#include <utils/cloth.h>
+#include <utils/cloth.h>
 
 // dimensions of application's window
 GLuint screenWidth = 1200, screenHeight = 900;
@@ -89,6 +90,8 @@ void SetupShaders();
 void DeleteShaders();
 // print on console the name of current shader
 void PrintCurrentShader(int shader);
+
+int SetupOpenGL();
 
 // we initialize an array of booleans for each keyboard key
 bool keys[1024];
@@ -138,68 +141,17 @@ GLfloat weight = 0.2f;
 GLfloat speed = 5.0f;
 
 
+// OpenGL Setup
+GLFWwindow* window;
+
 /////////////////// MAIN function ///////////////////////
 int main()
 {
-    // Initialization of OpenGL context using GLFW
-    glfwInit();
-    // We set OpenGL specifications required for this application
-    // In this case: 4.1 Core
-    // It is possible to raise the values, in order to use functionalities of more recent OpenGL specs.
-    // If not supported by your graphics HW, the context will not be created and the application will close
-    // N.B.) creating GLAD code to load extensions, try to take into account the specifications and any extensions you want to use,
-    // in relation also to the values indicated in these GLFW commands
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    // we set if the window is resizable
-    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-
-    // we create the application's window
-    GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "RGP_lecture03a", nullptr, nullptr);
-    if (!window)
-    {
-        std::cout << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
+    if(SetupOpenGL() == -1)
         return -1;
-    }
-    glfwMakeContextCurrent(window);
-
-    // we put in relation the window and the callbacks
-    glfwSetKeyCallback(window, key_callback);
-    glfwSetCursorPosCallback(window, mouse_callback);
-
-    // we disable the mouse cursor
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-    // GLAD tries to load the context set by GLFW
-    if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
-    {
-        std::cout << "Failed to initialize OpenGL context" << std::endl;
-        return -1;
-    }
-
-    // we define the viewport dimensions
-    int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
-    glViewport(0, 0, width, height);
-
-    // we enable Z test
-    glEnable(GL_DEPTH_TEST);
-
-    //the "clear" color for the frame buffer
-    glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
 
     // we create the Shader Programs used in the application
     SetupShaders();
-
-    // we load the model(s) (code of Model class is in include/utils/model.h)
-    Model cubeModel("../../models/cube.obj");
-    Model sphereModel("../../models/sphere.obj");
-    Model bunnyModel("../../models/bunny_lp.obj");
-    Model planeModel("../../models/plane.obj");
-
     // we print on console the name of the first shader used
     PrintCurrentShader(current_program);
 
@@ -210,18 +162,20 @@ int main()
     // View matrix (=camera): position, view direction, camera "up" vector
     glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 7.0f), glm::vec3(0.0f, 0.0f, -7.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
+    // we load the model(s) (code of Model class is in include/utils/model.h)
+    Model sphereModel("../../models/sphere.obj");
+    Model planeModel("../../models/plane.obj");
+
     // Model and Normal transformation matrices for the objects in the scene: we set to identity
     Transform sphereTransform;
     positionZ = 0.8f;
     GLint directionZ = 1;
 
-    // Transform cubeTransform;
-
-    // Transform bunnyTransform;
-
     Transform planeTransform;
 
-    //Cloth cloth(1000.0f, 1000.0f, 1000, 1000);
+    Cloth cloth(100.0f, 0.25f, glm::vec3(0.0f, -5.0f, 5.0f));
+
+    bool once = false;
 
     // Rendering loop: this code is executed at each frame
     while(!glfwWindowShouldClose(window))
@@ -308,46 +262,39 @@ int main()
                 glm::vec3(0.8f, 0.8f, 0.8f),
                 orientationY, glm::vec3(0.0f, 1.0f, 0.0f),
                 glm::vec3( 0.0f, 0.0f, positionZ),
-                view
-            );
+                view);
             glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.modelMatrix));
             glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.normalMatrix));
             sphereModel.Draw();
         }
 
-        // //CUBE
-        // cubeTransform.Transformation(
-        //     glm::vec3(0.8f, 0.8f, 0.8f),
-        //     orientationY, glm::vec3(0.0f, 1.0f, 0.0f),
-        //     glm::vec3(0.0f, 0.0f, 0.0f),
-        //     view
-        // );
-        // glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(cubeTransform.modelMatrix));
-        // glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(cubeTransform.normalMatrix));
-        // cubeModel.Draw();
-
-        // //BUNNY
-        // bunnyTransform.Transformation(
-        //     glm::vec3(0.3f, 0.3f, 0.3f),
-        //     orientationY, glm::vec3(0.0f, 1.0f, 0.0f),
-        //     glm::vec3(3.0f, 0.0f, 0.0f),
-        //     view
-        // );
-        // glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(bunnyTransform.modelMatrix));
-        // glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(bunnyTransform.normalMatrix));
-        // bunnyModel.Draw();
-
         // PLANE
         planeTransform.Transformation(
             glm::vec3(10.0f, 1.0f, 10.0f),
             0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
-            glm::vec3(0.0f, -2.0f, 0.0f)
+            glm::vec3(0.0f, -2.0f, 0.0f),
+            view
         );
         glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(planeTransform.modelMatrix));
         glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(planeTransform.normalMatrix));
         planeModel.Draw();
         
-        //cloth.Draw();
+
+        //cloth.AddGravityForce();
+        //cloth.windForce(glm::vec3(0.3f, 0.0f, 0.0f));
+        //cloth.PhysicsSteps();
+        cloth.Draw();
+
+        if(instantiate && !once){
+            once = true;
+            
+            std::vector<Particle>::iterator particle;
+            for(particle = cloth.particles.begin(); particle != cloth.particles.end(); particle++)
+            {
+                glm::vec3 pos = glm::vec3(particle->getPos());
+                std::cout << pos.x << " - " << pos.y << " - " << pos.z << " - "<< std::endl;
+            }
+        }
 
         // Swapping back and front buffers
         glfwSwapBuffers(window);
@@ -361,6 +308,59 @@ int main()
     return 0;
 }
 
+int SetupOpenGL(){
+    // Initialization of OpenGL context using GLFW
+    glfwInit();
+    // We set OpenGL specifications required for this application
+    // In this case: 4.1 Core
+    // It is possible to raise the values, in order to use functionalities of more recent OpenGL specs.
+    // If not supported by your graphics HW, the context will not be created and the application will close
+    // N.B.) creating GLAD code to load extensions, try to take into account the specifications and any extensions you want to use,
+    // in relation also to the values indicated in these GLFW commands
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    // we set if the window is resizable
+    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+
+    // we create the application's window
+    window = glfwCreateWindow(screenWidth, screenHeight, "RGP_lecture03a", nullptr, nullptr);
+    if (!window)
+    {
+        std::cout << "Failed to create GLFW window" << std::endl;
+        glfwTerminate();
+        return -1;
+    }
+    glfwMakeContextCurrent(window);
+
+    // we put in relation the window and the callbacks
+    glfwSetKeyCallback(window, key_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
+
+    // we disable the mouse cursor
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+    // GLAD tries to load the context set by GLFW
+    if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
+    {
+        std::cout << "Failed to initialize OpenGL context" << std::endl;
+        return -1;
+    }
+
+    // we define the viewport dimensions
+    int width, height;
+    glfwGetFramebufferSize(window, &width, &height);
+    glViewport(0, 0, width, height);
+
+    // we enable Z test
+    glEnable(GL_DEPTH_TEST);
+
+    //the "clear" color for the frame buffer
+    glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+
+    return 1;
+}
 
 //////////////////////////////////////////
 // we create and compile shaders (code of Shader class is in include/utils/shader.h), and we add them to the list of available shaders

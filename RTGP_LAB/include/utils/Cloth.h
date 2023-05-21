@@ -7,6 +7,7 @@
 // GLFW
 #include <glfw/glfw3.h>
 
+
 class Cloth
 {
 private:
@@ -15,7 +16,6 @@ private:
 	int num_particles_height; // number of particles in "height" direction
 	// total number of particles is num_particles_width*num_particles_height
 
-	std::vector<Particle> particles; // all particles that are part of this cloth
 	std::vector<Constraint> constraints; // alle constraints between particles as part of this cloth
 
 	GLuint VAO;
@@ -58,7 +58,6 @@ private:
 	/* A private method used by drawShaded(), that draws a single triangle p1,p2,p3 with a color*/
 	void drawTriangle(Particle *p1, Particle *p2, Particle *p3, const glm::vec3 color)
 	{
-
 		glColor3fv( (GLfloat*) &color );
 
 		glNormal3fv((GLfloat *) &(glm::normalize(p1->getNormal())));
@@ -71,33 +70,84 @@ private:
 		glVertex3fv((GLfloat *) &(p3->getPos() ));
 	}
 
+
 	void SetUp()
 	{
 		// we create the buffers
-		glGenVertexArrays(1, &this->VAO);
-		glGenBuffers(1, &this->VBO);
-		glGenBuffers(1, &this->EBO);
-
-		// Indices do not change, so EBO is initialized here and never updated
+        glGenVertexArrays(1, &this->VAO);
+        glGenBuffers(1, &this->VBO);
+        glGenBuffers(1, &this->EBO);
+        
 		glBindVertexArray(this->VAO);
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->EBO);
-		FromGridToTriangle(dim, indices);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, particles.size() * sizeof(uint), indices.data(), GL_STATIC_DRAW);
-		updateNormals();
-		glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
-		glBufferData(GL_ARRAY_BUFFER, dim * dim * sizeof(particles[0]), particles, GL_DYNAMIC_DRAW);
+		// Create triangles from grid
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, this->indices.size() * sizeof(GLuint), &this->indices[0], GL_DYNAMIC_DRAW);
+		// we copy data in the VBO - we must set the data dimension, and the pointer to the structure containing the data
+        glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
+        glBufferData(GL_ARRAY_BUFFER, num_particles_width * num_particles_height * sizeof(particles[0]), &this->particles[0], GL_DYNAMIC_DRAW);
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(particles[0]), (GLvoid *)offsetof(Particle, pos));
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, pos));
 		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(particles[0]), (GLvoid *)offsetof(Particle, normal));
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, accumulated_normal));
 	}
-
-	void FromGridToTriangle(GLfloat gridDim, ){
-		
-	}
-
 public:
+	std::vector<Particle> particles; // all particles that are part of this cloth
+
+	Cloth(float dim, float particleDistance, glm::vec3 topLeftPosition){
+		num_particles_width = dim;
+		num_particles_height = dim;
+
+		particles.resize(dim*dim); //I am essentially using this vector as an array with room for num_particles_width*num_particles_height particles
+		
+		// creating particles in a grid of particles from (0,0,0) to (width,-height,0)
+		for(int x=0; x<num_particles_width; x++)
+		{
+			for(int y=0; y<num_particles_height; y++)
+			{
+				glm::vec3 pos = glm::vec3(
+								topLeftPosition.x - (x * particleDistance),
+								topLeftPosition.y - (y * particleDistance),
+								0);
+				particles[y*dim + x]= Particle(pos); // insert particle in column x at y'th row
+			}
+		}
+
+		// Connecting immediate neighbor particles with constraints (distance 1 and sqrt(2) in the grid)
+		for(int x=0; x<dim; x++)
+		{
+			for(int y=0; y<dim; y++)
+			{
+				if (x<dim-1) makeConstraint(getParticle(x,y),getParticle(x+1,y));
+				if (y<dim-1) makeConstraint(getParticle(x,y),getParticle(x,y+1));
+				if (x<dim-1 && y<dim-1) makeConstraint(getParticle(x,y),getParticle(x+1,y+1));
+				if (x<dim-1 && y<dim-1) makeConstraint(getParticle(x+1,y),getParticle(x,y+1));
+			}
+		}
+
+
+		// Connecting secondary neighbors with constraints (distance 2 and sqrt(4) in the grid)
+		for(int x=0; x<dim; x++)
+		{
+			for(int y=0; y<dim; y++)
+			{
+				if (x<dim-2) makeConstraint(getParticle(x,y),getParticle(x+2,y));
+				if (y<dim-2) makeConstraint(getParticle(x,y),getParticle(x,y+2));
+				if (x<dim-2 && y<dim-2) makeConstraint(getParticle(x,y),getParticle(x+2,y+2));
+				if (x<dim-2 && y<dim-2) makeConstraint(getParticle(x+2,y),getParticle(x,y+2));			}
+		}
+
+
+		// making the upper left most three and right most three particles unmovable
+		for(int i=0;i<3; i++)
+		{
+			getParticle(0+i ,0)->offsetPos(glm::vec3(0.5f,0.0f,0.0f)); // moving the particle a bit towards the center, to make it hang more natural - because I like it ;)
+			getParticle(0+i ,0)->makeUnmovable(); 
+
+			getParticle(0+i ,0)->offsetPos(glm::vec3(-0.5f,0.0f,0.0f)); // moving the particle a bit towards the center, to make it hang more natural - because I like it ;)
+			getParticle(dim-1-i ,0)->makeUnmovable();
+		}
+	}
 
 	/* This is a important constructor for the entire system of particles and constraints*/
 	Cloth(float width, float height, int num_particles_width, int num_particles_height) : num_particles_width(num_particles_width), num_particles_height(num_particles_height)
@@ -150,6 +200,7 @@ public:
 			getParticle(0+i ,0)->offsetPos(glm::vec3(-0.5f,0.0f,0.0f)); // moving the particle a bit towards the center, to make it hang more natural - because I like it ;)
 			getParticle(num_particles_width-1-i ,0)->makeUnmovable();
 		}
+
 
 		SetUp();
 	}
@@ -229,6 +280,14 @@ public:
 		}
 	}
 
+	void AddGravityForce(){
+		glm::vec3 gravityVec = glm::vec3(0.0f, -1.0f, 0.0f);
+		gravityVec *= 9.8f;
+		glm::normalize(gravityVec);
+
+		addForce(gravityVec);
+	}
+
 	/* used to add gravity (or any other arbitrary vector) to all particles*/
 	void addForce(const glm::vec3 direction)
 	{
@@ -237,7 +296,6 @@ public:
 		{
 			(*particle).addForce(direction); // add the forces to each particle
 		}
-
 	}
 
 	/* used to add wind forces to all particles, is added for each triangle since the final force is proportional to the triangle area as seen from the wind direction*/
@@ -265,12 +323,8 @@ public:
 		}
 	}
 
-	void doFrame()
+	void Draw()
 	{
-		
-	}
-
-	void Draw(){
 		glBindVertexArray(this->VAO);
 		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);

@@ -5,7 +5,7 @@
 /* Some physics constants */
 #define DAMPING 0.01f // how much to damp the cloth simulation each frame
 #define TIME_STEPSIZE2 0.5f*0.5f // how large time step each particle takes each frame
-#define CONSTRAINT_ITERATIONS 15 // how many iterations of constraint satisfaction each frame (more is rigid, less is soft)
+#define CONSTRAINT_ITERATIONS 5 // how many iterations of constraint satisfaction each frame (more is rigid, less is soft)
 
 /* The particle class represents a particle of mass that can move around in 3D space*/
 class Particle
@@ -14,12 +14,12 @@ private:
 	bool movable; // can the particle move or not ? used to pin parts of the cloth
 
 	float mass; // the mass of the particle (is always 1 in this example)
-	glm::vec3 pos; // the current position of the particle in 3D space
 	glm::vec3 old_pos; // the position of the particle in the previous time step, used as part of the verlet numerical integration scheme
 	glm::vec3 acceleration; // a vector representing the current acceleration of the particle
-	glm::vec3 accumulated_normal; // an accumulated normal (i.e. non normalized), used for OpenGL soft shading
 
 public:
+	glm::vec3 pos; // the current position of the particle in 3D space
+	glm::vec3 accumulated_normal; // an accumulated normal (i.e. non normalized), used for OpenGL soft shading
 	Particle(glm::vec3 pos) : pos(pos), old_pos(pos),acceleration(glm::vec3(0.0f)), mass(1), movable(true), accumulated_normal(glm::vec3(0.0f)){}
 	Particle(){}
 
