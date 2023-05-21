@@ -109,6 +109,11 @@ GLfloat spin_speed = 30.0f;
 // boolean to start/stop animated rotation on Y angle
 GLboolean spinning = GL_TRUE;
 
+GLfloat positionZ = 0.0f;
+GLfloat movement_speed = 5.0f;
+GLboolean movingOnX = GL_FALSE;
+GLboolean instantiate = GL_FALSE;
+
 // boolean to activate/deactivate wireframe rendering
 GLboolean wireframe = GL_FALSE;
 
@@ -193,6 +198,7 @@ int main()
     Model cubeModel("../../models/cube.obj");
     Model sphereModel("../../models/sphere.obj");
     Model bunnyModel("../../models/bunny_lp.obj");
+    Model planeModel("../../models/plane.obj");
 
     // we print on console the name of the first shader used
     PrintCurrentShader(current_program);
@@ -206,10 +212,14 @@ int main()
 
     // Model and Normal transformation matrices for the objects in the scene: we set to identity
     Transform sphereTransform;
+    positionZ = 0.8f;
+    GLint directionZ = 1;
 
-    Transform cubeTransform;
+    // Transform cubeTransform;
 
-    Transform bunnyTransform;
+    // Transform bunnyTransform;
+
+    Transform planeTransform;
 
     //Cloth cloth(1000.0f, 1000.0f, 1000, 1000);
 
@@ -242,6 +252,14 @@ int main()
         // if animated rotation is activated, then we increment the rotation angle using delta time and the rotation speed parameter
         if (spinning)
             orientationY+=(deltaTime*spin_speed);
+
+        // Moving Sphere on X axis
+        if(movingOnX){
+            if(positionZ >= 6 || positionZ <= -6)
+                directionZ *= -1;
+
+            positionZ += directionZ * (deltaTime * movement_speed);
+        }
 
         // We "install" the selected Shader Program as part of the current rendering process
         shaders[current_program].Use();
@@ -285,38 +303,49 @@ int main()
         */
 
        //SPHERE
-        sphereTransform.Transformation(
-            glm::vec3(0.8f, 0.8f, 0.8f),
-            orientationY, glm::vec3(0.0f, 1.0f, 0.0f),
-            glm::vec3(-3.0f, 0.0f, 0.0f),
-            view
-        );
-        glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.modelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.normalMatrix));
-        sphereModel.Draw();
+        if(instantiate){
+            sphereTransform.Transformation(
+                glm::vec3(0.8f, 0.8f, 0.8f),
+                orientationY, glm::vec3(0.0f, 1.0f, 0.0f),
+                glm::vec3( 0.0f, 0.0f, positionZ),
+                view
+            );
+            glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.modelMatrix));
+            glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.normalMatrix));
+            sphereModel.Draw();
+        }
 
-        //CUBE
-        cubeTransform.Transformation(
-            glm::vec3(0.8f, 0.8f, 0.8f),
-            orientationY, glm::vec3(0.0f, 1.0f, 0.0f),
-            glm::vec3(0.0f, 0.0f, 0.0f),
-            view
-        );
-        glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(cubeTransform.modelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(cubeTransform.normalMatrix));
-        cubeModel.Draw();
+        // //CUBE
+        // cubeTransform.Transformation(
+        //     glm::vec3(0.8f, 0.8f, 0.8f),
+        //     orientationY, glm::vec3(0.0f, 1.0f, 0.0f),
+        //     glm::vec3(0.0f, 0.0f, 0.0f),
+        //     view
+        // );
+        // glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(cubeTransform.modelMatrix));
+        // glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(cubeTransform.normalMatrix));
+        // cubeModel.Draw();
 
-        //BUNNY
-        bunnyTransform.Transformation(
-            glm::vec3(0.3f, 0.3f, 0.3f),
-            orientationY, glm::vec3(0.0f, 1.0f, 0.0f),
-            glm::vec3(3.0f, 0.0f, 0.0f),
-            view
-        );
-        glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(bunnyTransform.modelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(bunnyTransform.normalMatrix));
-        bunnyModel.Draw();
+        // //BUNNY
+        // bunnyTransform.Transformation(
+        //     glm::vec3(0.3f, 0.3f, 0.3f),
+        //     orientationY, glm::vec3(0.0f, 1.0f, 0.0f),
+        //     glm::vec3(3.0f, 0.0f, 0.0f),
+        //     view
+        // );
+        // glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(bunnyTransform.modelMatrix));
+        // glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(bunnyTransform.normalMatrix));
+        // bunnyModel.Draw();
 
+        // PLANE
+        planeTransform.Transformation(
+            glm::vec3(10.0f, 1.0f, 10.0f),
+            0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
+            glm::vec3(0.0f, -2.0f, 0.0f)
+        );
+        glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(planeTransform.modelMatrix));
+        glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(planeTransform.normalMatrix));
+        planeModel.Draw();
         
         //cloth.Draw();
 
@@ -374,8 +403,11 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         glfwSetWindowShouldClose(window, GL_TRUE);
 
     // if P is pressed, we start/stop the animated rotation of models
-    if(key == GLFW_KEY_P && action == GLFW_PRESS)
+    if(key == GLFW_KEY_P && action == GLFW_PRESS){
         spinning=!spinning;
+        movingOnX = !movingOnX;
+        instantiate = !instantiate;
+    }
 
     // if L is pressed, we activate/deactivate wireframe rendering of models
     if(key == GLFW_KEY_L && action == GLFW_PRESS)
@@ -390,6 +422,15 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         current_program = (key-'0'-1);
         PrintCurrentShader(current_program);
     }
+
+    // we keep trace of the pressed keys
+    // with this method, we can manage 2 keys pressed at the same time:
+    // many I/O managers often consider only 1 key pressed at the time (the first pressed, until it is released)
+    // using a boolean array, we can then check and manage all the keys pressed at the same time
+    if(action == GLFW_PRESS)
+        keys[key] = true;
+    else if(action == GLFW_RELEASE)
+        keys[key] = false;
 }
 
 //////////////////////////////////////////
@@ -399,18 +440,27 @@ void apply_camera_movements()
     // if a single WASD key is pressed, then we will apply the full value of velocity v in the corresponding direction.
     // However, if two keys are pressed together in order to move diagonally (W+D, W+A, S+D, S+A), 
     // then the camera will apply a compensation factor to the velocities applied in the single directions, 
-    // in order to have the full v applied in the diagonal direction    
+    // in order to have the full v applied in the diagonal direction 
+
     GLboolean diagonal_movement = (keys[GLFW_KEY_W] || keys[GLFW_KEY_S]) && (keys[GLFW_KEY_A] || keys[GLFW_KEY_D]); 
     camera.SetMovementCompensation(diagonal_movement);
     
     if(keys[GLFW_KEY_W])
+    {
         camera.ProcessKeyboard(FORWARD, deltaTime);
+    }
     if(keys[GLFW_KEY_S])
+    {
         camera.ProcessKeyboard(BACKWARD, deltaTime);
+    }
     if(keys[GLFW_KEY_A])
+    {
         camera.ProcessKeyboard(LEFT, deltaTime);
+    }
     if(keys[GLFW_KEY_D])
+    {
         camera.ProcessKeyboard(RIGHT, deltaTime);
+    }
 }
 
 //////////////////////////////////////////
