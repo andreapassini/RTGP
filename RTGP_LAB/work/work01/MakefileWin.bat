@@ -1,8 +1,8 @@
 @echo off
-IF EXIST "C:\Program Files (x86)\Microsoft Visual Studio\BuildTools2022\VC\Auxiliary\Build\vcvarsall.bat" (
-    call "C:\Program Files (x86)\Microsoft Visual Studio\BuildTools2022\VC\Auxiliary\Build\vcvarsall.bat" x64
+IF EXIST "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" (
+    call "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" x64
 ) ELSE (
-    call "C:\Program Files (x86)\Microsoft Visual Studio\BuildTools2022\VC\Auxiliary\Build\vcvarsall.bat" x64
+    call "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" x64
 )
 
 if [%1%]==[] (

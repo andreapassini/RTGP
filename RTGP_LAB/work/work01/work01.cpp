@@ -16,7 +16,6 @@
 // GLFW
 #include <glfw/glfw3.h>
 
-
 // confirm that GLAD didn't include windows.h
 #ifdef _WINDOWS_
     #error windows.h was included!
