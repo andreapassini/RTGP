@@ -115,7 +115,6 @@ GLfloat myColor[] = {1.0f,0.0f,0.0f};
 GLfloat weight = 0.2f;
 GLfloat speed = 5.0f;
 
-
 /////////////////// MAIN function ///////////////////////
 int main()
 {

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <utils/constraint.h>
 #include <vector>
 #include <glad/glad.h>
@@ -16,6 +18,11 @@ private:
 	std::vector<Particle> particles; // all particles that are part of this cloth
 	std::vector<Constraint> constraints; // alle constraints between particles as part of this cloth
 
+	GLuint VAO;
+	GLuint EBO;
+	GLuint VBO;
+    std::vector<GLuint> indices;
+
 	Particle* getParticle(int x, int y) {return &particles[y*num_particles_width + x];}
 	void makeConstraint(Particle *p1, Particle *p2) {constraints.push_back(Constraint(p1,p2));}
 
@@ -33,10 +40,10 @@ private:
 		glm::vec3 v1 = pos2-pos1;
 		glm::vec3 v2 = pos3-pos1;
 
-		return v1.cross(v2);
+		return glm::cross(v1, v2);
 	}
 
-	/* A private method used by windForce() to calcualte the wind force for a single triangle 
+	/* A private method used by windForce() to calculate the wind force for a single triangle 
 	defined by p1,p2,p3*/
 	void addWindForcesForTriangle(Particle *p1,Particle *p2,Particle *p3, const glm::vec3 direction)
 	{
@@ -57,11 +64,37 @@ private:
 		glNormal3fv((GLfloat *) &(glm::normalize(p1->getNormal())));
 		glVertex3fv((GLfloat *) &(p1->getPos() ));
 
-		glNormal3fv((GLfloat *) &(p2->getNormal().normalized() ));
+		glNormal3fv((GLfloat *) &(glm::normalize(p2->getNormal())));
 		glVertex3fv((GLfloat *) &(p2->getPos() ));
 
-		glNormal3fv((GLfloat *) &(p3->getNormal().normalized() ));
+		glNormal3fv((GLfloat *) &(glm::normalize(p3->getNormal())));
 		glVertex3fv((GLfloat *) &(p3->getPos() ));
+	}
+
+	void SetUp()
+	{
+		// we create the buffers
+		glGenVertexArrays(1, &this->VAO);
+		glGenBuffers(1, &this->VBO);
+		glGenBuffers(1, &this->EBO);
+
+		// Indices do not change, so EBO is initialized here and never updated
+		glBindVertexArray(this->VAO);
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->EBO);
+		FromGridToTriangle(dim, indices);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, particles.size() * sizeof(uint), indices.data(), GL_STATIC_DRAW);
+		updateNormals();
+		glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
+		glBufferData(GL_ARRAY_BUFFER, dim * dim * sizeof(particles[0]), particles, GL_DYNAMIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(particles[0]), (GLvoid *)offsetof(Particle, pos));
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(particles[0]), (GLvoid *)offsetof(Particle, normal));
+	}
+
+	void FromGridToTriangle(GLfloat gridDim, ){
+		
 	}
 
 public:
@@ -117,6 +150,8 @@ public:
 			getParticle(0+i ,0)->offsetPos(glm::vec3(-0.5f,0.0f,0.0f)); // moving the particle a bit towards the center, to make it hang more natural - because I like it ;)
 			getParticle(num_particles_width-1-i ,0)->makeUnmovable();
 		}
+
+		SetUp();
 	}
 
 	/* drawing the cloth as a smooth shaded (and colored according to column) OpenGL triangular mesh
@@ -176,7 +211,7 @@ public:
 	/* this is an important methods where the time is progressed one time step for the entire cloth.
 	This includes calling satisfyConstraint() for every constraint, and calling timeStep() for all particles
 	*/
-	void timeStep()
+	void PhysicsSteps()
 	{
 		std::vector<Constraint>::iterator constraint;
 		for(int i=0; i<CONSTRAINT_ITERATIONS; i++) // iterate over all constraints several times
@@ -190,7 +225,7 @@ public:
 		std::vector<Particle>::iterator particle;
 		for(particle = particles.begin(); particle != particles.end(); particle++)
 		{
-			(*particle).timeStep(); // calculate the position of each particle at the next time step.
+			(*particle).PhysicStep(); // calculate the position of each particle at the next time step.
 		}
 	}
 
@@ -222,22 +257,22 @@ public:
 	This is based on a very simples scheme where the position of each particle is simply compared to the sphere and corrected.
 	This also means that the sphere can "slip through" if the ball is small enough compared to the distance in the grid bewteen particles
 	*/
-	void ballCollision(const glm::vec3 center,const float radius )
-	{
+	void BallCollisions(const glm::vec3 center,const float radius){
 		std::vector<Particle>::iterator particle;
 		for(particle = particles.begin(); particle != particles.end(); particle++)
 		{
-			glm::vec3 v = (*particle).getPos()-center;
-			float l = v.length();
-			if ( v.length() < radius) // if the particle is inside the ball
-			{
-				(*particle).offsetPos(v.normalized()*(radius-l)); // project the particle to the surface of the ball
-			}
+			(*particle).BallCollision(center, radius);
 		}
 	}
 
 	void doFrame()
 	{
+		
+	}
 
+	void Draw(){
+		glBindVertexArray(this->VAO);
+		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
 	}
 };

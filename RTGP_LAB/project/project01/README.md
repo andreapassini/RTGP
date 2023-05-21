@@ -58,3 +58,79 @@ Project the particle on the surface of the sphere, with a displacement big enoug
 - Detect Collisions
 - Respond to the collisions
 - Adjust the distance of the particles based on their *distance* and the *standard_distance*
+
+
+# **Classes**
+
+## **Particle**
+
+- **Position**
+
+
+For Verlet integration
+
+
+- **Old Position**
+- **Mass**
+- **Acceleration**
+
+For rendering
+
+- **Accumulated Normal**
+
+
+Methods
+
+- **Add Force()**
+
+        Calculating the acceleration
+
+- **PhysicStep()**
+
+        Applying Verlet Integration to the particle
+
+- **Ball Collision()**
+
+        Detect the possible collision with the ball
+        Respond to the collision
+
+
+
+## **Constraints**
+
+- **Particle 1**
+- **Particle 2**
+
+
+Methods
+
+- **Satisfy Constraint()**
+
+
+## **Cloth**
+
+- vector of **Particles**
+- vector of **Constraints**
+
+
+Methods
+
+### **Step**
+
+- **Physics Steps()**
+
+        Foreach Particles: do the Physic Step
+        Foreach Particles: **Satisfy Constraint()**
+
+- **Wind Force()**
+
+        Foreach Particles: add wind force
+
+- **Ball Collisions()**
+
+        Foreach Particles: Ball Collision
+
+- **Draw()**
+
+        Foreach Particles: 
+                - Divide the quad of the matrix into 2 triangles

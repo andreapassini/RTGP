@@ -157,10 +157,10 @@ private:
 
         // VAO is made "active"
         glBindVertexArray(this->VAO);
-        // we copy data in the VBO - we must set the data dimension, and the pointer to the structure cointaining the data
+        // we copy data in the VBO - we must set the data dimension, and the pointer to the structure containing the data
         glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
         glBufferData(GL_ARRAY_BUFFER, this->vertices.size() * sizeof(Vertex), &this->vertices[0], GL_STATIC_DRAW);
-        // we copy data in the EBO - we must set the data dimension, and the pointer to the structure cointaining the data
+        // we copy data in the EBO - we must set the data dimension, and the pointer to the structure containing the data
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->EBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, this->indices.size() * sizeof(GLuint), &this->indices[0], GL_STATIC_DRAW);
 

@@ -61,6 +61,7 @@ positive Z axis points "outside" the screen
 // classes developed during lab lectures to manage shaders and to load models
 #include <utils/shader.h>
 #include <utils/model.h>
+#include <utils/camera.h>
 
 // we load the GLM classes used in the application
 #include <glm/glm.hpp>
@@ -68,14 +69,19 @@ positive Z axis points "outside" the screen
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+
 // My classes
 #include <utils/Transform.h>
+//#include <utils/cloth.h>
 
 // dimensions of application's window
 GLuint screenWidth = 1200, screenHeight = 900;
 
 // callback functions for keyboard events
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+// if one of the WASD keys is pressed, we call the corresponding method of the Camera class
+void apply_camera_movements();
 
 // setup of Shader Programs for the 5 shaders used in the application
 void SetupShaders();
@@ -83,6 +89,14 @@ void SetupShaders();
 void DeleteShaders();
 // print on console the name of current shader
 void PrintCurrentShader(int shader);
+
+// we initialize an array of booleans for each keyboard key
+bool keys[1024];
+
+// we need to store the previous mouse position to calculate the offset with the current frame
+GLfloat lastX, lastY;
+// when rendering the first frame, we do not have a "previous state" for the mouse, so we need to manage this situation
+bool firstMouse = true;
 
 // parameters for time calculation (for animations)
 GLfloat deltaTime = 0.0f;
@@ -97,6 +111,9 @@ GLboolean spinning = GL_TRUE;
 
 // boolean to activate/deactivate wireframe rendering
 GLboolean wireframe = GL_FALSE;
+
+// we create a camera. We pass the initial position as a parameter to the constructor. The last boolean tells if we want a camera "anchored" to the ground
+Camera camera(glm::vec3(0.0f, 0.0f, 7.0f), GL_FALSE);
 
 // enum data structure to manage indices for shaders swapping
 enum available_ShaderPrograms{ FULLCOLOR, FLATTEN, NORMAL2COLOR, WAVE, UV2COLOR };
@@ -146,6 +163,7 @@ int main()
 
     // we put in relation the window and the callbacks
     glfwSetKeyCallback(window, key_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
 
     // we disable the mouse cursor
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -193,6 +211,8 @@ int main()
 
     Transform bunnyTransform;
 
+    //Cloth cloth(1000.0f, 1000.0f, 1000, 1000);
+
     // Rendering loop: this code is executed at each frame
     while(!glfwWindowShouldClose(window))
     {
@@ -204,6 +224,10 @@ int main()
 
         // Check is an I/O event is happening
         glfwPollEvents();
+        // we apply FPS camera movements
+        apply_camera_movements();
+        // View matrix (=camera): position, view direction, camera "up" vector
+        view = camera.GetViewMatrix();
 
         // we "clear" the frame and z buffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -293,6 +317,9 @@ int main()
         glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(bunnyTransform.normalMatrix));
         bunnyModel.Draw();
 
+        
+        //cloth.Draw();
+
         // Swapping back and front buffers
         glfwSwapBuffers(window);
     }
@@ -363,4 +390,52 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         current_program = (key-'0'-1);
         PrintCurrentShader(current_program);
     }
+}
+
+//////////////////////////////////////////
+// If one of the WASD keys is pressed, the camera is moved accordingly (the code is in utils/camera.h)
+void apply_camera_movements()
+{
+    // if a single WASD key is pressed, then we will apply the full value of velocity v in the corresponding direction.
+    // However, if two keys are pressed together in order to move diagonally (W+D, W+A, S+D, S+A), 
+    // then the camera will apply a compensation factor to the velocities applied in the single directions, 
+    // in order to have the full v applied in the diagonal direction    
+    GLboolean diagonal_movement = (keys[GLFW_KEY_W] || keys[GLFW_KEY_S]) && (keys[GLFW_KEY_A] || keys[GLFW_KEY_D]); 
+    camera.SetMovementCompensation(diagonal_movement);
+    
+    if(keys[GLFW_KEY_W])
+        camera.ProcessKeyboard(FORWARD, deltaTime);
+    if(keys[GLFW_KEY_S])
+        camera.ProcessKeyboard(BACKWARD, deltaTime);
+    if(keys[GLFW_KEY_A])
+        camera.ProcessKeyboard(LEFT, deltaTime);
+    if(keys[GLFW_KEY_D])
+        camera.ProcessKeyboard(RIGHT, deltaTime);
+}
+
+//////////////////////////////////////////
+// callback for mouse events
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+      // we move the camera view following the mouse cursor
+      // we calculate the offset of the mouse cursor from the position in the last frame
+      // when rendering the first frame, we do not have a "previous state" for the mouse, so we set the previous state equal to the initial values (thus, the offset will be = 0)
+      if(firstMouse)
+      {
+          lastX = xpos;
+          lastY = ypos;
+          firstMouse = false;
+      }
+
+      // offset of mouse cursor position
+      GLfloat xoffset = xpos - lastX;
+      GLfloat yoffset = lastY - ypos;
+
+      // the new position will be the previous one for the next frame
+      lastX = xpos;
+      lastY = ypos;
+
+      // we pass the offset to the Camera class instance in order to update the rendering
+      camera.ProcessMouseMovement(xoffset, yoffset);
+
 }

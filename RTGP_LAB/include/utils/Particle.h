@@ -1,3 +1,5 @@
+#pragma once
+
 #include <glm/glm.hpp>
 
 /* Some physics constants */
@@ -29,14 +31,14 @@ public:
 	/* This is one of the important methods, where the time is progressed a single step size (TIME_STEPSIZE)
 	   The method is called by Cloth.time_step()
 	   Given the equation "force = mass * acceleration" the next position is found through verlet integration*/
-	void timeStep()
+	void PhysicStep()
 	{
 		if(movable)
 		{
 			glm::vec3 temp = pos;
 			pos = pos + (pos-old_pos)*(1.0f-DAMPING) + acceleration*TIME_STEPSIZE2;
 			old_pos = temp;
-			acceleration = glm::vec3(0.0f); // acceleration is reset since it HAS been translated into a change in position (and implicitely into velocity)	
+			acceleration = glm::vec3(0.0f); // acceleration is reset since it HAS been translated into a change in position (and implicitly into velocity)	
 		}
 	}
 
@@ -56,5 +58,14 @@ public:
 	glm::vec3& getNormal() { return accumulated_normal;} // notice, the normal is not unit length
 
 	void resetNormal() {accumulated_normal = glm::vec3(0.0f);}
+
+	void BallCollision(const glm::vec3 center,const float radius){
+		glm::vec3 v = this->getPos()-center;
+		float l = v.length();
+		if ( v.length() < radius) // if the particle is inside the ball
+		{
+			this->offsetPos(glm::normalize(v)*(radius-l)); // project the particle to the surface of the ball
+		}
+	}
 
 };

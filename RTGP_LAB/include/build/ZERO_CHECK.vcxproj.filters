@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="D:\ANDREA\UNI\MAGISTRALE\ANNO_2\II_Semestre\REAL-TIME_GP\RTGP\RTGP_LAB\include\build\CMakeFiles\d3f6d1858907d0720c48025e6d8f5cd6\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{A3EAF59F-2C0B-3425-9866-474313E3CB10}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
