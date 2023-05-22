@@ -147,14 +147,14 @@ public:
 		{
 			for(int y=0; y<dim; y++)
 			{
-				if (x<dim-1) makeConstraint(getParticle(x,y),getParticle(x+1,y));
-				if (y<dim-1) makeConstraint(getParticle(x,y),getParticle(x,y+1));
-				if (x<dim-1 && y<dim-1) makeConstraint(getParticle(x,y),getParticle(x+1,y+1));
-				if (x<dim-1 && y<dim-1) makeConstraint(getParticle(x+1,y),getParticle(x,y+1));
+				if (x +1 < dim) makeConstraint(getParticle(x,y),getParticle(x+1, y));
+				if (x -1 < dim) makeConstraint(getParticle(x,y),getParticle(x-1, y));
+				if (y +1 < dim) makeConstraint(getParticle(x,y),getParticle(x, y+1));
+				if (y -1 < dim) makeConstraint(getParticle(x,y),getParticle(x, y-1));
 			}
 		}
 
-		// Connecting secondary neighbors with constraints (distance 2 and sqrt(4) in the grid)
+		// Constraints on the 4 diagonals
 		for(int x=0; x<dim; x++)
 		{
 			for(int y=0; y<dim; y++)
