@@ -114,7 +114,7 @@ GLboolean spinning = GL_TRUE;
 
 GLfloat positionZ = 0.0f;
 GLfloat movement_speed = 5.0f;
-GLboolean movingOnX = GL_FALSE;
+GLboolean movingOnX = GL_TRUE;
 GLboolean instantiate = GL_FALSE;
 
 // boolean to activate/deactivate wireframe rendering
@@ -144,6 +144,8 @@ GLfloat speed = 5.0f;
 // OpenGL Setup
 GLFWwindow* window;
 
+glm::vec3 startingPosition(0.0f, 5.0f, -5.0f);
+
 /////////////////// MAIN function ///////////////////////
 int main()
 {
@@ -165,6 +167,7 @@ int main()
     // we load the model(s) (code of Model class is in include/utils/model.h)
     Model sphereModel("../../models/sphere.obj");
     Model planeModel("../../models/plane.obj");
+    Model cubeModel("../../models/cube.obj");
 
     // Model and Normal transformation matrices for the objects in the scene: we set to identity
     Transform sphereTransform;
@@ -172,10 +175,15 @@ int main()
     GLint directionZ = 1;
 
     Transform planeTransform;
+    Transform cubeTransform;
 
-    Cloth cloth(100.0f, 0.25f, glm::vec3(0.0f, -5.0f, 5.0f));
+    Cloth cloth(8.0f, 0.25f, startingPosition);
 
     bool once = false;
+
+
+    glm::mat4 clothModelMatrix = glm::mat4(1.0f);
+    glm::mat3 clothNormalMatrix = glm::mat3(1.0f);
 
     // Rendering loop: this code is executed at each frame
     while(!glfwWindowShouldClose(window))
@@ -257,16 +265,15 @@ int main()
         */
 
        //SPHERE
-        if(instantiate){
-            sphereTransform.Transformation(
-                glm::vec3(0.8f, 0.8f, 0.8f),
-                orientationY, glm::vec3(0.0f, 1.0f, 0.0f),
-                glm::vec3( 0.0f, 0.0f, positionZ),
-                view);
-            glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.modelMatrix));
-            glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.normalMatrix));
-            sphereModel.Draw();
-        }
+        sphereTransform.Transformation(
+            glm::vec3(0.8f, 0.8f, 0.8f),
+            orientationY, glm::vec3(0.0f, 1.0f, 0.0f),
+            glm::vec3( 0.0f, 0.0f, positionZ),
+            view);
+        glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.modelMatrix));
+        glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.normalMatrix));
+        sphereModel.Draw();
+        
 
         // PLANE
         planeTransform.Transformation(
@@ -278,11 +285,24 @@ int main()
         glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(planeTransform.modelMatrix));
         glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(planeTransform.normalMatrix));
         planeModel.Draw();
+
+        //CUBE
+        cubeTransform.Transformation(
+            glm::vec3(0.25f, 0.25f, 0.25f),
+            orientationY, glm::vec3(0.0f, 1.0f, 0.0f),
+            startingPosition,
+            view
+        );
+        glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(cubeTransform.modelMatrix));
+        glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(cubeTransform.normalMatrix));
+        cubeModel.Draw();
         
 
-        //cloth.AddGravityForce();
-        //cloth.windForce(glm::vec3(0.3f, 0.0f, 0.0f));
-        //cloth.PhysicsSteps();
+        cloth.AddGravityForce();
+        cloth.windForce(glm::vec3(0.3f, 0.0f, 0.0f));
+        cloth.PhysicsSteps();
+        glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(clothModelMatrix));
+        glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(clothNormalMatrix));
         cloth.Draw();
 
         if(instantiate && !once){

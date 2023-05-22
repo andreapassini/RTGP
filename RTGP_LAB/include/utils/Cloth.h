@@ -23,7 +23,7 @@ private:
 	GLuint VBO;
     std::vector<GLuint> indices;
 
-	Particle* getParticle(int x, int y) {return &particles[y*num_particles_width + x];}
+	Particle* getParticle(int x, int y) {return &particles[x*num_particles_width + y];}
 	void makeConstraint(Particle *p1, Particle *p2) {constraints.push_back(Constraint(p1,p2));}
 
 
@@ -82,6 +82,7 @@ private:
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->EBO);
 		// Create triangles from grid
+		MakeTriangleFromGrid();
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, this->indices.size() * sizeof(GLuint), &this->indices[0], GL_DYNAMIC_DRAW);
 		// we copy data in the VBO - we must set the data dimension, and the pointer to the structure containing the data
         glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
@@ -90,6 +91,28 @@ private:
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, pos));
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, accumulated_normal));
+	}
+
+	void MakeTriangleFromGrid(){
+		for(int x = 0; x<num_particles_width-1; x++)
+		{
+			for(int y=0; y<num_particles_height-1; y++)
+			{
+				glm::vec3 color(0,0,0);
+				if (x%2) // red and white color is interleaved according to which column number
+					color = glm::vec3(0.6f,0.2f,0.2f);
+				else
+					color = glm::vec3(1.0f,1.0f,1.0f);
+
+				indices.push_back(x*num_particles_height +y);
+				indices.push_back((x+1)*num_particles_height +y);
+				indices.push_back((x+1)*num_particles_height +(y+1));
+
+				indices.push_back(x*num_particles_height +y);
+				indices.push_back((x+1)*num_particles_height +(y+1));
+				indices.push_back(x*num_particles_height +(y+1));
+			}
+		}
 	}
 public:
 	std::vector<Particle> particles; // all particles that are part of this cloth
@@ -109,7 +132,7 @@ public:
 								topLeftPosition.x - (x * particleDistance),
 								topLeftPosition.y - (y * particleDistance),
 								0);
-				particles[y*dim + x]= Particle(pos); // insert particle in column x at y'th row
+				particles[x*dim + y]= Particle(pos); // insert particle in column x at y'th row
 			}
 		}
 
@@ -134,7 +157,8 @@ public:
 				if (x<dim-2) makeConstraint(getParticle(x,y),getParticle(x+2,y));
 				if (y<dim-2) makeConstraint(getParticle(x,y),getParticle(x,y+2));
 				if (x<dim-2 && y<dim-2) makeConstraint(getParticle(x,y),getParticle(x+2,y+2));
-				if (x<dim-2 && y<dim-2) makeConstraint(getParticle(x+2,y),getParticle(x,y+2));			}
+				if (x<dim-2 && y<dim-2) makeConstraint(getParticle(x+2,y),getParticle(x,y+2));			
+			}
 		}
 
 
@@ -147,6 +171,8 @@ public:
 			getParticle(0+i ,0)->offsetPos(glm::vec3(-0.5f,0.0f,0.0f)); // moving the particle a bit towards the center, to make it hang more natural - because I like it ;)
 			getParticle(dim-1-i ,0)->makeUnmovable();
 		}
+
+		SetUp();
 	}
 
 	/* This is a important constructor for the entire system of particles and constraints*/
