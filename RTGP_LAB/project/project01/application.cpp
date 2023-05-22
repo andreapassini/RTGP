@@ -170,20 +170,15 @@ int main()
     Model cubeModel("../../models/cube.obj");
 
     // Model and Normal transformation matrices for the objects in the scene: we set to identity
-    Transform sphereTransform;
+    Transform sphereTransform(view);
     positionZ = 0.8f;
     GLint directionZ = 1;
 
-    Transform planeTransform;
-    Transform cubeTransform;
+    Transform planeTransform(view);
+    Transform cubeTransform(view);
 
     Cloth cloth(8.0f, 0.25f, startingPosition);
-
-    bool once = false;
-
-
-    glm::mat4 clothModelMatrix = glm::mat4(1.0f);
-    glm::mat3 clothNormalMatrix = glm::mat3(1.0f);
+    Transform clothTransform(view);
 
     // Rendering loop: this code is executed at each frame
     while(!glfwWindowShouldClose(window))
@@ -301,20 +296,16 @@ int main()
         cloth.AddGravityForce();
         cloth.windForce(glm::vec3(0.3f, 0.0f, 0.0f));
         cloth.PhysicsSteps();
-        glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(clothModelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(clothNormalMatrix));
+        //CLOTH
+        cubeTransform.Transformation(
+            glm::vec3(1.0f, 1.0f, 1.0f),
+            orientationY, glm::vec3(0.0f, 1.0f, 0.0f),
+            startingPosition,
+            view
+        );
+        glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.modelMatrix));
+        glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.normalMatrix));
         cloth.Draw();
-
-        if(instantiate && !once){
-            once = true;
-            
-            std::vector<Particle>::iterator particle;
-            for(particle = cloth.particles.begin(); particle != cloth.particles.end(); particle++)
-            {
-                glm::vec3 pos = glm::vec3(particle->getPos());
-                std::cout << pos.x << " - " << pos.y << " - " << pos.z << " - "<< std::endl;
-            }
-        }
 
         // Swapping back and front buffers
         glfwSwapBuffers(window);

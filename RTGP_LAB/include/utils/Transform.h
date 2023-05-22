@@ -32,7 +32,7 @@ public:
     glm::mat4 viewMatrix;
 
     Transform(glm::mat4 &model, glm::mat3 &normal, glm::mat4 &viewMatrix);
-    Transform();
+    Transform(glm::mat4 &viewMatrix);
     ~Transform();
 
     void Transformation(glm::vec3 &scaleVector,
@@ -53,7 +53,8 @@ Transform::Transform(glm::mat4 &model, glm::mat3 &normal, glm::mat4 &viewMatrix)
     this->normalMatrix = normal;
     this->viewMatrix = viewMatrix;
 }
-Transform::Transform(){
+Transform::Transform(glm::mat4 &viewMatrix){
+    this->viewMatrix = viewMatrix;
     this->modelMatrix = glm::mat4(1.0f);
     this->normalMatrix = glm::mat3(1.0f);
 }
