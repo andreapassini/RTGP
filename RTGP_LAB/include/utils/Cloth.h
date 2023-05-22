@@ -114,6 +114,12 @@ private:
 			}
 		}
 	}
+	void CalculateNewNormals(){
+		//TO DO
+	}
+	void UpdateBuffers(){
+		//TO DO
+	}
 public:
 	std::vector<Particle> particles; // all particles that are part of this cloth
 
@@ -148,29 +154,27 @@ public:
 			}
 		}
 
-
 		// Connecting secondary neighbors with constraints (distance 2 and sqrt(4) in the grid)
 		for(int x=0; x<dim; x++)
 		{
 			for(int y=0; y<dim; y++)
 			{
-				if (x<dim-2) makeConstraint(getParticle(x,y),getParticle(x+2,y));
-				if (y<dim-2) makeConstraint(getParticle(x,y),getParticle(x,y+2));
-				if (x<dim-2 && y<dim-2) makeConstraint(getParticle(x,y),getParticle(x+2,y+2));
-				if (x<dim-2 && y<dim-2) makeConstraint(getParticle(x+2,y),getParticle(x,y+2));			
+				if (x +1 < dim && y + 1 < dim) makeConstraint(getParticle(x,y),getParticle(x+1 ,y+1));
+				if (x +1 < dim && y - 1 < dim) makeConstraint(getParticle(x,y),getParticle(x+1, y-1));
+				if (x -1 < dim && y + 1 < dim) makeConstraint(getParticle(x,y),getParticle(x-1, y+1));
+				if (x -1 < dim && y - 1 < dim) makeConstraint(getParticle(x,y),getParticle(x-1, y-1));			
 			}
 		}
 
+		// // making the upper left most three and right most three particles unmovable
+		// for(int i=0;i<3; i++)
+		// {
+		// 	getParticle(0+i ,0)->offsetPos(glm::vec3(0.5f,0.0f,0.0f)); // moving the particle a bit towards the center, to make it hang more natural - because I like it ;)
+		// 	getParticle(0+i ,0)->makeUnmovable(); 
 
-		// making the upper left most three and right most three particles unmovable
-		for(int i=0;i<3; i++)
-		{
-			getParticle(0+i ,0)->offsetPos(glm::vec3(0.5f,0.0f,0.0f)); // moving the particle a bit towards the center, to make it hang more natural - because I like it ;)
-			getParticle(0+i ,0)->makeUnmovable(); 
-
-			getParticle(0+i ,0)->offsetPos(glm::vec3(-0.5f,0.0f,0.0f)); // moving the particle a bit towards the center, to make it hang more natural - because I like it ;)
-			getParticle(dim-1-i ,0)->makeUnmovable();
-		}
+		// 	getParticle(0+i ,0)->offsetPos(glm::vec3(-0.5f,0.0f,0.0f)); // moving the particle a bit towards the center, to make it hang more natural - because I like it ;)
+		// 	getParticle(dim-1-i ,0)->makeUnmovable();
+		// }
 
 		SetUp();
 	}
