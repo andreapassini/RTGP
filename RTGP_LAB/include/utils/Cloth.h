@@ -255,9 +255,7 @@ public:
 	}
 
 	void AddGravityForce(){
-		glm::vec3 gravityVec = glm::vec3(0.0f, -1.0f, 0.0f);
-		gravityVec *= 9.8f;
-		glm::normalize(gravityVec);
+		glm::vec3 gravityVec = glm::vec3(0.0f, 1.0f * (-9.8f), 0.0f);
 
 		addForce(gravityVec);
 	}

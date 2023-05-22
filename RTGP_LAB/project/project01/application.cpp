@@ -297,7 +297,7 @@ int main()
         cloth.windForce(glm::vec3(0.3f, 0.0f, 0.0f));
         cloth.PhysicsSteps();
         //CLOTH
-        cubeTransform.Transformation(
+        clothTransform.Transformation(
             glm::vec3(1.0f, 1.0f, 1.0f),
             orientationY, glm::vec3(0.0f, 1.0f, 0.0f),
             startingPosition,
