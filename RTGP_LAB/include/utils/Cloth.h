@@ -217,15 +217,15 @@ public:
 		}
 
 
-		// making the upper left most three and right most three particles unmovable
-		for(int i=0;i<3; i++)
-		{
-			getParticle(0+i ,0)->offsetPos(glm::vec3(0.5f,0.0f,0.0f)); // moving the particle a bit towards the center, to make it hang more natural - because I like it ;)
-			getParticle(0+i ,0)->makeUnmovable(); 
+		// // making the upper left most three and right most three particles unmovable
+		// for(int i=0;i<3; i++)
+		// {
+		// 	getParticle(0+i ,0)->offsetPos(glm::vec3(0.5f,0.0f,0.0f)); // moving the particle a bit towards the center, to make it hang more natural - because I like it ;)
+		// 	getParticle(0+i ,0)->makeUnmovable(); 
 
-			getParticle(0+i ,0)->offsetPos(glm::vec3(-0.5f,0.0f,0.0f)); // moving the particle a bit towards the center, to make it hang more natural - because I like it ;)
-			getParticle(num_particles_width-1-i ,0)->makeUnmovable();
-		}
+		// 	getParticle(0+i ,0)->offsetPos(glm::vec3(-0.5f,0.0f,0.0f)); // moving the particle a bit towards the center, to make it hang more natural - because I like it ;)
+		// 	getParticle(num_particles_width-1-i ,0)->makeUnmovable();
+		// }
 
 
 		SetUp();
@@ -295,14 +295,14 @@ public:
 		{
 			for(constraint = constraints.begin(); constraint != constraints.end(); constraint++ )
 			{
-				(*constraint).satisfyConstraint(); // satisfy constraint.
+				constraint->satisfyConstraint(); // satisfy constraint.
 			}
 		}
 
 		std::vector<Particle>::iterator particle;
 		for(particle = particles.begin(); particle != particles.end(); particle++)
 		{
-			(*particle).PhysicStep(); // calculate the position of each particle at the next time step.
+			particle->PhysicStep(); // calculate the position of each particle at the next time step.
 		}
 	}
 
@@ -320,7 +320,7 @@ public:
 		std::vector<Particle>::iterator particle;
 		for(particle = particles.begin(); particle != particles.end(); particle++)
 		{
-			(*particle).addForce(direction); // add the forces to each particle
+			particle->addForce(direction); // add the forces to each particle
 		}
 	}
 
