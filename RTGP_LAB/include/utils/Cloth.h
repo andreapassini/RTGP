@@ -221,6 +221,18 @@ public:
 			}
 		}
 
+		// Connecting neighbor at distance 2
+		for(int x=0; x < dim; x++)
+		{
+			for(int y=0; y < dim; y++)
+			{
+				if (x +2 < dim) makeConstraint(getParticle(x,y),getParticle(x+2, y));
+				if (x -2 < dim) makeConstraint(getParticle(x,y),getParticle(x-2, y));
+				if (y +2 < dim) makeConstraint(getParticle(x,y),getParticle(x, y+2));
+				if (y -2 < dim) makeConstraint(getParticle(x,y),getParticle(x, y-2));
+			}
+		}
+
 		// Constraints on the 4 diagonals
 		for(int x=0; x<dim; x++)
 		{
@@ -328,7 +340,7 @@ public:
 	}
 
 	void AddGravityForce(){
-		glm::vec3 gravityVec = glm::vec3(0.0f, 1.0f * (-2.0f), 0.0f);
+		glm::vec3 gravityVec = glm::vec3(0.0f, 1.0f * (-0.2f), 0.0f);
 
 		AddForceToAllParticles(gravityVec);
 	}
