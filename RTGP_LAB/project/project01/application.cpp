@@ -294,7 +294,7 @@ int main()
         
 
         cloth.AddGravityForce();
-        cloth.windForce(glm::vec3(0.3f, 0.0f, 0.0f));
+        //cloth.windForce(glm::vec3(0.3f, 0.0f, 0.0f));
         cloth.PhysicsSteps();
         //CLOTH
         clothTransform.Transformation(

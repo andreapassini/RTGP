@@ -30,28 +30,32 @@ private:
 	normal vector of the triangle defined by the position of the particles p1, p2, and p3.
 	The magnitude of the normal vector is equal to the area of the parallelogram defined by p1, p2 and p3
 	*/
-	glm::vec3 calcTriangleNormal(Particle *p1,Particle *p2,Particle *p3)
+	glm::vec3 CalculateNormalSquare(float x, float y)
 	{
-		glm::vec3 pos1 = p1->getPos();
-		glm::vec3 pos2 = p2->getPos();
-		glm::vec3 pos3 = p3->getPos();
+		if(x + 1 >= dim &&
+			y + 1 >= dim)
+			return glm::vec3(0.0f);
 
-		glm::vec3 v1 = pos2-pos1;
-		glm::vec3 v2 = pos3-pos1;
+		float idTopLeft = (x * dim) + y;
 
-		return glm::cross(v1, v2);
-	}
+		/*
+			COUNTER CLOCK-WISE
+			y
+		x	1---4
+			|	|
+			|	|	
+			2---3
+		*/
 
-	/* A private method used by windForce() to calculate the wind force for a single triangle 
-	defined by p1,p2,p3*/
-	void addWindForcesForTriangle(Particle *p1,Particle *p2,Particle *p3, const glm::vec3 direction)
-	{
-		glm::vec3 normal = calcTriangleNormal(p1,p2,p3);
-		glm::vec3 d = glm::normalize(normal);
-		glm::vec3 force = normal*(glm::dot(d, direction));
-		p1->addForce(force);
-		p2->addForce(force);
-		p3->addForce(force);
+		glm::vec3 pos1 = getParticle( x     , y		)->pos;
+		glm::vec3 pos2 = getParticle((x + 1), y		)->pos;
+		glm::vec3 pos3 = getParticle( x		, (y + 1))->pos;
+		glm::vec3 pos4 = getParticle((x + 1), (y + 1))->pos;
+
+		glm::vec3 diagonal1 = pos2-pos1;
+		glm::vec3 diagonal2 = pos3-pos1;
+
+		return glm::cross(diagonal1, diagonal2);
 	}
 
 	/* A private method used by drawShaded(), that draws a single triangle p1,p2,p3 with a color*/
@@ -93,9 +97,9 @@ private:
 	}
 
 	void MakeTriangleFromGrid(){
-		for(int x = 0; x<dim-1; x++)
+		for(int x = 0; x < dim-1; x++)
 		{
-			for(int y=0; y<dim-1; y++)
+			for(int y=0; y < dim-1; y++)
 			{
 				glm::vec3 color(0,0,0);
 				if (x%2) // red and white color is interleaved according to which column number
@@ -122,27 +126,28 @@ private:
 		}
 
 		//create smooth per particle normals by adding up all the (hard) triangle normals that each particle is part of
-		for(int x = 0; x<dim-1; x++)
+		for(int x = 0; x < dim-1; x++)
 		{
-			for(int y=0; y<dim-1; y++)
+			for(int y=0; y < dim-1; y++)
 			{
-				glm::vec3 normal = calcTriangleNormal(getParticle(x+1,y),getParticle(x,y),getParticle(x,y+1));
-				getParticle(x+1,y)->addToNormal(normal);
+				glm::vec3 normal = CalculateNormalSquare(x, y);
 				getParticle(x,y)->addToNormal(normal);
-				getParticle(x,y+1)->addToNormal(normal);
-
-				normal = calcTriangleNormal(getParticle(x+1,y+1),getParticle(x+1,y),getParticle(x,y+1));
-				getParticle(x+1,y+1)->addToNormal(normal);
 				getParticle(x+1,y)->addToNormal(normal);
 				getParticle(x,y+1)->addToNormal(normal);
+				getParticle(x+1,y+1)->addToNormal(normal);
 			}
 		}
+
+
 	}
 	void UpdateBuffers(){
 		glBindVertexArray(this->VAO);
     	glBufferSubData(GL_ARRAY_BUFFER, 0, this->dim * this->dim * sizeof(particles[0]), &this->particles);
     	glBindVertexArray(0);
 	}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 public:
 	std::vector<Particle> particles; // all particles that are part of this cloth
 
@@ -152,22 +157,22 @@ public:
 		particles.resize(dim*dim); //I am essentially using this vector as an array with room for num_particles_width*dim particles
 		
 		// creating particles in a grid of particles from (0,0,0) to (width,-height,0)
-		for(int x=0; x<dim; x++)
+		for(int x=0; x < dim; x++)
 		{
-			for(int y=0; y<dim; y++)
+			for(int y=0; y < dim; y++)
 			{
 				glm::vec3 pos = glm::vec3(
 								topLeftPosition.x - (x * particleDistance),
-								topLeftPosition.y + (y * particleDistance),
+								topLeftPosition.y - (y * particleDistance),
 								0);
 				particles[x*dim + y]= Particle(pos); // Linearization of the index, row = X, col = Y and row dimension = dim
 			}
 		}
 
 		// Connecting immediate neighbor particles with constraints (distance 1 and sqrt(2) in the grid)
-		for(int x=0; x<dim; x++)
+		for(int x=0; x < dim; x++)
 		{
-			for(int y=0; y<dim; y++)
+			for(int y=0; y < dim; y++)
 			{
 				if (x +1 < dim) makeConstraint(getParticle(x,y),getParticle(x+1, y));
 				if (x -1 < dim) makeConstraint(getParticle(x,y),getParticle(x-1, y));
@@ -211,49 +216,49 @@ public:
 	(x,y+1) *--* (x+1,y+1)
 
 	*/
-	void drawShaded()
-	{
-		// reset normals (which where written to last frame)
-		std::vector<Particle>::iterator particle;
-		for(particle = particles.begin(); particle != particles.end(); particle++)
-		{
-			(*particle).resetNormal();
-		}
+	// void drawShaded()
+	// {
+	// 	// reset normals (which where written to last frame)
+	// 	std::vector<Particle>::iterator particle;
+	// 	for(particle = particles.begin(); particle != particles.end(); particle++)
+	// 	{
+	// 		(*particle).resetNormal();
+	// 	}
 
-		//create smooth per particle normals by adding up all the (hard) triangle normals that each particle is part of
-		for(int x = 0; x<dim-1; x++)
-		{
-			for(int y=0; y<dim-1; y++)
-			{
-				glm::vec3 normal = calcTriangleNormal(getParticle(x+1,y),getParticle(x,y),getParticle(x,y+1));
-				getParticle(x+1,y)->addToNormal(normal);
-				getParticle(x,y)->addToNormal(normal);
-				getParticle(x,y+1)->addToNormal(normal);
+	// 	//create smooth per particle normals by adding up all the (hard) triangle normals that each particle is part of
+	// 	for(int x = 0; x<dim-1; x++)
+	// 	{
+	// 		for(int y=0; y<dim-1; y++)
+	// 		{
+	// 			glm::vec3 normal = CalculateNormalSquare(getParticle(x+1,y),getParticle(x,y),getParticle(x,y+1));
+	// 			getParticle(x+1,y)->addToNormal(normal);
+	// 			getParticle(x,y)->addToNormal(normal);
+	// 			getParticle(x,y+1)->addToNormal(normal);
 
-				normal = calcTriangleNormal(getParticle(x+1,y+1),getParticle(x+1,y),getParticle(x,y+1));
-				getParticle(x+1,y+1)->addToNormal(normal);
-				getParticle(x+1,y)->addToNormal(normal);
-				getParticle(x,y+1)->addToNormal(normal);
-			}
-		}
+	// 			normal = CalculateNormalSquare(getParticle(x+1,y+1),getParticle(x+1,y),getParticle(x,y+1));
+	// 			getParticle(x+1,y+1)->addToNormal(normal);
+	// 			getParticle(x+1,y)->addToNormal(normal);
+	// 			getParticle(x,y+1)->addToNormal(normal);
+	// 		}
+	// 	}
 
-		glBegin(GL_TRIANGLES);
-		for(int x = 0; x<dim-1; x++)
-		{
-			for(int y=0; y<dim-1; y++)
-			{
-				glm::vec3 color(0,0,0);
-				if (x%2) // red and white color is interleaved according to which column number
-					color = glm::vec3(0.6f,0.2f,0.2f);
-				else
-					color = glm::vec3(1.0f,1.0f,1.0f);
+	// 	glBegin(GL_TRIANGLES);
+	// 	for(int x = 0; x<dim-1; x++)
+	// 	{
+	// 		for(int y=0; y<dim-1; y++)
+	// 		{
+	// 			glm::vec3 color(0,0,0);
+	// 			if (x%2) // red and white color is interleaved according to which column number
+	// 				color = glm::vec3(0.6f,0.2f,0.2f);
+	// 			else
+	// 				color = glm::vec3(1.0f,1.0f,1.0f);
 
-				drawTriangle(getParticle(x+1,y),getParticle(x,y),getParticle(x,y+1),color);
-				drawTriangle(getParticle(x+1,y+1),getParticle(x+1,y),getParticle(x,y+1),color);
-			}
-		}
-		glEnd();
-	}
+	// 			drawTriangle(getParticle(x+1,y),getParticle(x,y),getParticle(x,y+1),color);
+	// 			drawTriangle(getParticle(x+1,y+1),getParticle(x+1,y),getParticle(x,y+1),color);
+	// 		}
+	// 	}
+	// 	glEnd();
+	// }
 
 	/* this is an important methods where the time is progressed one time step for the entire cloth.
 	This includes calling satisfyConstraint() for every constraint, and calling timeStep() for all particles
@@ -299,8 +304,6 @@ public:
 		{
 			for(int y=0; y<dim-1; y++)
 			{
-				addWindForcesForTriangle(getParticle(x+1,y),getParticle(x,y),getParticle(x,y+1),direction);
-				addWindForcesForTriangle(getParticle(x+1,y+1),getParticle(x+1,y),getParticle(x,y+1),direction);
 			}
 		}
 	}
@@ -319,6 +322,9 @@ public:
 
 	void Draw()
 	{
+		UpdateNormals();
+		//UpdateBuffers();
+
 		glBindVertexArray(this->VAO);
 		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
