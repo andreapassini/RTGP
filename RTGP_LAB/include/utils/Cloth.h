@@ -41,10 +41,16 @@ private:
 		/*
 			COUNTER CLOCK-WISE
 			y
-		x	1---4
+		x	1---4	
 			|	|
 			|	|	
 			2---3
+			
+	(x,y)   *--* (x,y+1)
+	        | /|
+	        |/ |
+	(x+1,y) *--* (x+1,y+1)
+		
 		*/
 
 		glm::vec3 pos1 = getParticle( x     , y		)->pos;
@@ -57,7 +63,6 @@ private:
 
 		return glm::cross(diagonal1, diagonal2);
 	}
-
 	/* A private method used by drawShaded(), that draws a single triangle p1,p2,p3 with a color*/
 	void drawTriangle(Particle *p1, Particle *p2, Particle *p3, const glm::vec3 color)
 	{
@@ -72,8 +77,6 @@ private:
 		glNormal3fv((GLfloat *) &(glm::normalize(p3->getNormal())));
 		glVertex3fv((GLfloat *) &(p3->getPos() ));
 	}
-
-
 	void SetUp()
 	{
 		// we create the buffers
@@ -94,8 +97,12 @@ private:
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, pos));
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, normal));
+	
+		 // Note that this is allowed, the call to glVertexAttribPointer registered VBO as the currently bound vertex buffer object so afterwards we can safely unbind
+        glBindBuffer(GL_ARRAY_BUFFER, 0); 
+        // Unbind VAO (it's always a good thing to unbind any buffer/array to prevent strange bugs), remember: do NOT unbind the EBO, keep it bound to this VAO
+        glBindVertexArray(0); 
 	}
-
 	void MakeTriangleFromGrid(){
 		for(int x = 0; x < dim-1; x++)
 		{
@@ -145,7 +152,17 @@ private:
     	glBufferSubData(GL_ARRAY_BUFFER, 0, this->dim * this->dim * sizeof(particles[0]), &this->particles);
     	glBindVertexArray(0);
 	}
-
+	void freeGPUresources()
+    {
+        // If VAO is 0, this instance of Mesh has been through a move, and no longer owns GPU resources,
+        // so there's no need for deleting.
+        if (VAO)
+        {
+            glDeleteVertexArrays(1, &this->VAO);
+            glDeleteBuffers(1, &this->VBO);
+            glDeleteBuffers(1, &this->EBO);
+        }
+    }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 public:
@@ -204,6 +221,11 @@ public:
 		// }
 
 		SetUp();
+	}
+
+	~Cloth()
+	{
+		freeGPUresources();
 	}
 
 	/* drawing the cloth as a smooth shaded (and colored according to column) OpenGL triangular mesh
@@ -323,7 +345,7 @@ public:
 	void Draw()
 	{
 		UpdateNormals();
-		//UpdateBuffers();
+		UpdateBuffers();
 
 		glBindVertexArray(this->VAO);
 		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
