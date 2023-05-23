@@ -12,9 +12,8 @@ class Cloth
 {
 private:
 
-	int num_particles_width; // number of particles in "width" direction
-	int num_particles_height; // number of particles in "height" direction
-	// total number of particles is num_particles_width*num_particles_height
+	int dim; // number of particles in "width" direction
+	// total number of particles is dim*dim
 
 	std::vector<Constraint> constraints; // alle constraints between particles as part of this cloth
 
@@ -23,7 +22,7 @@ private:
 	GLuint VBO;
     std::vector<GLuint> indices;
 
-	Particle* getParticle(int x, int y) {return &particles[x*num_particles_width + y];}
+	Particle* getParticle(int x, int y) {return &particles[x*dim + y];}
 	void makeConstraint(Particle *p1, Particle *p2) {constraints.push_back(Constraint(p1,p2));}
 
 
@@ -86,7 +85,7 @@ private:
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, this->indices.size() * sizeof(GLuint), &this->indices[0], GL_DYNAMIC_DRAW);
 		// we copy data in the VBO - we must set the data dimension, and the pointer to the structure containing the data
         glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
-        glBufferData(GL_ARRAY_BUFFER, num_particles_width * num_particles_height * sizeof(particles[0]), &this->particles[0], GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, dim * dim * sizeof(particles[0]), &this->particles[0], GL_DYNAMIC_DRAW);
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, pos));
 		glEnableVertexAttribArray(1);
@@ -94,9 +93,9 @@ private:
 	}
 
 	void MakeTriangleFromGrid(){
-		for(int x = 0; x<num_particles_width-1; x++)
+		for(int x = 0; x<dim-1; x++)
 		{
-			for(int y=0; y<num_particles_height-1; y++)
+			for(int y=0; y<dim-1; y++)
 			{
 				glm::vec3 color(0,0,0);
 				if (x%2) // red and white color is interleaved according to which column number
@@ -104,35 +103,58 @@ private:
 				else
 					color = glm::vec3(1.0f,1.0f,1.0f);
 
-				indices.push_back(x*num_particles_height +y);
-				indices.push_back((x+1)*num_particles_height +y);
-				indices.push_back((x+1)*num_particles_height +(y+1));
+				indices.push_back(x*dim +y);
+				indices.push_back((x+1)*dim +y);
+				indices.push_back((x+1)*dim +(y+1));
 
-				indices.push_back(x*num_particles_height +y);
-				indices.push_back((x+1)*num_particles_height +(y+1));
-				indices.push_back(x*num_particles_height +(y+1));
+				indices.push_back(x*dim +y);
+				indices.push_back((x+1)*dim +(y+1));
+				indices.push_back(x*dim +(y+1));
 			}
 		}
 	}
-	void CalculateNewNormals(){
-		//TO DO
+	void UpdateNormals(){
+		// reset normals (which where written to last frame)
+		std::vector<Particle>::iterator particle;
+		for(particle = particles.begin(); particle != particles.end(); particle++)
+		{
+			particle->resetNormal();
+		}
+
+		//create smooth per particle normals by adding up all the (hard) triangle normals that each particle is part of
+		for(int x = 0; x<dim-1; x++)
+		{
+			for(int y=0; y<dim-1; y++)
+			{
+				glm::vec3 normal = calcTriangleNormal(getParticle(x+1,y),getParticle(x,y),getParticle(x,y+1));
+				getParticle(x+1,y)->addToNormal(normal);
+				getParticle(x,y)->addToNormal(normal);
+				getParticle(x,y+1)->addToNormal(normal);
+
+				normal = calcTriangleNormal(getParticle(x+1,y+1),getParticle(x+1,y),getParticle(x,y+1));
+				getParticle(x+1,y+1)->addToNormal(normal);
+				getParticle(x+1,y)->addToNormal(normal);
+				getParticle(x,y+1)->addToNormal(normal);
+			}
+		}
 	}
 	void UpdateBuffers(){
-		//TO DO
+		glBindVertexArray(this->VAO);
+    	glBufferSubData(GL_ARRAY_BUFFER, 0, dim * dim * sizeof(particles[0]), &this->particles);
+    	glBindVertexArray(0);
 	}
 public:
 	std::vector<Particle> particles; // all particles that are part of this cloth
 
 	Cloth(float dim, float particleDistance, glm::vec3 topLeftPosition){
-		num_particles_width = dim;
-		num_particles_height = dim;
+		this->dim = dim;
 
-		particles.resize(dim*dim); //I am essentially using this vector as an array with room for num_particles_width*num_particles_height particles
+		particles.resize(dim*dim); //I am essentially using this vector as an array with room for num_particles_width*dim particles
 		
 		// creating particles in a grid of particles from (0,0,0) to (width,-height,0)
-		for(int x=0; x<num_particles_width; x++)
+		for(int x=0; x<dim; x++)
 		{
-			for(int y=0; y<num_particles_height; y++)
+			for(int y=0; y<dim; y++)
 			{
 				glm::vec3 pos = glm::vec3(
 								topLeftPosition.x - (x * particleDistance),
@@ -199,9 +221,9 @@ public:
 		}
 
 		//create smooth per particle normals by adding up all the (hard) triangle normals that each particle is part of
-		for(int x = 0; x<num_particles_width-1; x++)
+		for(int x = 0; x<dim-1; x++)
 		{
-			for(int y=0; y<num_particles_height-1; y++)
+			for(int y=0; y<dim-1; y++)
 			{
 				glm::vec3 normal = calcTriangleNormal(getParticle(x+1,y),getParticle(x,y),getParticle(x,y+1));
 				getParticle(x+1,y)->addToNormal(normal);
@@ -216,9 +238,9 @@ public:
 		}
 
 		glBegin(GL_TRIANGLES);
-		for(int x = 0; x<num_particles_width-1; x++)
+		for(int x = 0; x<dim-1; x++)
 		{
-			for(int y=0; y<num_particles_height-1; y++)
+			for(int y=0; y<dim-1; y++)
 			{
 				glm::vec3 color(0,0,0);
 				if (x%2) // red and white color is interleaved according to which column number
@@ -273,9 +295,9 @@ public:
 	/* used to add wind forces to all particles, is added for each triangle since the final force is proportional to the triangle area as seen from the wind direction*/
 	void windForce(const glm::vec3 direction)
 	{
-		for(int x = 0; x<num_particles_width-1; x++)
+		for(int x = 0; x<dim-1; x++)
 		{
-			for(int y=0; y<num_particles_height-1; y++)
+			for(int y=0; y<dim-1; y++)
 			{
 				addWindForcesForTriangle(getParticle(x+1,y),getParticle(x,y),getParticle(x,y+1),direction);
 				addWindForcesForTriangle(getParticle(x+1,y+1),getParticle(x+1,y),getParticle(x,y+1),direction);
@@ -297,6 +319,7 @@ public:
 
 	void Draw()
 	{
+		//UpdateBuffers();
 		glBindVertexArray(this->VAO);
 		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);

@@ -144,7 +144,7 @@ GLfloat speed = 5.0f;
 // OpenGL Setup
 GLFWwindow* window;
 
-glm::vec3 startingPosition(0.0f, 5.0f, -5.0f);
+glm::vec3 startingPosition(0.0f, 3.0f, -3.0f);
 
 /////////////////// MAIN function ///////////////////////
 int main()
@@ -299,7 +299,7 @@ int main()
         //CLOTH
         clothTransform.Transformation(
             glm::vec3(1.0f, 1.0f, 1.0f),
-            orientationY, glm::vec3(0.0f, 1.0f, 0.0f),
+            0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
             startingPosition,
             view
         );
@@ -336,7 +336,7 @@ int SetupOpenGL(){
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
     // we create the application's window
-    window = glfwCreateWindow(screenWidth, screenHeight, "RGP_lecture03a", nullptr, nullptr);
+    window = glfwCreateWindow(screenWidth, screenHeight, "Application", nullptr, nullptr);
     if (!window)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
