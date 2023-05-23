@@ -38,6 +38,7 @@ positive Z axis points "outside" the screen
 // Std. Includes
 #include <string>
 #include <iostream>
+#include <chrono>
 
 // Loader for OpenGL extensions
 // http://glad.dav1d.de/
@@ -69,7 +70,6 @@ positive Z axis points "outside" the screen
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
 
 // My classes
 #include <utils/Transform.h>
@@ -177,8 +177,18 @@ int main()
     Transform planeTransform(view);
     Transform cubeTransform(view);
 
-    Cloth cloth(8.0f, 0.25f, startingPosition);
+    bool once = true;
+    unsigned int prints = 0;
+    Cloth cloth(3.0f, 0.25f, startingPosition);
+    cloth.PrintParticles(prints);
     Transform clothTransform(view);
+
+    // DELTA TIME using std::chrono
+    // https://stackoverflow.com/questions/14391327/how-to-get-duration-as-int-millis-and-float-seconds-from-chrono
+    typedef std::chrono::high_resolution_clock Time;
+    typedef std::chrono::duration<float> fsec;
+
+    auto start_time = Time::now();   
 
     // Rendering loop: this code is executed at each frame
     while(!glfwWindowShouldClose(window))
@@ -295,7 +305,11 @@ int main()
 
         cloth.AddGravityForce();
         //cloth.windForce(glm::vec3(0.3f, 0.0f, 0.0f));
-        cloth.PhysicsSteps();
+        auto current_time = Time::now();
+        fsec deltaTime = (current_time - start_time);
+        start_time = Time::now();
+
+        cloth.PhysicsSteps(deltaTime.count());
         //CLOTH
         clothTransform.Transformation(
             glm::vec3(1.0f, 1.0f, 1.0f),
@@ -306,6 +320,16 @@ int main()
         glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.modelMatrix));
         glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.normalMatrix));
         cloth.Draw();
+
+        if(!spinning && once)
+        {
+            prints++;
+            cloth.PrintParticles(prints);
+            once = false;
+            std::cout << "deltaTime in sec" << deltaTime.count() << std::endl;
+        } else if(spinning && !once){
+           once = true; 
+        }
 
         // Swapping back and front buffers
         glfwSwapBuffers(window);

@@ -193,7 +193,7 @@ public:
 			for(int y=0; y < dim; y++)
 			{
 				glm::vec3 pos = glm::vec3(
-								topLeftPosition.x - (x * particleDistance),
+								topLeftPosition.x + (x * particleDistance),
 								topLeftPosition.y - (y * particleDistance),
 								0);
 				particles[x*dim + y] = Particle(pos); // Linearization of the index, row = X, col = Y and row dimension = dim
@@ -224,15 +224,13 @@ public:
 			}
 		}
 
-		// // making the upper left most three and right most three particles unmovable
-		// for(int i=0;i<3; i++)
-		// {
-		// 	getParticle(0+i ,0)->offsetPos(glm::vec3(0.5f,0.0f,0.0f)); // moving the particle a bit towards the center, to make it hang more natural - because I like it ;)
-		// 	getParticle(0+i ,0)->makeUnmovable(); 
+		// making the upper left most three and right most three particles unmovable
+		for(int i=0;i<3; i++)
+		{
+			getParticle(0+i ,0)->makeUnmovable(); 
 
-		// 	getParticle(0+i ,0)->offsetPos(glm::vec3(-0.5f,0.0f,0.0f)); // moving the particle a bit towards the center, to make it hang more natural - because I like it ;)
-		// 	getParticle(dim-1-i ,0)->makeUnmovable();
-		// }
+			getParticle(dim-1-i ,0)->makeUnmovable();
+		}
 
 		SetUp();
 	}
@@ -297,9 +295,9 @@ public:
 	// }
 
 	/* this is an important methods where the time is progressed one time step for the entire cloth.
-	This includes calling satisfyConstraint() for every constraint, and calling timeStep() for all particles
+	This includes calling satisfyConstraint_Physics() for every constraint, and calling timeStep() for all particles
 	*/
-	void PhysicsSteps()
+	void PhysicsSteps(float deltaTime)
 	{
 		std::vector<Constraint>::iterator constraint;
 		for(int i=0; i<CONSTRAINT_ITERATIONS; i++) // iterate over all constraints several times
@@ -313,23 +311,23 @@ public:
 		std::vector<Particle>::iterator particle;
 		for(particle = particles.begin(); particle != particles.end(); particle++)
 		{
-			particle->PhysicStep(); // calculate the position of each particle at the next time step.
+			particle->PhysicStep(deltaTime); // calculate the position of each particle at the next time step.
 		}
 	}
 
 	void AddGravityForce(){
-		glm::vec3 gravityVec = glm::vec3(0.0f, 1.0f * (-9.8f), 0.0f);
+		glm::vec3 gravityVec = glm::vec3(0.0f, 1.0f * (-0.2f), 0.0f);
 
-		addForce(gravityVec);
+		AddForceToParticles(gravityVec);
 	}
 
 	/* used to add gravity (or any other arbitrary vector) to all particles*/
-	void addForce(const glm::vec3 direction)
+	void AddForceToParticles(const glm::vec3 forceVector)
 	{
 		std::vector<Particle>::iterator particle;
 		for(particle = particles.begin(); particle != particles.end(); particle++)
 		{
-			particle->addForce(direction); // add the forces to each particle
+			particle->addForce(forceVector); // add the forces to each particle
 		}
 	}
 
@@ -364,5 +362,15 @@ public:
 		glBindVertexArray(this->VAO);
 		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
+	}
+
+	void PrintParticles(unsigned int times)
+	{
+		std::vector<Particle>::iterator particle;
+		std::cout << "Print number: " << times << " ----------------------------" << std::endl;
+		for(particle = particles.begin(); particle != particles.end(); particle++)
+		{
+			std::cout << particle->pos.x << ", " << particle->pos.y << ", " << particle->pos.z << std::endl;
+		}
 	}
 };
