@@ -105,7 +105,7 @@ private:
         glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
         glBufferData(GL_ARRAY_BUFFER, dim * dim * sizeof(Particle), &this->particles[0], GL_DYNAMIC_DRAW);
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, pos));
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, normal));
 	
@@ -162,9 +162,18 @@ private:
 		}	
 	}
 	void UpdateBuffers(){
+		// glBindVertexArray(this->VAO);
+    	// glBufferSubData(GL_ARRAY_BUFFER, 0, this->dim * this->dim * sizeof(Particle), &this->particles[0]);
+    	// glBindVertexArray(0);
+
 		glBindVertexArray(this->VAO);
-    	glBufferSubData(GL_ARRAY_BUFFER, 0, this->dim * this->dim * sizeof(particles[0]), &this->particles);
-    	glBindVertexArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
+        glBufferData(GL_ARRAY_BUFFER, dim * dim * sizeof(Particle), &this->particles[0], GL_DYNAMIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, pos));
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, normal));
+		glBindVertexArray(0);
 	}
 	void freeGPUresources()
     {
@@ -225,18 +234,17 @@ public:
 		}
 
 		// making the upper left most three and right most three particles unmovable
-		for(int i=0;i<3; i++)
+		for(int i=0 ; i<1 ; i++)
 		{
 			getParticle(0+i ,0)->makeUnmovable(); 
-
 			getParticle(dim-1-i ,0)->makeUnmovable();
 		}
 
 		SetUp();
 	}
-
 	~Cloth()
 	{
+
 		freeGPUresources();
 	}
 
@@ -304,7 +312,7 @@ public:
 		{
 			for(constraint = constraints.begin(); constraint != constraints.end(); constraint++ )
 			{
-				constraint->satisfyConstraint(); // satisfy constraint.
+				constraint->satisfyConstraint_Physics(); // satisfy constraint.
 			}
 		}
 
@@ -313,16 +321,20 @@ public:
 		{
 			particle->PhysicStep(deltaTime); // calculate the position of each particle at the next time step.
 		}
+
+
+		UpdateNormals();
+		UpdateBuffers();
 	}
 
 	void AddGravityForce(){
-		glm::vec3 gravityVec = glm::vec3(0.0f, 1.0f * (-0.2f), 0.0f);
+		glm::vec3 gravityVec = glm::vec3(0.0f, 1.0f * (-2.0f), 0.0f);
 
-		AddForceToParticles(gravityVec);
+		AddForceToAllParticles(gravityVec);
 	}
 
 	/* used to add gravity (or any other arbitrary vector) to all particles*/
-	void AddForceToParticles(const glm::vec3 forceVector)
+	void AddForceToAllParticles(const glm::vec3 forceVector)
 	{
 		std::vector<Particle>::iterator particle;
 		for(particle = particles.begin(); particle != particles.end(); particle++)
@@ -356,9 +368,6 @@ public:
 
 	void Draw()
 	{
-		UpdateNormals();
-		UpdateBuffers();
-
 		glBindVertexArray(this->VAO);
 		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
