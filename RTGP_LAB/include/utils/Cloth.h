@@ -58,8 +58,19 @@ private:
 		glm::vec3 pos3 = getParticle( x		, (y + 1))->pos;
 		glm::vec3 pos4 = getParticle((x + 1), (y + 1))->pos;
 
-		glm::vec3 diagonal1 = pos2-pos1;
-		glm::vec3 diagonal2 = pos3-pos1;
+		/*
+		   ^
+			\
+			 \
+		*/
+		glm::vec3 diagonal1 = pos3-pos1;
+		
+		/*
+			  ^				  
+			 /
+			/
+		*/
+		glm::vec3 diagonal2 = pos2-pos4;
 
 		return glm::cross(diagonal1, diagonal2);
 	}
@@ -92,13 +103,13 @@ private:
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, this->indices.size() * sizeof(GLuint), &this->indices[0], GL_DYNAMIC_DRAW);
 		// we copy data in the VBO - we must set the data dimension, and the pointer to the structure containing the data
         glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
-        glBufferData(GL_ARRAY_BUFFER, dim * dim * sizeof(particles[0]), &this->particles[0], GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, dim * dim * sizeof(Particle), &this->particles[0], GL_DYNAMIC_DRAW);
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, pos));
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)0);
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, normal));
 	
-		 // Note that this is allowed, the call to glVertexAttribPointer registered VBO as the currently bound vertex buffer object so afterwards we can safely unbind
+		// Note that this is allowed, the call to glVertexAttribPointer registered VBO as the currently bound vertex buffer object so afterwards we can safely unbind
         glBindBuffer(GL_ARRAY_BUFFER, 0); 
         // Unbind VAO (it's always a good thing to unbind any buffer/array to prevent strange bugs), remember: do NOT unbind the EBO, keep it bound to this VAO
         glBindVertexArray(0); 
@@ -145,7 +156,10 @@ private:
 			}
 		}
 
-
+		for(particle = particles.begin(); particle != particles.end(); particle++)
+		{
+			glm::normalize(particle->normal);
+		}	
 	}
 	void UpdateBuffers(){
 		glBindVertexArray(this->VAO);
@@ -182,7 +196,7 @@ public:
 								topLeftPosition.x - (x * particleDistance),
 								topLeftPosition.y - (y * particleDistance),
 								0);
-				particles[x*dim + y]= Particle(pos); // Linearization of the index, row = X, col = Y and row dimension = dim
+				particles[x*dim + y] = Particle(pos); // Linearization of the index, row = X, col = Y and row dimension = dim
 			}
 		}
 

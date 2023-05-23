@@ -20,7 +20,7 @@ public:
 	glm::vec3 old_pos; // the position of the particle in the previous time step, used as part of the verlet numerical integration scheme
 	glm::vec3 acceleration; // a vector representing the current acceleration of the particle
 	
-	Particle(glm::vec3 pos) : pos(pos), old_pos(pos),acceleration(glm::vec3(0.0f)), mass(1), movable(true), normal(glm::vec3(0.0f)){}
+	Particle(glm::vec3 pos) : pos(pos), old_pos(pos),acceleration(glm::vec3(0.0f)), mass(1), movable(true), normal(glm::vec3(1.0f)){}
 	Particle(){}
 
 	void addForce(glm::vec3 f)
@@ -33,13 +33,13 @@ public:
 	   Given the equation "force = mass * acceleration" the next position is found through verlet integration*/
 	void PhysicStep()
 	{
-		if(movable)
-		{
-			glm::vec3 temp = pos;
-			pos = pos + (pos-old_pos)*(1.0f-DAMPING) + acceleration*TIME_STEPSIZE2;
-			old_pos = temp;
-			acceleration = glm::vec3(0.0f); // acceleration is reset since it HAS been translated into a change in position (and implicitly into velocity)	
-		}
+		if(!movable)
+			return;
+
+		glm::vec3 temp = pos;
+		pos = pos + (pos-old_pos)*(1.0f-DAMPING) + acceleration*TIME_STEPSIZE2;
+		old_pos = temp;
+		acceleration = glm::vec3(0.0f); // acceleration is reset since it HAS been translated into a change in position (and implicitly into velocity)	
 	}
 
 	glm::vec3& getPos() {return pos;}
