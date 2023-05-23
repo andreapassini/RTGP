@@ -140,7 +140,7 @@ private:
 	}
 	void UpdateBuffers(){
 		glBindVertexArray(this->VAO);
-    	glBufferSubData(GL_ARRAY_BUFFER, 0, dim * dim * sizeof(particles[0]), &this->particles);
+    	glBufferSubData(GL_ARRAY_BUFFER, 0, this->dim * this->dim * sizeof(particles[0]), &this->particles);
     	glBindVertexArray(0);
 	}
 public:
@@ -158,7 +158,7 @@ public:
 			{
 				glm::vec3 pos = glm::vec3(
 								topLeftPosition.x - (x * particleDistance),
-								topLeftPosition.y - (y * particleDistance),
+								topLeftPosition.y + (y * particleDistance),
 								0);
 				particles[x*dim + y]= Particle(pos); // insert particle in column x at y'th row
 			}
@@ -319,7 +319,6 @@ public:
 
 	void Draw()
 	{
-		//UpdateBuffers();
 		glBindVertexArray(this->VAO);
 		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
