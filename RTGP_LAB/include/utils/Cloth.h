@@ -105,7 +105,7 @@ private:
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, this->indices.size() * sizeof(GLuint), &this->indices[0], GL_DYNAMIC_DRAW);
 		// we copy data in the VBO - we must set the data dimension, and the pointer to the structure containing the data
         glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
-        glBufferData(GL_ARRAY_BUFFER, dim * dim * sizeof(Particle), &this->particles[0], GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, this->dim * this->dim * sizeof(Particle), &this->particles[0], GL_DYNAMIC_DRAW);
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, pos));
 		glEnableVertexAttribArray(1);
@@ -164,18 +164,21 @@ private:
 		}	
 	}
 	void UpdateBuffers(){
-		// glBindVertexArray(this->VAO);
-    	// glBufferSubData(GL_ARRAY_BUFFER, 0, this->dim * this->dim * sizeof(Particle), &this->particles[0]);
-    	// glBindVertexArray(0);
 
+		// POSITION WORKING WITH THIS SECTION
 		glBindVertexArray(this->VAO);
 		glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
-        glBufferData(GL_ARRAY_BUFFER, dim * dim * sizeof(Particle), &this->particles[0], GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, this->dim * this->dim * sizeof(Particle), &this->particles[0], GL_DYNAMIC_DRAW);
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, pos));
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, normal));
 		glBindVertexArray(0);
+
+		// NORMAL WORKING with only this
+		glBindVertexArray(this->VAO);
+    	glBufferSubData(GL_ARRAY_BUFFER, 0, this->dim * this->dim * sizeof(Particle), &this->particles[0]);
+    	glBindVertexArray(0);
 	}
 	void freeGPUresources()
     {

@@ -179,7 +179,7 @@ int main()
 
     bool once = true;
     unsigned int prints = 0;
-    Cloth cloth(8.0f, 0.25f, startingPosition);
+    Cloth cloth(4.0f, 0.25f, startingPosition);
     cloth.PrintParticles(prints);
     Transform clothTransform(view);
 
@@ -304,7 +304,7 @@ int main()
         
 
         cloth.AddGravityForce();
-        cloth.AddRandomIntensityForce(glm::vec3(1.0f, 0.0f, 0.0f), -0.5f, 5.5f);
+        cloth.AddRandomIntensityForce(glm::vec3(1.0f, 0.0f, 0.0f), 0.5f, 1.5f);
         //cloth.windForce(glm::vec3(0.3f, 0.0f, 0.0f));
         auto current_time = Time::now();
         fsec deltaTime = (current_time - start_time);
