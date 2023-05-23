@@ -7,6 +7,8 @@
 // GLFW
 #include <glfw/glfw3.h>
 
+#include <cstdlib>
+#include <random>
 
 class Cloth
 {
@@ -246,7 +248,7 @@ public:
 		}
 
 		// making the upper left most three and right most three particles unmovable
-		for(int i=0 ; i<1 ; i++)
+		for(int i=0 ; i<2 ; i++)
 		{
 			getParticle(0+i ,0)->makeUnmovable(); 
 			getParticle(dim-1-i ,0)->makeUnmovable();
@@ -345,6 +347,20 @@ public:
 		AddForceToAllParticles(gravityVec);
 	}
 
+	void AddRandomIntensityForce(glm::vec3 normalizedDirection, float min, float max)
+	{
+		std::vector<Particle>::iterator particle;
+		glm::vec3 force = glm::normalize(normalizedDirection);
+		float randomIntensity;
+		for(particle = particles.begin(); particle != particles.end(); particle++)
+		{
+			randomIntensity = min + (max - min) * (rand() / RAND_MAX);
+			force *= randomIntensity;
+			particle->addForce(force); // add the forces to each particle
+		}
+		particles[(dim-1) * dim + (dim-1)].addForce(force * 5.5f);
+	}
+
 	/* used to add gravity (or any other arbitrary vector) to all particles*/
 	void AddForceToAllParticles(const glm::vec3 forceVector)
 	{
@@ -380,6 +396,9 @@ public:
 
 	void Draw()
 	{
+		UpdateNormals();
+		UpdateBuffers();
+
 		glBindVertexArray(this->VAO);
 		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
@@ -389,6 +408,7 @@ public:
 	{
 		std::vector<Particle>::iterator particle;
 		std::cout << "Print number: " << times << " ----------------------------" << std::endl;
+		std::cout << "Constraints number: " << constraints.size() << std::endl;
 		for(particle = particles.begin(); particle != particles.end(); particle++)
 		{
 			std::cout << particle->pos.x << ", " << particle->pos.y << ", " << particle->pos.z << std::endl;

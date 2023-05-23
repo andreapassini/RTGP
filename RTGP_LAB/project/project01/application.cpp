@@ -304,6 +304,7 @@ int main()
         
 
         cloth.AddGravityForce();
+        cloth.AddRandomIntensityForce(glm::vec3(1.0f, 0.0f, 0.0f), -0.5f, 5.5f);
         //cloth.windForce(glm::vec3(0.3f, 0.0f, 0.0f));
         auto current_time = Time::now();
         fsec deltaTime = (current_time - start_time);
