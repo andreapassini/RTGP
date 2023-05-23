@@ -309,7 +309,6 @@ int main()
         auto current_time = Time::now();
         fsec deltaTime = (current_time - start_time);
         start_time = Time::now();
-
         cloth.PhysicsSteps(deltaTime.count());
         //CLOTH
         clothTransform.Transformation(

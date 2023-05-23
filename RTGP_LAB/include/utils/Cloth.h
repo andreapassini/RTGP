@@ -325,7 +325,7 @@ public:
 	void PhysicsSteps(float deltaTime)
 	{
 		std::vector<Constraint>::iterator constraint;
-		for(int i=0; i<CONSTRAINT_ITERATIONS; i++) // iterate over all constraints several times
+		for(int i=0; i < CONSTRAINT_ITERATIONS; i++) // iterate over all constraints several times
 		{
 			for(constraint = constraints.begin(); constraint != constraints.end(); constraint++ )
 			{
@@ -338,7 +338,6 @@ public:
 		{
 			particle->PhysicStep(deltaTime); // calculate the position of each particle at the next time step.
 		}
-
 
 		UpdateNormals();
 		UpdateBuffers();
