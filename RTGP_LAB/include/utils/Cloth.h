@@ -160,7 +160,7 @@ public:
 								topLeftPosition.x - (x * particleDistance),
 								topLeftPosition.y + (y * particleDistance),
 								0);
-				particles[x*dim + y]= Particle(pos); // insert particle in column x at y'th row
+				particles[x*dim + y]= Particle(pos); // Linearization of the index, row = X, col = Y and row dimension = dim
 			}
 		}
 
