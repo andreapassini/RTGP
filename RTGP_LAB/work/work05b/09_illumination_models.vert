@@ -29,42 +29,19 @@ uniform mat4 viewMatrix;
 // Projection matrix
 uniform mat4 projectionMatrix;
 
-// normals transformation matrix (= transpose of the inverse of the model-view matrix)
-uniform mat3 normalMatrix;
-
-// the position of the point light is passed as uniform
-// N. B.) with more lights, and of different kinds, the shader code must be modified with a for cycle, with different treatment of the source lights parameters (directions, position, cutoff angle for spot lights, etc)
-uniform vec3 pointLightPosition;
-
-// light incidence direction (in view coordinates)
-out vec3 lightDir;
-// the transformed normal (in view coordinate) is set as an output variable, to be "passed" to the fragment shader
-// this means that the normal values in each vertex will be interpolated on each fragment created during rasterization between two vertices
-out vec3 vNormal;
-
-// in the subroutines in fragment shader where specular reflection is considered,
-// we need to calculate also the reflection vector for each fragment
-// to do this, we need to calculate in the vertex shader the view direction (in view coordinates) for each vertex, and to have it interpolated for each fragment by the rasterization stage
-out vec3 vViewPosition;
-
+// to have a reflection on BabyYoda
+out vec3 worldNormal; // since we are sampling the 3d texture of the cube, in world position
+out vec4 worldPosition;
 
 void main(){
 
   // vertex position in ModelView coordinate (see the last line for the application of projection)
   // when I need to use coordinates in camera coordinates, I need to split the application of model and view transformations from the projection transformations
-  vec4 mvPosition = viewMatrix * modelMatrix * vec4( position, 1.0 );
+  worldPosition = modelMatrix * vec4(position, 1.0);
 
-  // view direction, negated to have vector from the vertex to the camera
-  vViewPosition = -mvPosition.xyz;
-
-  // transformations are applied to the normal
-  vNormal = normalize( normalMatrix * normal );
-
-  // light incidence direction (in view coordinate)
-  vec4 lightPos = viewMatrix  * vec4(pointLightPosition, 1.0);
-  lightDir = lightPos.xyz - mvPosition.xyz;
+  worldNormal = mat3(transpose(inverse(modelMatrix))) * normal;
 
   // we apply the projection transformation
-  gl_Position = projectionMatrix * mvPosition;
+  gl_Position = projectionMatrix * viewMatrix * worldPosition;
 
 }

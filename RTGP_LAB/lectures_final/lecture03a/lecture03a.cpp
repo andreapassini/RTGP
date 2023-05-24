@@ -68,9 +68,6 @@ positive Z axis points "outside" the screen
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-// My classes
-#include <utils/Transform.h>
-
 // dimensions of application's window
 GLuint screenWidth = 1200, screenHeight = 900;
 
@@ -114,6 +111,7 @@ GLfloat myColor[] = {1.0f,0.0f,0.0f};
 // weight and velocity for the animation of Wave shader
 GLfloat weight = 0.2f;
 GLfloat speed = 5.0f;
+
 
 /////////////////// MAIN function ///////////////////////
 int main()
@@ -186,11 +184,12 @@ int main()
     glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 7.0f), glm::vec3(0.0f, 0.0f, -7.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     // Model and Normal transformation matrices for the objects in the scene: we set to identity
-    Transform sphereTransform;
-
-    Transform cubeTransform;
-
-    Transform bunnyTransform;
+    glm::mat4 sphereModelMatrix = glm::mat4(1.0f);
+    glm::mat3 sphereNormalMatrix = glm::mat3(1.0f);
+    glm::mat4 cubeModelMatrix = glm::mat4(1.0f);
+    glm::mat3 cubeNormalMatrix = glm::mat3(1.0f);
+    glm::mat4 bunnyModelMatrix = glm::mat4(1.0f);
+    glm::mat3 bunnyNormalMatrix = glm::mat3(1.0f);
 
     // Rendering loop: this code is executed at each frame
     while(!glfwWindowShouldClose(window))
@@ -231,6 +230,7 @@ int main()
         }
         else if (current_program == WAVE)
         {
+
             // we determine the position in the Shader Program of the uniform variables
             GLint weightLocation = glGetUniformLocation(shaders[current_program].Program, "weight");
             GLint timerLocation = glGetUniformLocation(shaders[current_program].Program, "timer");
@@ -258,38 +258,48 @@ int main()
             And MT.N is the identity matrix if and only if N=(MT)-1, i.e. N is the inverse of the transpose of M.
 
         */
+        // we reset to identity at each frame
+        sphereModelMatrix = glm::mat4(1.0f);
+        sphereNormalMatrix = glm::mat3(1.0f);
+        sphereModelMatrix = glm::translate(sphereModelMatrix, glm::vec3(-3.0f, 0.0f, 0.0f));
+        sphereModelMatrix = glm::rotate(sphereModelMatrix, glm::radians(orientationY), glm::vec3(0.0f, 1.0f, 0.0f));
+        sphereModelMatrix = glm::scale(sphereModelMatrix, glm::vec3(0.8f, 0.8f, 0.8f));	// It's a bit too big for our scene, so scale it down
+        // if we cast a mat4 to a mat3, we are automatically considering the upper left 3x3 submatrix
+        sphereNormalMatrix = glm::inverseTranspose(glm::mat3(view*sphereModelMatrix));
+        glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(sphereModelMatrix));
+        glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(sphereNormalMatrix));
 
-       //SPHERE
-        sphereTransform.Transformation(
-            glm::vec3(0.8f, 0.8f, 0.8f),
-            orientationY, glm::vec3(0.0f, 1.0f, 0.0f),
-            glm::vec3(-3.0f, 0.0f, 0.0f),
-            view
-        );
-        glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.modelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.normalMatrix));
+        // we render the sphere
         sphereModel.Draw();
 
         //CUBE
-        cubeTransform.Transformation(
-            glm::vec3(0.8f, 0.8f, 0.8f),
-            orientationY, glm::vec3(0.0f, 1.0f, 0.0f),
-            glm::vec3(0.0f, 0.0f, 0.0f),
-            view
-        );
-        glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(cubeTransform.modelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(cubeTransform.normalMatrix));
+        // we create the transformation matrix and the normals transformation matrix
+        // we reset to identity at each frame
+        cubeModelMatrix = glm::mat4(1.0f);
+        cubeNormalMatrix = glm::mat3(1.0f);
+        cubeModelMatrix = glm::translate(cubeModelMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
+        cubeModelMatrix = glm::rotate(cubeModelMatrix, glm::radians(orientationY), glm::vec3(0.0f, 1.0f, 0.0f));
+        cubeModelMatrix = glm::scale(cubeModelMatrix, glm::vec3(0.8f, 0.8f, 0.8f));	// It's a bit too big for our scene, so scale it down
+        cubeNormalMatrix = glm::inverseTranspose(glm::mat3(view*cubeModelMatrix));
+        glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(cubeModelMatrix));
+        glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(cubeNormalMatrix));
+
+        // we render the cube
         cubeModel.Draw();
 
         //BUNNY
-        bunnyTransform.Transformation(
-            glm::vec3(0.3f, 0.3f, 0.3f),
-            orientationY, glm::vec3(0.0f, 1.0f, 0.0f),
-            glm::vec3(3.0f, 0.0f, 0.0f),
-            view
-        );
-        glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(bunnyTransform.modelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(bunnyTransform.normalMatrix));
+        // we create the transformation matrix and the normals transformation matrix
+        // we reset to identity at each frame
+        bunnyModelMatrix = glm::mat4(1.0f);
+        bunnyNormalMatrix = glm::mat3(1.0f);
+        bunnyModelMatrix = glm::translate(bunnyModelMatrix, glm::vec3(3.0f, 0.0f, 0.0f));
+        bunnyModelMatrix = glm::rotate(bunnyModelMatrix, glm::radians(orientationY), glm::vec3(0.0f, 1.0f, 0.0f));
+        bunnyModelMatrix = glm::scale(bunnyModelMatrix, glm::vec3(0.3f, 0.3f, 0.3f));	// It's a bit too big for our scene, so scale it down
+        bunnyNormalMatrix = glm::inverseTranspose(glm::mat3(view*bunnyModelMatrix));
+        glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(bunnyModelMatrix));
+        glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(bunnyNormalMatrix));
+
+        // we render the bunny
         bunnyModel.Draw();
 
         // Swapping back and front buffers

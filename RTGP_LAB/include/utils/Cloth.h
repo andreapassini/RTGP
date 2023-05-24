@@ -9,6 +9,7 @@
 
 #include <cstdlib>
 #include <random>
+#include <ctime>
 
 class Cloth
 {
@@ -226,22 +227,10 @@ public:
 			}
 		}
 
-		// Connecting neighbor at distance 2
-		for(int x=0; x < dim; x++)
-		{
-			for(int y=0; y < dim; y++)
-			{
-				if (x +2 < dim) makeConstraint(getParticle(x,y),getParticle(x+2, y));
-				if (x -2 < dim) makeConstraint(getParticle(x,y),getParticle(x-2, y));
-				if (y +2 < dim) makeConstraint(getParticle(x,y),getParticle(x, y+2));
-				if (y -2 < dim) makeConstraint(getParticle(x,y),getParticle(x, y-2));
-			}
-		}
-
 		// Constraints on the 4 diagonals
-		for(int x=0; x<dim; x++)
+		for(int x=0; x<dim; x+=2)
 		{
-			for(int y=0; y<dim; y++)
+			for(int y=0; y<dim; y+=2)
 			{
 				if (x +1 < dim && y + 1 < dim) makeConstraint(getParticle(x,y),getParticle(x+1 ,y+1));
 				if (x +1 < dim && y - 1 < dim) makeConstraint(getParticle(x,y),getParticle(x+1, y-1));
@@ -353,14 +342,14 @@ public:
 	{
 		std::vector<Particle>::iterator particle;
 		glm::vec3 force = glm::normalize(normalizedDirection);
+		srand(time(0));
 		float randomIntensity;
 		for(particle = particles.begin(); particle != particles.end(); particle++)
 		{
-			randomIntensity = min + (max - min) * (rand() / RAND_MAX);
+			randomIntensity = min + ((max - min) * (rand()%2));
 			force *= randomIntensity;
 			particle->addForce(force); // add the forces to each particle
 		}
-		particles[(dim-1) * dim + (dim-1)].addForce(force * 5.5f);
 	}
 
 	/* used to add gravity (or any other arbitrary vector) to all particles*/
@@ -413,7 +402,9 @@ public:
 		std::cout << "Constraints number: " << constraints.size() << std::endl;
 		for(particle = particles.begin(); particle != particles.end(); particle++)
 		{
-			std::cout << particle->pos.x << ", " << particle->pos.y << ", " << particle->pos.z << std::endl;
+			std::cout << std::endl;
+			std::cout << "Force: " << particle->force.x << ", " << particle->force.y << ", " << particle->force.z  << std::endl;
+			std::cout << "Position: " <<particle->pos.x << ", " << particle->pos.y << ", " << particle->pos.z << std::endl;
 		}
 	}
 };

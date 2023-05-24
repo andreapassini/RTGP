@@ -10,5 +10,3 @@ if [%1%]==[] (
 ) else (
   nmake /f MakefileWin clean
 )
-
-

@@ -84,8 +84,13 @@ vector<std::string> shaders;
 // print on console the name of current shader subroutine
 //void PrintCurrentShader(int subroutine);
 
+enum render_passes{
+    SHADOWMAP,
+    RENDER
+};
+
 // in this application, we have isolated the models rendering using a function, which will be called in each rendering step
-void RenderObjects(Shader &shader, Model &planeModel, Model &cubeModel, Model &sphereModel, Model &bunnyModel);
+void RenderObjects(Shader &shader, Model &planeModel, Model &cubeModel, Model &sphereModel, Model &bunnyModel, GLint render_passes, GLuint depthMap);
 
 // load image from disk and create an OpenGL texture
 GLint LoadTexture(const char* path);
@@ -128,7 +133,7 @@ glm::mat3 planeNormalMatrix = glm::mat3(1.0f);
 // we create a camera. We pass the initial position as a paramenter to the constructor. The last boolean tells that we want a camera "anchored" to the ground
 Camera camera(glm::vec3(0.0f, 0.0f, 7.0f), GL_TRUE);
 
-// in this example, we consider a directional light. We pass the direction of incoming light as an uniform to the shaders
+// in this example, we consider a **directional light**. We pass the direction of incoming light as an uniform to the shaders
 glm::vec3 lightDir0 = glm::vec3(1.0f, 1.0f, 1.0f);
 
 // weight for the diffusive component
@@ -197,6 +202,8 @@ int main()
 
     // we create the Shader Program used for objects (which presents different subroutines we can switch)
     Shader illumination_shader = Shader("21_ggx_tex_shadow_work.vert", "22_ggx_tex_shadow_work.frag");
+    Shader shadow_shader = Shader("shadowmap.vert", "shadowmap.frag");
+
 
     // we parse the Shader Program to search for the number and names of the subroutines.
     // the names are placed in the shaders vector
@@ -213,6 +220,30 @@ int main()
     Model sphereModel("../../models/sphere.obj");
     Model bunnyModel("../../models/bunny_lp.obj");
     Model planeModel("../../models/plane.obj");
+
+
+    // depth buffer
+    const GLuint SHADOW_WIDTH = 1024;
+    const GLuint SHADOW_HEIGHT = 1024;
+
+    // Frame buffer object
+    GLuint depthMapFBO;
+    glGenFramebuffers(1, &depthMapFBO);
+    
+    GLuint depthMap;
+    glGenTextures(1, &depthMap);
+    glBindTexture(GL_TEXTURE_2D, depthMap);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+    glDrawBuffer(GL_NONE);  // Dont save color informations
+    glReadBuffer(GL_NONE);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // Projection matrix of the camera: FOV angle, aspect ratio, near and far planes
     glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);

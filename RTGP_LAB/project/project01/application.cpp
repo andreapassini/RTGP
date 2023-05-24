@@ -302,13 +302,26 @@ int main()
         glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(cubeTransform.normalMatrix));
         cubeModel.Draw();
         
-
-        cloth.AddGravityForce();
-        cloth.AddRandomIntensityForce(glm::vec3(1.0f, 0.0f, 0.0f), 0.5f, 1.5f);
-        //cloth.windForce(glm::vec3(0.3f, 0.0f, 0.0f));
+            cloth.AddGravityForce();
+        //cloth.AddRandomIntensityForce(glm::vec3(1.0f, 0.0f, 0.0f), 0.5f, 1.5f);
         auto current_time = Time::now();
         fsec deltaTime = (current_time - start_time);
         start_time = Time::now();
+        //cloth.windForce(glm::vec3(0.3f, 0.0f, 0.0f));
+        if(!spinning){
+            cloth.AddForceToAllParticles(glm::vec3(0.0f, 5.0f, 0.0f));
+
+        }
+
+        if(!spinning && once)
+        {
+            prints++;
+            cloth.PrintParticles(prints);
+            std::cout << "deltaTime in sec" << deltaTime.count() << std::endl;
+            once = false;
+        } else if(spinning && !once){
+           once = true; 
+        }
         cloth.PhysicsSteps(deltaTime.count());
         //CLOTH
         clothTransform.Transformation(
@@ -321,15 +334,6 @@ int main()
         glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.normalMatrix));
         cloth.Draw();
 
-        if(!spinning && once)
-        {
-            prints++;
-            cloth.PrintParticles(prints);
-            once = false;
-            std::cout << "deltaTime in sec" << deltaTime.count() << std::endl;
-        } else if(spinning && !once){
-           once = true; 
-        }
 
         // Swapping back and front buffers
         glfwSwapBuffers(window);

@@ -53,11 +53,15 @@ positive Z axis points "outside" the screen
 #include <utils/model.h>
 #include <utils/camera.h>
 
+
 // we load the GLM classes used in the application
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image/stb_image.h"
 
 // number of lights in the scene
 #define NR_LIGHTS 3
@@ -81,6 +85,8 @@ void SetupShader(int shader_program);
 
 // print on console the name of current shader subroutine
 void PrintCurrentShader(int subroutine);
+
+GLint LoadTexture(const char* path);
 
 // we initialize an array of booleans for each keyboard key
 bool keys[1024];
@@ -117,12 +123,11 @@ glm::vec3 lightPositions[] = {
 };
 
 // diffusive, specular and ambient components
-GLfloat diffuseColor[] = {1.0f,0.0f,0.0f};
 GLfloat specularColor[] = {1.0f,1.0f,1.0f};
 GLfloat ambientColor[] = {0.1f,0.1f,0.1f};
 // weights for the diffusive, specular and ambient components
-GLfloat Kd = 0.5f;
-GLfloat Ks = 0.4f;
+GLfloat Kd = 0.8f;
+GLfloat Ks = 0.5f;
 GLfloat Ka = 0.1f;
 // shininess coefficient for Blinn-Phong shader
 GLfloat shininess = 25.0f;
@@ -132,8 +137,10 @@ GLfloat alpha = 0.2f;
 // Fresnel reflectance at 0 degree (Schlik's approximation)
 GLfloat F0 = 0.9f;
 
-// color to be passed as uniform to the shader of the plane
-GLfloat planeMaterial[] = {0.0f,0.5f,0.0f};
+GLfloat repeat = 1.0f;
+
+// Textures are ref by an ID
+vector<GLint> textureID;
 
 /////////////////// MAIN function ///////////////////////
 int main()
@@ -201,6 +208,9 @@ int main()
     Model bunnyModel("../../models/bunny_lp.obj");
     Model planeModel("../../models/plane.obj");
 
+    textureID.push_back(LoadTexture("../../textures/UV_Grid_Sm.png"));
+    textureID.push_back(LoadTexture("../../textures/SoilCracked.png"));
+
     // Projection matrix: FOV angle, aspect ratio, near and far planes
     glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);
 
@@ -256,7 +266,8 @@ int main()
         glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &index);
 
         // we determine the position in the Shader Program of the uniform variables
-        GLint matDiffuseLocation = glGetUniformLocation(illumination_shader.Program, "diffuseColor");
+        GLint textureLocation = glGetUniformLocation(illumination_shader.Program, "tex");
+        GLint repeatLocation = glGetUniformLocation(illumination_shader.Program, "repeat"); // num if repetition of the texture
         GLint matAmbientLocation = glGetUniformLocation(illumination_shader.Program, "ambientColor");
         GLint matSpecularLocation = glGetUniformLocation(illumination_shader.Program, "specularColor");
         GLint kaLocation = glGetUniformLocation(illumination_shader.Program, "Ka");
@@ -289,9 +300,10 @@ int main()
             glUniform3fv(glGetUniformLocation(illumination_shader.Program, ("lights[" + number + "]").c_str()), 1, glm::value_ptr(lightPositions[i]));
         }
 
-        // the only difference with the other objects is the diffuse color of the plane (green)
-        // we assign green here, we will change to red for the other objects
-        glUniform3fv(matDiffuseLocation, 1, planeMaterial);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, textureID[1]); // Soil texture
+        glUniform1i(textureLocation, 1);
+        glUniform1f(repeatLocation, 80.0f);
 
         // we create the transformation matrix
         // we reset to identity at each frame
@@ -313,13 +325,15 @@ int main()
         // we activate the subroutine using the index (this is where shaders swapping happens)
         glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &index);
 
-        // we assign red as diffuse color for the objects here
-        glUniform3fv(matDiffuseLocation, 1, diffuseColor);
-        // we set other parameters for the objects
         glUniform1f(ksLocation, Ka);
         glUniform1f(ksLocation, Kd);
         glUniform1f(ksLocation, Ks);
 
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, textureID[0]); // Soil texture
+        glUniform1i(textureLocation, 0);
+        glUniform1f(repeatLocation, repeat);        // we set other parameters for the objects
+        
         // SPHERE
         /*
           we create the transformation matrix
@@ -537,4 +551,43 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
       // we pass the offset to the Camera class instance in order to update the rendering
       camera.ProcessMouseMovement(xoffset, yoffset);
 
+}
+
+GLint LoadTexture(const char* path)
+{
+    GLuint textureImage;
+
+    int w, h, channels;
+    unsigned char* image;
+
+    image = stbi_load(path, &w, &h, &channels, STBI_rgb);
+
+    if(image == nullptr){
+        std::cout << "Failed to load texture" << std::endl;
+    }
+
+    glGenTextures(1, &textureImage); // assign id to the texture
+    glBindTexture(GL_TEXTURE_2D, textureImage);
+
+    if(channels == 3)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, image);   // MipMap level
+    else if(channels == 4)  // If the image has an Alpha channel
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);   // MipMap level
+
+    // If we dont have MipMaps, opengl will generate them
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    // (u, v) => in OpenGL (s, t)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);   // Repeat the texture outside 0 and 1
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);   // Repeat the texture outside 0 and 1
+
+    // For magnification and minification problem: linear filtering
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); 
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST_MIPMAP_LINEAR); 
+
+    // Cleanup
+    stbi_image_free(image);
+    glBindTexture(GL_TEXTURE_2D, 0);    // Reset OpenGL state
+
+    return textureImage;
 }

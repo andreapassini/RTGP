@@ -28,8 +28,6 @@ public:
 
 		glm::vec3 correctionVector = p1_to_p2 * delta; // The offset vector that could moves p1 into a distance of rest_distance to p2
 		float correctionRation = 0.5f;
-		if(!p1->movable || !p2->movable)
-			correctionRation = 1.0f; // Lets make it half that length, so that we can move BOTH p1 and p2.
 		glm::vec3 correctionVectorHalf = correctionVector * correctionRation * K; // Lets make it half that length, so that we can move BOTH p1 and p2.
 		p1->addForce(correctionVectorHalf); // correctionVectorHalf is pointing from p1 to p2, so the length should move p1 half the length needed to satisfy the constraint.
 		p2->addForce(-correctionVectorHalf); // we must move p2 the negative direction of correctionVectorHalf since it points from p2 to p1, and not p1 to p2.	
@@ -45,8 +43,6 @@ public:
 
 		glm::vec3 correctionVector = p1_to_p2 * delta; // The offset vector that could moves p1 into a distance of rest_distance to p2
 		float correctionRation = 0.5f;
-		if(!p1->movable || !p2->movable)
-			correctionRation = 1.0f; // Lets make it half that length, so that we can move BOTH p1 and p2.
 
 		glm::vec3 correctionVectorHalf = correctionVector * correctionRation * K; // Lets make it half that length, so that we can move BOTH p1 and p2.
 		

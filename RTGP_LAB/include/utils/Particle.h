@@ -5,8 +5,8 @@
 /* Some physics constants */
 #define DAMPING 0.01f // how much to damp the cloth simulation each frame
 #define TIME_STEPSIZE2 0.5f*0.5f // how large time step each particle takes each frame
-#define CONSTRAINT_ITERATIONS 15 // how many iterations of constraint satisfaction each frame (more is rigid, less is soft)
-#define K 3.0f
+#define CONSTRAINT_ITERATIONS 1 // how many iterations of constraint satisfaction each frame (more is rigid, less is soft)
+#define K 1.15f
 
 /* The particle class represents a particle of mass that can move around in 3D space*/
 class Particle
@@ -21,7 +21,7 @@ public:
 	glm::vec3 old_pos; // the position of the particle in the previous time step, used as part of the verlet numerical integration scheme
 	glm::vec3 force; // a vector representing the current force of the particle
 	
-	Particle(glm::vec3 pos) : pos(pos), old_pos(pos),force(glm::vec3(-1.0f)), mass(1.0f), movable(true), normal(glm::vec3(1.0f)){}
+	Particle(glm::vec3 pos) : pos(pos), old_pos(pos),force(glm::vec3(0.0f)), mass(1.0f), movable(true), normal(glm::vec3(0.0f)){}
 	Particle(){}
 
 	void addForce(glm::vec3 f)
@@ -34,21 +34,27 @@ public:
 	   Given the equation "force = mass * force" the next position is found through verlet integration*/
 	void PhysicStep(float deltaTime)
 	{
-		if(!movable)
+		if(!movable){
+			this->force = glm::vec3(0.0f);
 			return;
+		}
 
 		glm::vec3 now_pos = pos;
 		glm::vec3 accel = force/mass;
 		pos = now_pos + ((now_pos-old_pos) * (1.0f-DAMPING) + accel) * deltaTime;	// newPos = now_pos + speed * deltaTime
 		old_pos = now_pos;
-		resetForce();
+		this->force = glm::vec3(0.0f);
 	}
 
 	glm::vec3& getPos() {return pos;}
 
 	void resetForce() {this->force = glm::vec3(0.0f);}
 
-	void offsetPos(const glm::vec3 v) { if(movable) pos += v;}
+	void offsetPos(glm::vec3 v) 
+	{
+		if(movable) 
+		 	pos += v;
+	}
 
 	void makeUnmovable() {movable = false;}
 

@@ -84,7 +84,7 @@ void SetupShader(int shader_program);
 void PrintCurrentShader(int subroutine);
 
 // load the 6 images from disk and create an OpenGL cubemap
-GLint LoadTextureCube(string path);
+GLint LoadTextureCube(string path); // Passing the folder since the 6 images of the cubemap are saved as separate image
 
 // we initialize an array of booleans for each keyboard key
 bool keys[1024];
@@ -108,13 +108,15 @@ GLboolean spinning = GL_TRUE;
 // boolean to activate/deactivate wireframe rendering
 GLboolean wireframe = GL_FALSE;
 
-// we create a camera. We pass the initial position as a parameter to the constructor. The last boolean tells if we want a camera "anchored" to the ground
+// we create a camera. We pass the initial position as a paramenter to the constructor. The last boolean tells if we want a camera "anchored" to the ground
 Camera camera(glm::vec3(0.0f, 0.0f, 7.0f), GL_FALSE);
 
 // Uniforms to pass to shaders
-// position of a point-light
+// position of a pointlight
 glm::vec3 lightPos0 = glm::vec3(5.0f, 10.0f, 10.0f);
 //GLfloat lightColor[] = {1.0f,1.0f,1.0f};
+
+GLfloat Eta = 1.0f/1.52f;   // reflection between air(1.0) and glass(1.52)
 
 // diffusive, specular and ambient components
 GLfloat diffuseColor[] = {1.0f,0.0f,0.0f};
@@ -128,9 +130,8 @@ GLfloat Ka = 0.1f;
 GLfloat shininess = 25.0f;
 
 // roughness index for GGX shader
-GLfloat alpha = 0.2f;
+GLfloat mFresnelPower = 5.0f;
 // Fresnel reflectance at 0 degree (Schlik's approximation)
-GLfloat F0 = 0.9f;
 
 // texture unit for the cube map
 GLuint textureCube;
@@ -189,6 +190,7 @@ int main()
     //the "clear" color for the frame buffer
     glClearColor(0.26f, 0.46f, 0.98f, 1.0f);
 
+    Shader skybox_shader = Shader("skybox.vert", "skybox.frag"); // To show the skybox that the model is reflecting
     // we create the Shader Program used for objects (which presents different subroutines we can switch)
     Shader illumination_shader = Shader("09_illumination_models.vert", "10_illumination_models.frag");
     // we parse the Shader Program to search for the number and names of the subroutines.
@@ -199,11 +201,13 @@ int main()
 
     // we load the model(s) (code of Model class is in include/utils/model.h)
     Model cubeModel("../../models/cube.obj");
-    Model bunnyModel("../../models/bunny_lp.obj");
+    Model bunnyModel("../../models/babyyoda.obj");
+
+    textureCube = LoadTextureCube("../../textures/cube/Maskonaive2/");
 
     // Projection matrix: FOV angle, aspect ratio, near and far planes
     glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);
-    // View matrix: the camera moves, so we just set to indentity now
+    // View matrix: the camera moves, so we just set to identity now
     glm::mat4 view = glm::mat4(1.0f);
 
     // Model and Normal transformation matrices for the objects in the scene: we set to identity
@@ -252,29 +256,22 @@ int main()
         glUniformMatrix4fv(glGetUniformLocation(illumination_shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(glGetUniformLocation(illumination_shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
 
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, textureCube);
+
         // we determine the position in the Shader Program of the uniform variables
         GLint pointLightLocation = glGetUniformLocation(illumination_shader.Program, "pointLightPosition");
-        GLint matDiffuseLocation = glGetUniformLocation(illumination_shader.Program, "diffuseColor");
-        GLint kdLocation = glGetUniformLocation(illumination_shader.Program, "Kd");
-        GLint matAmbientLocation = glGetUniformLocation(illumination_shader.Program, "ambientColor");
-        GLint matSpecularLocation = glGetUniformLocation(illumination_shader.Program, "specularColor");
-        GLint kaLocation = glGetUniformLocation(illumination_shader.Program, "Ka");
-        GLint ksLocation = glGetUniformLocation(illumination_shader.Program, "Ks");
-        GLint shineLocation = glGetUniformLocation(illumination_shader.Program, "shininess");
-        GLint alphaLocation = glGetUniformLocation(illumination_shader.Program, "alpha");
-        GLint f0Location = glGetUniformLocation(illumination_shader.Program, "F0");
+        GLint textureLocation = glGetUniformLocation(illumination_shader.Program, "tCube");
+        GLint cameraLocation = glGetUniformLocation(illumination_shader.Program, "cameraPosition");
+        GLint etaLocation = glGetUniformLocation(illumination_shader.Program, "Eta");
+        GLint powerLocation = glGetUniformLocation(illumination_shader.Program, "mFresnelPower");
 
         // we assign the value to the uniform variables
-         glUniform3fv(pointLightLocation, 1, glm::value_ptr(lightPos0));
-        glUniform1f(kdLocation, Kd);
-        glUniform3fv(matDiffuseLocation, 1, diffuseColor);
-        glUniform3fv(matAmbientLocation, 1, ambientColor);
-        glUniform3fv(matSpecularLocation, 1, specularColor);
-        glUniform1f(kaLocation, Ka);
-        glUniform1f(ksLocation, Ks);
-        glUniform1f(shineLocation, shininess);
-        glUniform1f(alphaLocation, alpha);
-        glUniform1f(f0Location, F0);
+        glUniform3fv(pointLightLocation, 1, glm::value_ptr(lightPos0));
+        glUniform1i(textureLocation, 0);
+        glUniform3fv(cameraLocation, 1, glm::value_ptr(camera.Position));
+        glUniform1f(etaLocation, Eta);
+        glUniform1f(powerLocation, mFresnelPower);
 
         // we create the transformation matrix and the normals transformation matrix
         // we reset to identity at each frame
@@ -290,6 +287,29 @@ int main()
         // we render the bunny
         bunnyModel.Draw();
 
+        // Cubemap as skybox
+        // We want it to the background, so draw it as last
+        // we want the fragment of the object, in the buffer, to be first
+        // Depth test procedure
+        // Default is GL_LESS, if i.depth < buffer.depth
+        // We set the depth to max depth, and change GL_LESS_OR_EQUAL
+        glDepthFunc(GL_LEQUAL);
+        skybox_shader.Use();
+        glUniformMatrix4fv(glGetUniformLocation(skybox_shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
+        // To keep the skybox fix, we remove the translation;
+        view = glm::mat4(glm::mat3(view)); // The rotations removing the translations (last column)
+        glUniformMatrix4fv(glGetUniformLocation(skybox_shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
+        
+        glActiveTexture(GL_TEXTURE0);   // We need to rebind the texture since they are different shader programs
+        glBindTexture(GL_TEXTURE_CUBE_MAP, textureCube);
+
+        textureLocation = glGetUniformLocation(skybox_shader.Program, "tCube");
+        glUniform1i(textureLocation, 0);
+        cubeModel.Draw();   // Without passing model matrix, it will follow the world
+
+        // Reset to default after rendering the skybox
+        glDepthFunc(GL_LESS);
+
         // Swapping back and front buffers
         glfwSwapBuffers(window);
     }
@@ -297,6 +317,7 @@ int main()
     // when I exit from the graphics loop, it is because the application is closing
     // we delete the Shader Program
     illumination_shader.Delete();
+    skybox_shader.Delete();
     // we close and delete the created context
     glfwTerminate();
     return 0;
@@ -480,7 +501,7 @@ GLint LoadTextureCube(string path)
 {
     GLuint textureImage;
 
-    // we create and activate the OpenGL cubemap texture
+    // we create and activate the OpenGL cubemap texture, create an ID
     glGenTextures(1, &textureImage);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, textureImage);

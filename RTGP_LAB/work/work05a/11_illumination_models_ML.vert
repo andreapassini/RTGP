@@ -29,6 +29,7 @@ layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 normal;
 // the numbers used for the location in the layout qualifier are the positions of the vertex attribute
 // as defined in the Mesh class
+layout (location = 2) in vec2 UV;
 
 // vectors of lights positions (passed from the application)
 uniform vec3 lights[NR_LIGHTS];
@@ -53,9 +54,12 @@ out vec3 vNormal;
 // in the fragment shader, we need to calculate also the reflection vector for each fragment
 // to do this, we need to calculate in the vertex shader the view direction (in view coordinates) for each vertex, and to have it interpolated for each fragment by the rasterization stage
 out vec3 vViewPosition;
+out vec2 interp_UV;
 
 
 void main(){
+
+  interp_UV = UV;
 
   // vertex position in ModelView coordinate (see the last line for the application of projection)
   // when I need to use coordinates in camera coordinates, I need to split the application of model and view transformations from the projection transformations

@@ -38,9 +38,14 @@ in vec3 vNormal;
 // vector from fragment to camera (in view coordinate)
 in vec3 vViewPosition;
 
+in vec2 interp_UV;
+
+uniform float repeat;
+
+uniform sampler2D tex;  // Specific data-structure for textures
+
 // ambient, diffusive and specular components (passed from the application)
 uniform vec3 ambientColor;
-uniform vec3 diffuseColor;
 uniform vec3 specularColor;
 // weight of the components
 // in this case, we can pass separate values from the main application even if Ka+Kd+Ks>1. In more "realistic" situations, I have to set this sum = 1, or at least Kd+Ks = 1, by passing Kd as uniform, and then setting Ks = 1.0-Kd
@@ -58,7 +63,7 @@ uniform float F0; // fresnel reflectance at normal incidence
 ////////////////////////////////////////////////////////////////////
 
 // the "type" of the Subroutine
-subroutine vec3 ill_model();
+subroutine vec4 ill_model();
 
 // Subroutine Uniform (it is conceptually similar to a C pointer function)
 subroutine uniform ill_model Illumination_Model_ML;
@@ -68,10 +73,13 @@ subroutine uniform ill_model Illumination_Model_ML;
 //////////////////////////////////////////
 // a subroutine for the Blinn-Phong model for multiple lights
 subroutine(ill_model)
-vec3 BlinnPhong_ML() // this name is the one which is detected by the SetupShaders() function in the main application, and the one used to swap subroutines
+vec4 BlinnPhong_ML() // this name is the one which is detected by the SetupShaders() function in the main application, and the one used to swap subroutines
 {
+    vec2 repeated_UV = mod(interp_UV * repeat, 1.0f);
+    vec4 surfaceColor = texture(tex, repeated_UV);
+
     // ambient component can be calculated at the beginning
-    vec3 color = Ka*ambientColor;
+    vec4 color = vec4(Ka*ambientColor, 1.0f);
 
     // normalization of the per-fragment normal
     vec3 N = normalize(vNormal);
@@ -101,11 +109,11 @@ vec3 BlinnPhong_ML() // this name is the one which is detected by the SetupShade
 
             // We add diffusive and specular components to the final color
             // N.B. ): in this implementation, the sum of the components can be different than 1
-            color += vec3( Kd * lambertian * diffuseColor +
-                            Ks * specular * specularColor);
+            color += ( Kd * lambertian * surfaceColor +
+                            vec4(Ks * specular * specularColor, 1.0f));
         }
     }
-    return color;
+    return vec4(color, 1.0f);
 }
 //////////////////////////////////////////
 
@@ -127,13 +135,16 @@ float G1(float angle, float alpha)
 //////////////////////////////////////////
 // a subroutine for the GGX model for multiple lights
 subroutine(ill_model)
-vec3 GGX_ML() // this name is the one which is detected by the SetupShaders() function in the main application, and the one used to swap subroutines
-{
+vec4 GGX_ML() // this name is the one which is detected by the SetupShaders() function in the main application, and the one used to swap subroutines
+{    
+    vec2 repeated_UV = mod(interp_UV * repeat, 1.0f);
+    vec4 surfaceColor = texture(tex, repeated_UV);
+
     // normalization of the per-fragment normal
     vec3 N = normalize(vNormal);
 
     // diffusive (Lambert) reflection component
-    vec3 lambert = (Kd*diffuseColor)/PI;
+    vec3 lambert = (Kd*surfaceColor.rgb)/PI;
 
     // we initialize the final color
     vec3 color = vec3(0.0);
@@ -192,7 +203,7 @@ vec3 GGX_ML() // this name is the one which is detected by the SetupShaders() fu
             color += (lambert + specular)*NdotL;
         }
     }
-    return color;
+    return vec4(color, 1.0f);
 }
 //////////////////////////////////////////
 
@@ -201,7 +212,5 @@ void main(void)
 {
     // we call the pointer function Illumination_Model_ML():
     // the subroutine selected in the main application will be called and executed
-  	vec3 color = Illumination_Model_ML();
-
-    colorFrag = vec4(color, 1.0);
+    colorFrag = Illumination_Model_ML();
 }
