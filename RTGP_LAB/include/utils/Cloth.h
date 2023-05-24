@@ -317,7 +317,7 @@ public:
 		{
 			for(constraint = constraints.begin(); constraint != constraints.end(); constraint++ )
 			{
-				constraint->satisfyConstraint_Physics(); // satisfy constraint.
+				constraint->satisfyConstraint(); // satisfy constraint.
 			}
 		}
 
