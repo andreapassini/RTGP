@@ -179,7 +179,7 @@ int main()
 
     bool once = true;
     unsigned int prints = 0;
-    Cloth cloth(8.0f, 0.25f, startingPosition);
+    Cloth cloth(10.0f, 0.25f, startingPosition);
     cloth.PrintParticles(prints);
     Transform clothTransform(view);
 

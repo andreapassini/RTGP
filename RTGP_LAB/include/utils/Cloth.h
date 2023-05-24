@@ -205,30 +205,38 @@ public:
 		{
 			for(int y=0; y < dim; y++)
 			{
+				// To keep the row-major order even in the grid displayed
+				/*
+				(x, y)
+					y=0	y=1
+				x=0	0,0	0,1	0,2	0,3
+				x=1	1,0	1,1	1,2	1,3
+					......
+				*/
 				glm::vec3 pos = glm::vec3(
-								topLeftPosition.x + (x * particleDistance),
-								topLeftPosition.y - (y * particleDistance),
+								topLeftPosition.y + (y * particleDistance),
+								topLeftPosition.x - (x * particleDistance),
 								0);
 				particles[(x*dim) + y] = Particle(pos); // Linearization of the index, row = X, col = Y and row dimension = dim
 			}
 		}
 
 		// Connecting immediate neighbor particles with constraints (distance 1)
-		for(int x=0; x < dim; x++)
+		for(int x=0; x < dim -1; x++)
 		{
-			for(int y=0; y < dim; y++)
+			for(int y=0; y < dim - 1; y++)
 			{
 				if (x +1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x + 1) * dim ) + y]);
-				if (x -1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x - 1) * dim ) + y]);
+				if (x -1 < dim && x - 1 >= 0) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x - 1) * dim ) + y]);
 				if (y +1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[(x * dim ) + (y +1)]);
-				if (y -1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[(x * dim ) + (y - 1)]);
+				if (y -1 < dim && y - 1 >= 0) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[(x * dim ) + (y - 1)]);
 			}
 		}
 
 		// Constraints on the 4 diagonals
-		for(int x=0; x<dim; x++)
+		for(int x=0; x < dim - 1; x++)
 		{
-			for(int y=0; y<dim; y++)
+			for(int y=0; y < dim - 1; y++)
 			{
 				if (x +1 < dim && y + 1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x + 1) * dim ) + (y + 1)]);
 				if (x +1 < dim && y - 1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x + 1) * dim ) + (y - 1)]);
@@ -238,10 +246,10 @@ public:
 		}
 
 		// making the upper left most three and right most three particles unmovable
-		for(int i=0 ; i<2 ; i++)
+		for(int i=0 ; i<4 ; i++)
 		{
-			this->particles[(i * dim ) + 0].makeUnmovable(); 
-			this->particles[((dim - 1 -i) * dim ) + 0].makeUnmovable();
+			this->particles[0 + i ].makeUnmovable(); 
+			this->particles[0 + (dim - 1 -i)].makeUnmovable();
 		}
 
 		SetUp();
@@ -312,11 +320,11 @@ public:
 	void PhysicsSteps(float deltaTime)
 	{
 		std::vector<Constraint>::iterator constraint;
-		for(int i=0; i < CONSTRAINT_ITERATIONS; i++) // iterate over all constraints several times
+		for(size_t i=0; i < CONSTRAINT_ITERATIONS; i++) // iterate over all constraints several times
 		{
 			for(constraint = constraints.begin(); constraint != constraints.end(); constraint++ )
 			{
-				constraint->satisfyConstraint_Physics(); // satisfy constraint.
+				constraint->satisfyConstraint(); // satisfy constraint.
 			}
 		}
 
@@ -330,7 +338,7 @@ public:
 		UpdateBuffers();
 	}
 	void AddGravityForce(){
-		glm::vec3 gravityVec = glm::vec3(0.0f, 1.0f * (-0.5f), 0.0f);
+		glm::vec3 gravityVec = glm::vec3(0.0f, 1.0f * (-9.8f), 0.0f);
 
 		AddForceToAllParticles(gravityVec);
 	}
