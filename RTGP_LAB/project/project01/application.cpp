@@ -302,10 +302,7 @@ int main()
         glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(cubeTransform.normalMatrix));
         cubeModel.Draw();
         
-        if(!spinning){
-            //cloth.AddForceToAllParticles(glm::vec3(0.0f, 5.0f, 0.0f));
-            cloth.AddGravityForce();
-        }
+        //cloth.AddGravityForce();
         //cloth.AddRandomIntensityForce(glm::vec3(1.0f, 0.0f, 0.0f), 0.5f, 1.5f);
         auto current_time = Time::now();
         fsec deltaTime = (current_time - start_time);
@@ -321,6 +318,7 @@ int main()
         } else if(spinning && !once){
            once = true; 
         }
+
         cloth.PhysicsSteps(deltaTime.count());
         //CLOTH
         clothTransform.Transformation(

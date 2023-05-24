@@ -209,39 +209,39 @@ public:
 								topLeftPosition.x + (x * particleDistance),
 								topLeftPosition.y - (y * particleDistance),
 								0);
-				particles[x*dim + y] = Particle(pos); // Linearization of the index, row = X, col = Y and row dimension = dim
+				particles[(x*dim) + y] = Particle(pos); // Linearization of the index, row = X, col = Y and row dimension = dim
 			}
 		}
 
 		// Connecting immediate neighbor particles with constraints (distance 1)
-		for(int x=0; x < dim; x+=2)
+		for(int x=0; x < dim; x++)
 		{
-			for(int y=0; y < dim; y+=2)
+			for(int y=0; y < dim; y++)
 			{
-				if (x +1 < dim) makeConstraint(getParticle(x,y),getParticle(x+1, y));
-				if (x -1 < dim) makeConstraint(getParticle(x,y),getParticle(x-1, y));
-				if (y +1 < dim) makeConstraint(getParticle(x,y),getParticle(x, y+1));
-				if (y -1 < dim) makeConstraint(getParticle(x,y),getParticle(x, y-1));
+				if (x +1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x + 1) * dim ) + y]);
+				if (x -1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x - 1) * dim ) + y]);
+				if (y +1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[(x * dim ) + (y +1)]);
+				if (y -1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[(x * dim ) + (y - 1)]);
 			}
 		}
 
 		// Constraints on the 4 diagonals
-		for(int x=0; x<dim; x+=2)
+		for(int x=0; x<dim; x++)
 		{
-			for(int y=0; y<dim; y+=2)
+			for(int y=0; y<dim; y++)
 			{
-				if (x +1 < dim && y + 1 < dim) makeConstraint(getParticle(x,y),getParticle(x+1 ,y+1));
-				if (x +1 < dim && y - 1 < dim) makeConstraint(getParticle(x,y),getParticle(x+1, y-1));
-				if (x -1 < dim && y + 1 < dim) makeConstraint(getParticle(x,y),getParticle(x-1, y+1));
-				if (x -1 < dim && y - 1 < dim) makeConstraint(getParticle(x,y),getParticle(x-1, y-1));			
+				if (x +1 < dim && y + 1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x + 1) * dim ) + (y + 1)]);
+				if (x +1 < dim && y - 1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x + 1) * dim ) + (y - 1)]);
+				if (x -1 < dim && y + 1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x + 1) * dim ) + (y + 1)]);
+				if (x -1 < dim && y - 1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x - 1) * dim ) + (y - 1)]);			
 			}
 		}
 
 		// making the upper left most three and right most three particles unmovable
 		for(int i=0 ; i<2 ; i++)
 		{
-			getParticle(0+i ,0)->makeUnmovable(); 
-			getParticle(dim-1-i ,0)->makeUnmovable();
+			this->particles[(i * dim ) + 0].makeUnmovable(); 
+			this->particles[((dim - 1 -i) * dim ) + 0].makeUnmovable();
 		}
 
 		SetUp();
@@ -312,12 +312,11 @@ public:
 	void PhysicsSteps(float deltaTime)
 	{
 		std::vector<Constraint>::iterator constraint;
-		std::cout << " P " << std::endl;
 		for(int i=0; i < CONSTRAINT_ITERATIONS; i++) // iterate over all constraints several times
 		{
 			for(constraint = constraints.begin(); constraint != constraints.end(); constraint++ )
 			{
-				constraint->satisfyConstraint(); // satisfy constraint.
+				constraint->satisfyConstraint_Physics(); // satisfy constraint.
 			}
 		}
 
