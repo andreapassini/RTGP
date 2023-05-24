@@ -28,11 +28,6 @@ private:
 	Particle* getParticle(int x, int y) {return &particles[x*dim + y];}
 	void makeConstraint(Particle *p1, Particle *p2) {constraints.push_back(Constraint(p1,p2));}
 
-
-	/* A private method used by drawShaded() and addWindForcesForTriangle() to retrieve the  
-	normal vector of the triangle defined by the position of the particles p1, p2, and p3.
-	The magnitude of the normal vector is equal to the area of the parallelogram defined by p1, p2 and p3
-	*/
 	glm::vec3 CalculateNormalSquare(float x, float y)
 	{
 		if(x + 1 >= dim &&
@@ -192,8 +187,11 @@ private:
             glDeleteBuffers(1, &this->EBO);
         }
     }
+	
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 public:
 	std::vector<Particle> particles; // all particles that are part of this cloth
 
@@ -215,10 +213,10 @@ public:
 			}
 		}
 
-		// Connecting immediate neighbor particles with constraints (distance 1 and sqrt(2) in the grid)
-		for(int x=0; x < dim; x++)
+		// Connecting immediate neighbor particles with constraints (distance 1)
+		for(int x=0; x < dim; x+=2)
 		{
-			for(int y=0; y < dim; y++)
+			for(int y=0; y < dim; y+=2)
 			{
 				if (x +1 < dim) makeConstraint(getParticle(x,y),getParticle(x+1, y));
 				if (x -1 < dim) makeConstraint(getParticle(x,y),getParticle(x-1, y));
@@ -314,6 +312,7 @@ public:
 	void PhysicsSteps(float deltaTime)
 	{
 		std::vector<Constraint>::iterator constraint;
+		std::cout << " P " << std::endl;
 		for(int i=0; i < CONSTRAINT_ITERATIONS; i++) // iterate over all constraints several times
 		{
 			for(constraint = constraints.begin(); constraint != constraints.end(); constraint++ )
@@ -331,13 +330,11 @@ public:
 		UpdateNormals();
 		UpdateBuffers();
 	}
-
 	void AddGravityForce(){
 		glm::vec3 gravityVec = glm::vec3(0.0f, 1.0f * (-0.2f), 0.0f);
 
 		AddForceToAllParticles(gravityVec);
 	}
-
 	void AddRandomIntensityForce(glm::vec3 normalizedDirection, float min, float max)
 	{
 		std::vector<Particle>::iterator particle;
@@ -351,8 +348,6 @@ public:
 			particle->addForce(force); // add the forces to each particle
 		}
 	}
-
-	/* used to add gravity (or any other arbitrary vector) to all particles*/
 	void AddForceToAllParticles(const glm::vec3 forceVector)
 	{
 		std::vector<Particle>::iterator particle;
@@ -361,8 +356,6 @@ public:
 			particle->addForce(forceVector); // add the forces to each particle
 		}
 	}
-
-	/* used to add wind forces to all particles, is added for each triangle since the final force is proportional to the triangle area as seen from the wind direction*/
 	void windForce(const glm::vec3 direction)
 	{
 		for(int x = 0; x<dim-1; x++)
