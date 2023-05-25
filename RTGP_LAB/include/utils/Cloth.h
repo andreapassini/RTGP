@@ -222,7 +222,7 @@ public:
 		}
 
 		// Connecting immediate neighbor particles with constraints (distance 1)
-		for(int x=0; x < dim -1; x+s+)
+		for(int x=0; x < dim -1; x++)
 		{
 			for(int y=0; y < dim - 1; y++)
 			{
