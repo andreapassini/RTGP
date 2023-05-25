@@ -95,6 +95,7 @@ int SetupOpenGL();
 
 // we initialize an array of booleans for each keyboard key
 bool keys[1024];
+bool R_KEY = false;
 
 // we need to store the previous mouse position to calculate the offset with the current frame
 GLfloat lastX, lastY;
@@ -145,7 +146,6 @@ GLfloat speed = 5.0f;
 GLFWwindow* window;
 
 glm::vec3 startingPosition(0.0f, 3.0f, -3.0f);
-glm::vec3 spherePosition(3.0f, -2.0f, -2.5f);
 
 /////////////////// MAIN function ///////////////////////
 int main()
@@ -171,6 +171,7 @@ int main()
     Model cubeModel("../../models/cube.obj");
 
     // Model and Normal transformation matrices for the objects in the scene: we set to identity
+    glm::vec3 spherePosition(3.0f, -2.0f, -2.5f);
     Transform sphereTransform(view);
     positionZ = 0.8f;
     GLint directionZ = 1;
@@ -179,6 +180,7 @@ int main()
     Transform cubeTransform(view);
 
     bool once = true;
+    bool clothExist = true;
     unsigned int prints = 0;
     Cloth cloth(10.0f, 0.25f, startingPosition);
     cloth.PrintParticles(prints);
@@ -188,7 +190,6 @@ int main()
     // https://stackoverflow.com/questions/14391327/how-to-get-duration-as-int-millis-and-float-seconds-from-chrono
     typedef std::chrono::high_resolution_clock Time;
     typedef std::chrono::duration<float> fsec;
-
     auto start_time = Time::now();   
 
     // Rendering loop: this code is executed at each frame
@@ -227,6 +228,13 @@ int main()
                 directionZ *= -1;
 
             positionZ += directionZ * (deltaTime * movement_speed);
+        }
+
+        if(R_KEY)
+        {
+            cloth = Cloth(10.0f, 0.25f, startingPosition);
+            cloth.PrintParticles(prints);
+            clothTransform = Transform(view);
         }
 
         // We "install" the selected Shader Program as part of the current rendering process
@@ -433,6 +441,11 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         spinning=!spinning;
         movingOnX = !movingOnX;
         instantiate = !instantiate;
+    }
+
+    // if P is pressed, we start/stop the animated rotation of models
+    if(key == GLFW_KEY_R && action == GLFW_PRESS){
+        R_KEY = true;
     }
 
     // if L is pressed, we activate/deactivate wireframe rendering of models
