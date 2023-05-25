@@ -145,6 +145,7 @@ GLfloat speed = 5.0f;
 GLFWwindow* window;
 
 glm::vec3 startingPosition(0.0f, 3.0f, -3.0f);
+glm::vec3 spherePosition(3.0f, -2.0f, -2.5f);
 
 /////////////////// MAIN function ///////////////////////
 int main()
@@ -271,9 +272,9 @@ int main()
 
        //SPHERE
         sphereTransform.Transformation(
-            glm::vec3(0.8f, 0.8f, 0.8f),
-            orientationY, glm::vec3(0.0f, 1.0f, 0.0f),
-            glm::vec3( 0.0f, 0.0f, positionZ),
+            glm::vec3(1.0f, 1.0f, 1.0f),
+            0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
+            spherePosition,
             view);
         glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.modelMatrix));
         glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.normalMatrix));
@@ -285,23 +286,12 @@ int main()
             glm::vec3(10.0f, 1.0f, 10.0f),
             0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
             glm::vec3(0.0f, -2.0f, 0.0f),
-            view
-        );
+            view);
         glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(planeTransform.modelMatrix));
         glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(planeTransform.normalMatrix));
-        planeModel.Draw();
-
-        //CUBE
-        cubeTransform.Transformation(
-            glm::vec3(0.25f, 0.25f, 0.25f),
-            orientationY, glm::vec3(0.0f, 1.0f, 0.0f),
-            startingPosition,
-            view
-        );
-        glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(cubeTransform.modelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(cubeTransform.normalMatrix));
-        cubeModel.Draw();
+        //planeModel.Draw();
         
+
         cloth.AddGravityForce();
         //cloth.AddRandomIntensityForce(glm::vec3(1.0f, 0.0f, 0.0f), 0.5f, 1.5f);
         auto current_time = Time::now();
@@ -319,7 +309,7 @@ int main()
            once = true; 
         }
 
-        cloth.PhysicsSteps(deltaTime.count());
+        cloth.PhysicsSteps(deltaTime.count(), spherePosition, 1.0f);
         //CLOTH
         clothTransform.Transformation(
             glm::vec3(1.0f, 1.0f, 1.0f),

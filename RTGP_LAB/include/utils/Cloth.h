@@ -216,7 +216,7 @@ public:
 				glm::vec3 pos = glm::vec3(
 								topLeftPosition.y + (y * particleDistance),
 								topLeftPosition.x - (x * particleDistance),
-								0);
+								0.0f);
 				particles[(x*dim) + y] = Particle(pos); // Linearization of the index, row = X, col = Y and row dimension = dim
 			}
 		}
@@ -248,8 +248,8 @@ public:
 		// making the upper left most three and right most three particles unmovable
 		for(int i=0 ; i<4 ; i++)
 		{
-			this->particles[0 + i ].makeUnmovable(); 
-			this->particles[0 + (dim - 1 -i)].makeUnmovable();
+			//this->particles[0 + i ].makeUnmovable(); 
+			//this->particles[0 + (dim - 1 -i)].makeUnmovable();
 		}
 
 		SetUp();
@@ -317,14 +317,14 @@ public:
 	/* this is an important methods where the time is progressed one time step for the entire cloth.
 	This includes calling satisfyConstraint_Physics() for every constraint, and calling timeStep() for all particles
 	*/
-	void PhysicsSteps(float deltaTime)
+	void PhysicsSteps(float deltaTime, glm::vec3 sphereCenter, float radius)
 	{
 		std::vector<Constraint>::iterator constraint;
 		for(size_t i=0; i < CONSTRAINT_ITERATIONS; i++) // iterate over all constraints several times
 		{
 			for(constraint = constraints.begin(); constraint != constraints.end(); constraint++ )
 			{
-				constraint->satisfyConstraint(); // satisfy constraint.
+				constraint->satisfyConstraint_Physics(); // satisfy constraint.
 			}
 		}
 
@@ -332,6 +332,11 @@ public:
 		for(particle = particles.begin(); particle != particles.end(); particle++)
 		{
 			particle->PhysicStep(deltaTime); // calculate the position of each particle at the next time step.
+		}
+
+		for(particle = particles.begin(); particle != particles.end(); particle++)
+		{
+			particle->BallCollision(sphereCenter, radius); // calculate the position of each particle at the next time step.
 		}
 
 		UpdateNormals();
