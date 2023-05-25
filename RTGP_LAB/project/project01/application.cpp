@@ -122,7 +122,7 @@ GLboolean instantiate = GL_FALSE;
 GLboolean wireframe = GL_FALSE;
 
 // we create a camera. We pass the initial position as a parameter to the constructor. The last boolean tells if we want a camera "anchored" to the ground
-Camera camera(glm::vec3(0.0f, 0.0f, 7.0f), GL_FALSE);
+Camera camera(glm::vec3(0.0f, -2.0f, 7.0f), GL_FALSE);
 
 // enum data structure to manage indices for shaders swapping
 enum available_ShaderPrograms{ FULLCOLOR, FLATTEN, NORMAL2COLOR, WAVE, UV2COLOR };
@@ -145,7 +145,7 @@ GLfloat speed = 5.0f;
 // OpenGL Setup
 GLFWwindow* window;
 
-glm::vec3 startingPosition(0.0f, 3.0f, -3.0f);
+glm::vec3 startingPosition(0.0f, 0.0f, 0.0f);
 
 /////////////////// MAIN function ///////////////////////
 int main()
@@ -158,9 +158,6 @@ int main()
     // we print on console the name of the first shader used
     PrintCurrentShader(current_program);
 
-    // we set projection and view matrices
-    // N.B.) in this case, the camera is fixed -> we set it up outside the rendering loop
-    // Projection matrix: FOV angle, aspect ratio, near and far planes
     glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);
     // View matrix (=camera): position, view direction, camera "up" vector
     glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 7.0f), glm::vec3(0.0f, 0.0f, -7.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -171,7 +168,7 @@ int main()
     Model cubeModel("../../models/cube.obj");
 
     // Model and Normal transformation matrices for the objects in the scene: we set to identity
-    glm::vec3 spherePosition(3.0f, -2.0f, -2.5f);
+    glm::vec3 spherePosition(1.0f, -4.0f, 0.0f);
     Transform sphereTransform(view);
     positionZ = 0.8f;
     GLint directionZ = 1;
@@ -183,7 +180,6 @@ int main()
     bool clothExist = true;
     unsigned int prints = 0;
     Cloth cloth(10.0f, 0.25f, startingPosition);
-    cloth.PrintParticles(prints);
     Transform clothTransform(view);
 
     // DELTA TIME using std::chrono
@@ -230,16 +226,8 @@ int main()
             positionZ += directionZ * (deltaTime * movement_speed);
         }
 
-        if(R_KEY)
-        {
-            cloth = Cloth(10.0f, 0.25f, startingPosition);
-            cloth.PrintParticles(prints);
-            clothTransform = Transform(view);
-        }
-
         // We "install" the selected Shader Program as part of the current rendering process
         shaders[current_program].Use();
-
         // uniforms are passed to the corresponding shader
         if (current_program == FULLCOLOR || current_program == FLATTEN)
         {
@@ -278,26 +266,6 @@ int main()
 
         */
 
-       //SPHERE
-        sphereTransform.Transformation(
-            glm::vec3(1.0f, 1.0f, 1.0f),
-            0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
-            spherePosition,
-            view);
-        glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.modelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.normalMatrix));
-        sphereModel.Draw();
-        
-
-        // PLANE
-        planeTransform.Transformation(
-            glm::vec3(10.0f, 1.0f, 10.0f),
-            0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
-            glm::vec3(0.0f, -2.0f, 0.0f),
-            view);
-        glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(planeTransform.modelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(planeTransform.normalMatrix));
-        //planeModel.Draw();
         
 
         cloth.AddGravityForce();
@@ -307,17 +275,18 @@ int main()
         start_time = Time::now();
         //cloth.windForce(glm::vec3(0.3f, 0.0f, 0.0f));
 
-        if(!spinning && once)
-        {
-            prints++;
-            cloth.PrintParticles(prints);
-            std::cout << "deltaTime in sec" << deltaTime.count() << std::endl;
-            once = false;
-        } else if(spinning && !once){
-           once = true; 
-        }
+        // if(!spinning && once)
+        // {
+        //     prints++;
+        //     cloth.PrintParticles(prints);
+        //     std::cout << "deltaTime in sec" << deltaTime.count() << std::endl;
+        //     once = false;
+        // } else if(spinning && !once){
+        //    once = true; 
+        // }
 
-        cloth.PhysicsSteps(deltaTime.count(), spherePosition, 1.0f);
+        //glm::vec3 spherePosition_World = glm::vec3(sphereTransform.modelMatrix * glm::vec4(spherePosition, 1.0f));
+        cloth.PhysicsSteps(deltaTime.count());
         //CLOTH
         clothTransform.Transformation(
             glm::vec3(1.0f, 1.0f, 1.0f),
@@ -329,6 +298,25 @@ int main()
         glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.normalMatrix));
         cloth.Draw();
 
+       //SPHERE
+        sphereTransform.Transformation(
+            glm::vec3(1.0f, 1.0f, 1.0f),
+            0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
+            spherePosition,
+            view);
+        glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.modelMatrix));
+        glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.normalMatrix));
+        sphereModel.Draw();
+        
+        // PLANE
+        planeTransform.Transformation(
+            glm::vec3(10.0f, 1.0f, 10.0f),
+            0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
+            glm::vec3(0.0f, -3.0f, 0.0f),
+            view);
+        glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(planeTransform.modelMatrix));
+        glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(planeTransform.normalMatrix));
+        //planeModel.Draw();
 
         // Swapping back and front buffers
         glfwSwapBuffers(window);

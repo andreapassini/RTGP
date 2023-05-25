@@ -26,7 +26,7 @@ public:
 
 		float delta = current_distance - rest_distance;
 
-		glm::vec3 correctionVector = p1_to_p2 * delta * 0.5f; // The offset vector that could moves p1 into a distance of rest_distance to p2
+		glm::vec3 correctionVector = p1_to_p2 * delta * K; // The offset vector that could moves p1 into a distance of rest_distance to p2
 		this->p1->addForce(correctionVector); // correctionVectorHalf is pointing from p1 to p2, so the length should move p1 half the length needed to satisfy the constraint.
 		this->p2->addForce(-correctionVector); // we must move p2 the negative direction of correctionVectorHalf since it points from p2 to p1, and not p1 to p2.	
 	}
@@ -39,7 +39,7 @@ public:
 
 		float delta = current_distance - rest_distance;
 
-		glm::vec3 correctionVector = p1_to_p2 * delta * 0.5f; // The offset vector that could moves p1 into a distance of rest_distance to p2
+		glm::vec3 correctionVector = p1_to_p2 * delta * K; // The offset vector that could moves p1 into a distance of rest_distance to p2
 		
 		this->p1->offsetPos(correctionVector); // correctionVectorHalf is pointing from p1 to p2, so the length should move p1 half the length needed to satisfy the constraint.
 		this->p2->offsetPos(-correctionVector); // we must move p2 the negative direction of correctionVectorHalf since it points from p2 to p1, and not p1 to p2.	

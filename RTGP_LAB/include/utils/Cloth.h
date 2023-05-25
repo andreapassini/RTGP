@@ -101,7 +101,7 @@ private:
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, this->indices.size() * sizeof(GLuint), &this->indices[0], GL_DYNAMIC_DRAW);
 		// we copy data in the VBO - we must set the data dimension, and the pointer to the structure containing the data
         glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
-        glBufferData(GL_ARRAY_BUFFER, this->dim * this->dim * sizeof(Particle), &this->particles[0], GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, this->particles.size() * sizeof(Particle), &this->particles[0], GL_DYNAMIC_DRAW);
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, pos));
 		glEnableVertexAttribArray(1);
@@ -222,7 +222,7 @@ public:
 		}
 
 		// Connecting immediate neighbor particles with constraints (distance 1)
-		for(int x=0; x < dim -1; x++)
+		for(int x=0; x < dim -1; x+s+)
 		{
 			for(int y=0; y < dim - 1; y++)
 			{
@@ -248,8 +248,8 @@ public:
 		// making the upper left most three and right most three particles unmovable
 		for(int i=0 ; i<4 ; i++)
 		{
-			//this->particles[0 + i ].makeUnmovable(); 
-			//this->particles[0 + (dim - 1 -i)].makeUnmovable();
+			this->particles[0 + i ].makeUnmovable(); 
+			this->particles[0 + (dim - 1 -i)].makeUnmovable();
 		}
 
 		SetUp();
@@ -317,14 +317,14 @@ public:
 	/* this is an important methods where the time is progressed one time step for the entire cloth.
 	This includes calling satisfyConstraint_Physics() for every constraint, and calling timeStep() for all particles
 	*/
-	void PhysicsSteps(float deltaTime, glm::vec3 sphereCenter, float radius)
+	void PhysicsSteps(float deltaTime)
 	{
 		std::vector<Constraint>::iterator constraint;
 		for(size_t i=0; i < CONSTRAINT_ITERATIONS; i++) // iterate over all constraints several times
 		{
 			for(constraint = constraints.begin(); constraint != constraints.end(); constraint++ )
 			{
-				constraint->satisfyConstraint_Physics(); // satisfy constraint.
+				constraint->satisfyConstraint(); // satisfy constraint.
 			}
 		}
 
@@ -336,7 +336,7 @@ public:
 
 		for(particle = particles.begin(); particle != particles.end(); particle++)
 		{
-			particle->BallCollision(sphereCenter, radius); // calculate the position of each particle at the next time step.
+			//particle->BallCollision(sphereCenter, radius); // calculate the position of each particle at the next time step.
 		}
 
 		UpdateNormals();
