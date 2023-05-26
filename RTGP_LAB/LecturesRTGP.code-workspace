@@ -129,7 +129,19 @@
 			"xlocbuf": "cpp",
 			"xlocmes": "cpp",
 			"xlocmon": "cpp",
-			"xloctime": "cpp"
+			"xloctime": "cpp",
+			"array": "cpp",
+			"condition_variable": "cpp",
+			"cstdarg": "cpp",
+			"cwctype": "cpp",
+			"deque": "cpp",
+			"numbers": "cpp",
+			"numeric": "cpp",
+			"queue": "cpp",
+			"random": "cpp",
+			"ranges": "cpp",
+			"semaphore": "cpp",
+			"span": "cpp"
 		}
 	}
 }

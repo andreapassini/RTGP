@@ -6,7 +6,7 @@
 #define DAMPING 0.01f // how much to damp the cloth simulation each frame
 #define TIME_STEPSIZE2 0.5f*0.5f // how large time step each particle takes each frame
 #define CONSTRAINT_ITERATIONS 15 // how many iterations of constraint satisfaction each frame (more is rigid, less is soft)
-#define K 0.30f
+#define K 2.5f
 
 /* The particle class represents a particle of mass that can move around in 3D space*/
 class Particle
@@ -41,7 +41,7 @@ public:
 
 		glm::vec3 now_pos = pos;
 		glm::vec3 accel = force/mass;
-		pos = now_pos + ((now_pos-old_pos) * (1.0f-DAMPING) + accel) * deltaTime;	// newPos = now_pos + speed * deltaTime
+		pos = now_pos + ((now_pos-old_pos) * (1.0f-DAMPING) + accel) * deltaTime * TIME_STEPSIZE2;	// newPos = now_pos + speed * deltaTime
 		old_pos = now_pos;
 		this->force = glm::vec3(0.0f);
 	}
@@ -65,7 +65,7 @@ public:
 
 	glm::vec3& getNormal() { return normal;} // notice, the normal is not unit length
 
-	void resetNormal() {normal = glm::vec3(0.0f);}
+	void resetNormal() {this->normal = glm::vec3(0.0f);}
 
 	void BallCollision(const glm::vec3 center,const float radius){
 		glm::vec3 v = this->getPos()-center;

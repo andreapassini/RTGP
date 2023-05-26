@@ -8,6 +8,7 @@
                 "D:\\ANDREA\\UNI\\MAGISTRALE\\ANNO_2\\II_Semestre\\REAL-TIME_GP\\RTGP\\RTGP_LAB\\include",
                 "D:\\ANDREA\\UNI\\MAGISTRALE\\ANNO_2\\II_Semestre\\REAL-TIME_GP\\RTGP\\RTGP_LAB\\include\\glm",
                 "${workspaceFolder}",
+                "${workspaceFolder}",
                 "${workspaceFolder}"
             ],
             "defines": [

@@ -26,7 +26,7 @@ private:
 	GLuint VBO;
     std::vector<GLuint> indices;
 
-	Particle* getParticle(int x, int y) {return &particles[x*dim + y];}
+	Particle* getParticle(int x, int y, int rowDim) {return &particles[x*rowDim + y];}
 	void makeConstraint(Particle *p1, Particle *p2, float rest_distance) {
 		constraints.push_back(Constraint(p1,p2, rest_distance));
 	}
@@ -54,26 +54,26 @@ private:
 		
 		*/
 
-		glm::vec3 pos1 = getParticle( x     , y		)->pos;
-		glm::vec3 pos2 = getParticle((x + 1), y		)->pos;
-		glm::vec3 pos3 = getParticle( x		, (y + 1))->pos;
-		glm::vec3 pos4 = getParticle((x + 1), (y + 1))->pos;
+		glm::vec3 pos1 = getParticle( x     , y		 , dim)->pos;
+		glm::vec3 pos2 = getParticle( x		, (y + 1), dim)->pos;
+		glm::vec3 pos3 = getParticle((x + 1), y		 , dim)->pos;
+		glm::vec3 pos4 = getParticle((x + 1), (y + 1), dim)->pos;
 
 		/*
 		   ^
 			\
 			 \
 		*/
-		glm::vec3 diagonal1 = pos3-pos1;
+		glm::vec3 diagonal1 = pos1-pos4;
 		
 		/*
 			  ^				  
 			 /
 			/
 		*/
-		glm::vec3 diagonal2 = pos2-pos4;
+		glm::vec3 diagonal2 = pos2-pos3;
 
-		return glm::cross(diagonal1, diagonal2);
+		return glm::cross(diagonal2, diagonal1);
 	}
 	/* A private method used by drawShaded(), that draws a single triangle p1,p2,p3 with a color*/
 	void drawTriangle(Particle *p1, Particle *p2, Particle *p3, const glm::vec3 color)
@@ -101,7 +101,8 @@ private:
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->EBO);
 		// Create triangles from grid
 		MakeTriangleFromGrid();
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, this->indices.size() * sizeof(GLuint), &this->indices[0], GL_DYNAMIC_DRAW);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, this->indices.size() * sizeof(GLuint), this->indices.data(), GL_STATIC_DRAW);
+		UpdateNormals();
 		// we copy data in the VBO - we must set the data dimension, and the pointer to the structure containing the data
         glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
         glBufferData(GL_ARRAY_BUFFER, this->particles.size() * sizeof(Particle), &this->particles[0], GL_DYNAMIC_DRAW);
@@ -120,19 +121,13 @@ private:
 		{
 			for(int y=0; y < dim-1; y++)
 			{
-				glm::vec3 color(0,0,0);
-				if (x%2) // red and white color is interleaved according to which column number
-					color = glm::vec3(0.6f,0.2f,0.2f);
-				else
-					color = glm::vec3(1.0f,1.0f,1.0f);
+				indices.push_back((x)*dim +y);
+				indices.push_back((x)*dim +(y+1));
+				indices.push_back((x+1)*dim +(y));
 
-				indices.push_back(x*dim +y);
-				indices.push_back((x+1)*dim +y);
+				indices.push_back((x+1)*dim +(y));
+				indices.push_back((x)*dim +(y+1));
 				indices.push_back((x+1)*dim +(y+1));
-
-				indices.push_back(x*dim +y);
-				indices.push_back((x+1)*dim +(y+1));
-				indices.push_back(x*dim +(y+1));
 			}
 		}
 	}
@@ -150,10 +145,10 @@ private:
 			for(int y=0; y < dim-1; y++)
 			{
 				glm::vec3 normal = CalculateNormalSquare(x, y);
-				getParticle(x,y)->addToNormal(normal);
-				getParticle(x+1,y)->addToNormal(normal);
-				getParticle(x,y+1)->addToNormal(normal);
-				getParticle(x+1,y+1)->addToNormal(normal);
+				getParticle(x,   y,   dim)->addToNormal(normal);
+				getParticle(x+1, y,   dim)->addToNormal(normal);
+				getParticle(x,   y+1, dim)->addToNormal(normal);
+				getParticle(x+1, y+1, dim)->addToNormal(normal);
 			}
 		}
 
@@ -167,7 +162,7 @@ private:
 		// POSITION WORKING WITH THIS SECTION
 		glBindVertexArray(this->VAO);
 		glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
-        glBufferData(GL_ARRAY_BUFFER, this->dim * this->dim * sizeof(Particle), &this->particles[0], GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, this->dim * this->dim * sizeof(Particle), this->particles.data(), GL_DYNAMIC_DRAW);
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, pos));
 		glEnableVertexAttribArray(1);
@@ -198,7 +193,7 @@ private:
 public:
 	std::vector<Particle> particles; // all particles that are part of this cloth
 
-	Cloth(float dim, float particleDistance, glm::vec3 topLeftPosition, Transform *t){
+	Cloth(int dim, float particleDistance, glm::vec3 topLeftPosition, Transform *t){
 		this->dim = dim;
 		this->transform = t;
 
@@ -220,37 +215,32 @@ public:
 				glm::vec3 pos = glm::vec3(
 								topLeftPosition.y + (y * particleDistance),
 								topLeftPosition.x - (x * particleDistance),
-								0.0f);
+								topLeftPosition.x - (x * particleDistance));
 				particles[(x*dim) + y] = Particle(pos); // Linearization of the index, row = X, col = Y and row dimension = dim
 			}
 		}
 
-		// Connecting immediate neighbor particles with constraints (distance 1)
-		for(int x=0; x < dim -1; x+=2)
+		for(int x=0; x < dim -1; x++)
 		{
-			for(int y=0; y < dim - 1; y+=2)
+			for(int y=0; y < dim - 1; y++)
 			{
-				if (x +1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x + 1) * dim ) + y], particleDistance);
-				if (x - 1 >= 0) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x - 1) * dim ) + y], particleDistance);
-				if (y +1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[(x * dim ) + (y +1)], particleDistance);
-				if (y - 1 >= 0) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[(x * dim ) + (y - 1)], particleDistance);
-			}
-		}
+				// Connecting immediate neighbor particles with constraints (distance 1)
+				if (y +1 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x, y+1, dim), particleDistance);	// RIGHT
+				if (y - 1 >= 0) makeConstraint(getParticle(x, y, dim), getParticle(x, y-1, dim), particleDistance);	// LEFT
+				if (x +1 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+1, y, dim), particleDistance);	// BOT
+				if (x - 1 >= 0) makeConstraint(getParticle(x, y, dim), getParticle(x-1, y, dim), particleDistance);	// TOP
 
-		// Constraints on the 4 diagonals
-		for(int x=0; x < dim - 1; x+=2)
-		{
-			for(int y=0; y < dim - 1; y+=2)
-			{
-				if (x +1 < dim && y + 1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x + 1) * dim ) + (y + 1)], particleDistance*glm::sqrt(2.0f));
-				if (x +1 < dim && y - 1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x + 1) * dim ) + (y - 1)], particleDistance*glm::sqrt(2.0f));
-				if (x -1 < dim && y + 1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x - 1) * dim ) + (y + 1)], particleDistance*glm::sqrt(2.0f));
-				if (x -1 < dim && y - 1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x - 1) * dim ) + (y - 1)], particleDistance*glm::sqrt(2.0f));			
+
+				// Constraints on the 4 diagonals
+				if (x +1 < dim && y + 1 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+1, y+1, dim), particleDistance*glm::sqrt(2.0f));
+				if (x + 1 < dim && y - 1 >= 0) makeConstraint(getParticle(x, y, dim), getParticle(x+1, y-1, dim), particleDistance*glm::sqrt(2.0f));
+				if (x -1 >= 0  && y + 1 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x-1, y+1, dim), particleDistance*glm::sqrt(2.0f));
+				if (x -1 >= 0 	&& y - 1 >= 0) makeConstraint(getParticle(x, y, dim), getParticle(x-1, y-1, dim), particleDistance*glm::sqrt(2.0f));			
 			}
 		}
 
 		// making the upper left most three and right most three particles unmovable
-		for(int i=0 ; i<4 ; i++)
+		for(int i=0 ; i<3 ; i++)
 		{
 			this->particles[0 + i ].makeUnmovable(); 
 			this->particles[0 + (dim - 1 -i)].makeUnmovable();
@@ -323,6 +313,12 @@ public:
 	*/
 	void PhysicsSteps(float deltaTime)
 	{
+		std::vector<Particle>::iterator particle;
+		for(particle = particles.begin(); particle != particles.end(); particle++)
+		{
+			particle->PhysicStep(deltaTime); // calculate the position of each particle at the next time step.
+		}
+
 		std::vector<Constraint>::iterator constraint;
 		for(size_t i=0; i < CONSTRAINT_ITERATIONS; i++) // iterate over all constraints several times
 		{
@@ -330,12 +326,6 @@ public:
 			{
 				constraint->satisfyConstraint(); // satisfy constraint.
 			}
-		}
-
-		std::vector<Particle>::iterator particle;
-		for(particle = particles.begin(); particle != particles.end(); particle++)
-		{
-			particle->PhysicStep(deltaTime); // calculate the position of each particle at the next time step.
 		}
 
 		for(particle = particles.begin(); particle != particles.end(); particle++)

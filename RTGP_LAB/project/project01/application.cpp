@@ -180,7 +180,7 @@ int main()
     bool clothExist = true;
     unsigned int prints = 0;
     Transform clothTransform(view);
-    Cloth cloth(10.0f, 0.25f, startingPosition, &clothTransform);
+    Cloth cloth(8, 0.25f, startingPosition, &clothTransform);
 
     // DELTA TIME using std::chrono
     // https://stackoverflow.com/questions/14391327/how-to-get-duration-as-int-millis-and-float-seconds-from-chrono
