@@ -63,7 +63,7 @@ vec3 Lambert() // this name is the one which is detected by the SetupShaders() f
     // normalization of the per-fragment normal
     vec3 N = normalize(vNormal);
     // normalization of the per-fragment light incidence direction
-    vec3 L = normalize(lightDir);
+    vec3 L = normalize(lightDir.xyz);
 
     // Lambert coefficient
     float lambertian = max(dot(L,N), 0.0);
@@ -85,7 +85,7 @@ vec3 Phong() // this name is the one which is detected by the SetupShaders() fun
     vec3 N = normalize(vNormal);
 
     // normalization of the per-fragment light incidence direction
-    vec3 L = normalize(lightDir);
+    vec3 L = normalize(lightDir.xyz);
 
     // Lambert coefficient
     float lambertian = max(dot(L,N), 0.0);
@@ -125,7 +125,7 @@ vec3 BlinnPhong() // this name is the one which is detected by the SetupShaders(
     vec3 N = normalize(vNormal);
 
     // normalization of the per-fragment light incidence direction
-    vec3 L = normalize(lightDir);
+    vec3 L = normalize(lightDir.xyz);
 
     // Lambert coefficient
     float lambertian = max(dot(L,N), 0.0);
@@ -176,7 +176,7 @@ vec3 GGX() // this name is the one which is detected by the SetupShaders() funct
     // normalization of the per-fragment normal
     vec3 N = normalize(vNormal);
     // normalization of the per-fragment light incidence direction
-    vec3 L = normalize(lightDir);
+    vec3 L = normalize(lightDir.xyz);
 
     // cosine angle between direction of light and normal
     float NdotL = max(dot(N, L), 0.0);

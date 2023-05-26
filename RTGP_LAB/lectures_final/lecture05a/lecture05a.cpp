@@ -1,6 +1,5 @@
 /*
-Es04b: as Es04a, but with multiple lights
-- Moreover, it is possible to move inside the scene using WASD keys and mouse.
+Es05a: as Es04b, but textures are used for the diffusive component of materials
 
 N.B. 1)
 In this example we use Shaders Subroutines to do shader swapping:
@@ -22,11 +21,7 @@ https://hub.packtpub.com/opengl-40-using-uniform-blocks-and-uniform-buffer-objec
 
 N.B. 3) we have considered point lights only, the code must be modified for different light sources
 
-N.B. 4) no texturing in this version of the classes
-
-N.B. 5) to test different parameters of the shaders, it is convenient to use some GUI library, like e.g. Dear ImGui (https://github.com/ocornut/imgui)
-
-N.B. 6) The Camera class has been added in include/utils
+N.B. 4) to test different parameters of the shaders, it is convenient to use some GUI library, like e.g. Dear ImGui (https://github.com/ocornut/imgui)
 
 author: Davide Gadia
 
@@ -75,17 +70,20 @@ positive Z axis points "outside" the screen
     #error windows.h was included!
 #endif
 
-// classes developed during lab lectures to manage shaders and to load models, and for FPS camera
+// classes developed during lab lectures to manage shaders, to load models, and for FPS camera
 #include <utils/shader.h>
 #include <utils/model.h>
 #include <utils/camera.h>
-
 
 // we load the GLM classes used in the application
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
+// we include the library for images loading
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image/stb_image.h"
 
 // number of lights in the scene
 #define NR_LIGHTS 3
@@ -109,6 +107,9 @@ void SetupShader(int shader_program);
 
 // print on console the name of current shader subroutine
 void PrintCurrentShader(int subroutine);
+
+// load image from disk and create an OpenGL texture
+GLint LoadTexture(const char* path);
 
 // we initialize an array of booleans for each keyboard key
 bool keys[1024];
@@ -136,7 +137,7 @@ GLboolean wireframe = GL_FALSE;
 // we create a camera. We pass the initial position as a parameter to the constructor. The last boolean tells that we want a camera "anchored" to the ground
 Camera camera(glm::vec3(0.0f, 0.0f, 7.0f), GL_TRUE);
 
-// Uniforms to pass to shaders
+// Uniforms to be passed to shaders
 // pointlights positions
 glm::vec3 lightPositions[] = {
     glm::vec3(5.0f, 10.0f, 10.0f),
@@ -144,13 +145,12 @@ glm::vec3 lightPositions[] = {
     glm::vec3(5.0f, 10.0f, -10.0f),
 };
 
-// diffusive, specular and ambient components
-GLfloat diffuseColor[] = {1.0f,0.0f,0.0f};
-GLfloat specularColor[] = {1.0f,1.0f,1.0f};
-GLfloat ambientColor[] = {0.1f,0.1f,0.1f};
+// specular and ambient components
+GLfloat specularColor[] = {1.0,1.0,1.0};
+GLfloat ambientColor[] = {0.1,0.1,0.1};
 // weights for the diffusive, specular and ambient components
-GLfloat Kd = 0.5f;
-GLfloat Ks = 0.4f;
+GLfloat Kd = 0.8f;
+GLfloat Ks = 0.5f;
 GLfloat Ka = 0.1f;
 // shininess coefficient for Blinn-Phong shader
 GLfloat shininess = 25.0f;
@@ -160,8 +160,11 @@ GLfloat alpha = 0.2f;
 // Fresnel reflectance at 0 degree (Schlik's approximation)
 GLfloat F0 = 0.9f;
 
-// color to be passed as uniform to the shader of the plane
-GLfloat planeMaterial[] = {0.0f,0.5f,0.0f};
+// vector for the textures IDs
+vector<GLint> textureID;
+
+// UV repetitions
+GLfloat repeat = 1.0f;
 
 /////////////////// MAIN function ///////////////////////
 int main()
@@ -181,7 +184,7 @@ int main()
   glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
   // we create the application's window
-    GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "RGP_lecture04b", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "RGP_lecture05a", nullptr, nullptr);
     if (!window)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -204,6 +207,7 @@ int main()
         return -1;
     }
 
+
     // we define the viewport dimensions
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
@@ -216,18 +220,21 @@ int main()
     glClearColor(0.26f, 0.46f, 0.98f, 1.0f);
 
     // we create the Shader Program used for objects (which presents different subroutines we can switch)
-    Shader illumination_shader = Shader("11_illumination_models_ML.vert", "12_illumination_models_ML.frag");
+    Shader illumination_shader = Shader("13_illumination_models_ML_TX.vert", "14_illumination_models_ML_TX.frag");
     // we parse the Shader Program to search for the number and names of the subroutines.
     // the names are placed in the shaders vector
     SetupShader(illumination_shader.Program);
     // we print on console the name of the first subroutine used
     PrintCurrentShader(current_subroutine);
-
     // we load the model(s) (code of Model class is in include/utils/model.h)
     Model cubeModel("../../models/cube.obj");
     Model sphereModel("../../models/sphere.obj");
     Model bunnyModel("../../models/bunny_lp.obj");
     Model planeModel("../../models/plane.obj");
+
+    // we load the images and store them in a vector
+    textureID.push_back(LoadTexture("../../textures/UV_Grid_Sm.png"));
+    textureID.push_back(LoadTexture("../../textures/SoilCracked.png"));
 
     // Projection matrix: FOV angle, aspect ratio, near and far planes
     glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);
@@ -276,15 +283,16 @@ int main()
             orientationY+=(deltaTime*spin_speed);
 
         /////////////////// PLANE ////////////////////////////////////////////////
-        // We render a plane under the objects. We apply the Blinn-Phong model only, and we do not apply the rotation applied to the other objects.
+         // We render a plane under the objects. We apply the Blinn-Phong model only, and we do not apply the rotation applied to the other objects.
         illumination_shader.Use();
         // we search inside the Shader Program the name of the subroutine, and we get the numerical index
-        GLuint index = glGetSubroutineIndex(illumination_shader.Program, GL_FRAGMENT_SHADER, "BlinnPhong_ML");
+        GLuint index = glGetSubroutineIndex(illumination_shader.Program, GL_FRAGMENT_SHADER, "BlinnPhong_ML_TX");
         // we activate the subroutine using the index (this is where shaders swapping happens)
         glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &index);
 
         // we determine the position in the Shader Program of the uniform variables
-        GLint matDiffuseLocation = glGetUniformLocation(illumination_shader.Program, "diffuseColor");
+        GLint textureLocation = glGetUniformLocation(illumination_shader.Program, "tex");
+        GLint repeatLocation = glGetUniformLocation(illumination_shader.Program, "repeat");
         GLint matAmbientLocation = glGetUniformLocation(illumination_shader.Program, "ambientColor");
         GLint matSpecularLocation = glGetUniformLocation(illumination_shader.Program, "specularColor");
         GLint kaLocation = glGetUniformLocation(illumination_shader.Program, "Ka");
@@ -294,7 +302,7 @@ int main()
         GLint alphaLocation = glGetUniformLocation(illumination_shader.Program, "alpha");
         GLint f0Location = glGetUniformLocation(illumination_shader.Program, "F0");
 
-         // we assign the value to the uniform variables
+        // we assign the value to the uniform variables
         glUniform3fv(matAmbientLocation, 1, ambientColor);
         glUniform3fv(matSpecularLocation, 1, specularColor);
         glUniform1f(shineLocation, shininess);
@@ -309,7 +317,6 @@ int main()
         glUniformMatrix4fv(glGetUniformLocation(illumination_shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(glGetUniformLocation(illumination_shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
 
-
         // we pass each light position to the shader
         for (GLuint i = 0; i < NR_LIGHTS; i++)
         {
@@ -317,9 +324,13 @@ int main()
             glUniform3fv(glGetUniformLocation(illumination_shader.Program, ("lights[" + number + "]").c_str()), 1, glm::value_ptr(lightPositions[i]));
         }
 
-        // the only difference with the other objects is the diffuse color of the plane (green)
-        // we assign green here, we will change to red for the other objects
-        glUniform3fv(matDiffuseLocation, 1, planeMaterial);
+        // we activate the texture with id 1, and we bind the id to the loaded texture data
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, textureID[1]);
+
+        // we pass the id of the texture (= to number X in GL_TEXTUREX at line 327) and the number of repetitions for the plane
+        glUniform1i(textureLocation, 1);
+        glUniform1f(repeatLocation, 80.0f);
 
         // we create the transformation matrix
         // we reset to identity at each frame
@@ -341,12 +352,17 @@ int main()
         // we activate the subroutine using the index (this is where shaders swapping happens)
         glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &index);
 
-        // we assign red as diffuse color for the objects here
-        glUniform3fv(matDiffuseLocation, 1, diffuseColor);
+        // we activate the texture with id 0, and we bind the id to our loaded texture data
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, textureID[0]);
+
         // we set other parameters for the objects
         glUniform1f(ksLocation, Ka);
         glUniform1f(ksLocation, Kd);
         glUniform1f(ksLocation, Ks);
+        // we change texture and repetitions for the objects
+        glUniform1i(textureLocation, 0);
+        glUniform1f(repeatLocation, repeat);
 
         // SPHERE
         /*
@@ -359,8 +375,7 @@ int main()
             "Two column vectors X and Y are perpendicular if and only if XT.Y=0. If We're going to transform X by a matrix M, we need to transform Y by some matrix N so that (M.X)T.(N.Y)=0. Using the identity (A.B)T=BT.AT, this becomes (XT.MT).(N.Y)=0 => XT.(MT.N).Y=0. If MT.N is the identity matrix then this reduces to XT.Y=0. And MT.N is the identity matrix if and only if N=(MT)-1, i.e. N is the inverse of the transpose of M.
 
         */
-
-        // we reset to identity at each frame
+       // we reset to identity at each frame
         sphereModelMatrix = glm::mat4(1.0f);
         sphereNormalMatrix = glm::mat3(1.0f);
         sphereModelMatrix = glm::translate(sphereModelMatrix, glm::vec3(-3.0f, 0.0f, 0.0f));
@@ -408,9 +423,10 @@ int main()
         glfwSwapBuffers(window);
     }
 
-    // when I exit from the graphics loop, it is because the application is closing
+   // when I exit from the graphics loop, it is because the application is closing
     // we delete the Shader Program
     illumination_shader.Delete();
+
     // we close and delete the created context
     glfwTerminate();
     return 0;
@@ -465,11 +481,49 @@ void SetupShader(int program)
 }
 
 //////////////////////////////////////////
+// we load the image from disk and we create an OpenGL texture
+GLint LoadTexture(const char* path)
+{
+    GLuint textureImage;
+    int w, h, channels;
+    unsigned char* image;
+    image = stbi_load(path, &w, &h, &channels, STBI_rgb);
+
+    if (image == nullptr)
+        std::cout << "Failed to load texture!" << std::endl;
+
+    glGenTextures(1, &textureImage);
+    glBindTexture(GL_TEXTURE_2D, textureImage);
+    // 3 channels = RGB ; 4 channel = RGBA
+    if (channels==3)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+    else if (channels==4)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    // we set how to consider UVs outside [0,1] range
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // we set the filtering for minification and magnification
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+
+    // we free the memory once we have created an OpenGL texture
+    stbi_image_free(image);
+
+    // we set the binding to 0 once we have finished
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    return textureImage;
+
+}
+
+//////////////////////////////////////////
 // we print on console the name of the currently used shader subroutine
 void PrintCurrentShader(int subroutine)
 {
     std::cout << "Current shader subroutine: " << shaders[subroutine]  << std::endl;
 }
+
 
 //////////////////////////////////////////
 // callback for keyboard events

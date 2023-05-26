@@ -10,10 +10,10 @@ private:
 public:
 	Particle *p1, *p2; // the two particles that are connected through this constraint
 
-	Constraint(Particle *p1, Particle *p2) :  p1(p1),p2(p2)
+	Constraint(Particle *p1, Particle *p2, float rest) :  p1(p1),p2(p2),rest_distance(rest)
 	{
 		glm::vec3 vec = p1->getPos()-p2->getPos();
-		rest_distance = glm::length(vec); // vec.length();
+		//rest_distance = glm::length(vec);
 	}
 
 	/* This is one of the important methods, where a single constraint between two particles p1 and p2 is solved

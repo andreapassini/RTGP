@@ -1,6 +1,6 @@
 /*
-Es04b: as Es04a, but with multiple lights
-- Moreover, it is possible to move inside the scene using WASD keys and mouse.
+Es05b: cubemap used for environment mapping, shaders for reflections and refractions
+- swapping shaders pressing keys from 1 to 4
 
 N.B. 1)
 In this example we use Shaders Subroutines to do shader swapping:
@@ -12,21 +12,6 @@ In other cases, an alternative could be to consider Separate Shader Objects:
 https://www.informit.com/articles/article.aspx?p=2731929&seqNum=7
 https://www.khronos.org/opengl/wiki/Shader_Compilation#Separate_programs
 https://riptutorial.com/opengl/example/26979/load-separable-shader-in-cplusplus
-
-N.B. 2)
-There are other methods (more efficient) to pass multiple data to the shaders, using for example Uniform Buffer Objects.
-With last versions of OpenGL, using structures like the one cited above, it is possible to pass a "dynamic" number of lights
-https://www.geeks3d.com/20140704/gpu-buffers-introduction-to-opengl-3-1-uniform-buffers-objects/
-https://learnopengl.com/Advanced-OpenGL/Advanced-GLSL (scroll down a bit)
-https://hub.packtpub.com/opengl-40-using-uniform-blocks-and-uniform-buffer-objects/
-
-N.B. 3) we have considered point lights only, the code must be modified for different light sources
-
-N.B. 4) no texturing in this version of the classes
-
-N.B. 5) to test different parameters of the shaders, it is convenient to use some GUI library, like e.g. Dear ImGui (https://github.com/ocornut/imgui)
-
-N.B. 6) The Camera class has been added in include/utils
 
 author: Davide Gadia
 
@@ -55,7 +40,7 @@ positive Z axis points "outside" the screen
 // Std. Includes
 #include <string>
 
-// Loader for OpenGL extensions
+// Loader estensioni OpenGL
 // http://glad.dav1d.de/
 // THIS IS OPTIONAL AND NOT REQUIRED, ONLY USE THIS IF YOU DON'T WANT GLAD TO INCLUDE windows.h
 // GLAD will include windows.h for APIENTRY if it was not previously defined.
@@ -75,11 +60,10 @@ positive Z axis points "outside" the screen
     #error windows.h was included!
 #endif
 
-// classes developed during lab lectures to manage shaders and to load models, and for FPS camera
+// classes developed during lab lectures to manage shaders, to load models, and for FPS camera
 #include <utils/shader.h>
 #include <utils/model.h>
 #include <utils/camera.h>
-
 
 // we load the GLM classes used in the application
 #include <glm/glm.hpp>
@@ -87,8 +71,9 @@ positive Z axis points "outside" the screen
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-// number of lights in the scene
-#define NR_LIGHTS 3
+// we include the library for images loading
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image/stb_image.h>
 
 // dimensions of application's window
 GLuint screenWidth = 1200, screenHeight = 900;
@@ -110,12 +95,14 @@ void SetupShader(int shader_program);
 // print on console the name of current shader subroutine
 void PrintCurrentShader(int subroutine);
 
+// load the 6 images from disk and create an OpenGL cubemap
+GLint LoadTextureCube(string path);
+
 // we initialize an array of booleans for each keyboard key
 bool keys[1024];
 
 // we need to store the previous mouse position to calculate the offset with the current frame
 GLfloat lastX, lastY;
-
 // when rendering the first frame, we do not have a "previous state" for the mouse, so we need to manage this situation
 bool firstMouse = true;
 
@@ -133,35 +120,23 @@ GLboolean spinning = GL_TRUE;
 // boolean to activate/deactivate wireframe rendering
 GLboolean wireframe = GL_FALSE;
 
-// we create a camera. We pass the initial position as a parameter to the constructor. The last boolean tells that we want a camera "anchored" to the ground
-Camera camera(glm::vec3(0.0f, 0.0f, 7.0f), GL_TRUE);
+// we create a camera. We pass the initial position as a paramenter to the constructor. The last boolean tells if we want a camera "anchored" to the ground
+Camera camera(glm::vec3(0.0f, 0.0f, 7.0f), GL_FALSE);
 
-// Uniforms to pass to shaders
-// pointlights positions
-glm::vec3 lightPositions[] = {
-    glm::vec3(5.0f, 10.0f, 10.0f),
-    glm::vec3(-5.0f, 10.0f, 10.0f),
-    glm::vec3(5.0f, 10.0f, -10.0f),
-};
+// Uniforms to be passed to shaders
+// point light positions
+glm::vec3 lightPos0 = glm::vec3(0.0f, 0.0f, 10.0f);
 
-// diffusive, specular and ambient components
-GLfloat diffuseColor[] = {1.0f,0.0f,0.0f};
-GLfloat specularColor[] = {1.0f,1.0f,1.0f};
-GLfloat ambientColor[] = {0.1f,0.1f,0.1f};
-// weights for the diffusive, specular and ambient components
-GLfloat Kd = 0.5f;
-GLfloat Ks = 0.4f;
-GLfloat Ka = 0.1f;
-// shininess coefficient for Blinn-Phong shader
-GLfloat shininess = 25.0f;
+// ratio between refraction indices (Fresnel shader) of air (1.00) and glass (1.52)
+GLfloat Eta = 1.0f/1.52f;
+// exponent for Fresnel equation
+// = 5 -> "physically correct" value
+// < 5 -> technically not physically correct, but it gives more "artistic" results
+GLfloat mFresnelPower = 5.0f;
 
-// roughness index for GGX shader
-GLfloat alpha = 0.2f;
-// Fresnel reflectance at 0 degree (Schlik's approximation)
-GLfloat F0 = 0.9f;
+// texture unit for the cube map
+GLuint textureCube;
 
-// color to be passed as uniform to the shader of the plane
-GLfloat planeMaterial[] = {0.0f,0.5f,0.0f};
 
 /////////////////// MAIN function ///////////////////////
 int main()
@@ -181,7 +156,7 @@ int main()
   glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
   // we create the application's window
-    GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "RGP_lecture04b", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "RGP_lecture05b", nullptr, nullptr);
     if (!window)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -216,18 +191,22 @@ int main()
     glClearColor(0.26f, 0.46f, 0.98f, 1.0f);
 
     // we create the Shader Program used for objects (which presents different subroutines we can switch)
-    Shader illumination_shader = Shader("11_illumination_models_ML.vert", "12_illumination_models_ML.frag");
+    Shader reflection_shader = Shader("15_reflect_refract.vert", "16_reflect_refract.frag");
     // we parse the Shader Program to search for the number and names of the subroutines.
     // the names are placed in the shaders vector
-    SetupShader(illumination_shader.Program);
+    SetupShader(reflection_shader.Program);
     // we print on console the name of the first subroutine used
     PrintCurrentShader(current_subroutine);
 
-    // we load the model(s) (code of Model class is in include/utils/model.h)
-    Model cubeModel("../../models/cube.obj");
-    Model sphereModel("../../models/sphere.obj");
-    Model bunnyModel("../../models/bunny_lp.obj");
-    Model planeModel("../../models/plane.obj");
+    // we create the Shader Program used for the environment map
+    Shader skybox_shader("17_skybox.vert", "18_skybox.frag");
+
+    // we load the cube map (we pass the path to the folder containing the 6 views)
+    textureCube = LoadTextureCube("../../textures/cube/Maskonaive2/");
+
+    // we load the model(s)
+    Model cubeModel("../../models/cube.obj"); // used for the environment map
+    Model objModel("../../models/babyyoda.obj");
 
     // Projection matrix: FOV angle, aspect ratio, near and far planes
     glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);
@@ -235,15 +214,9 @@ int main()
     // View matrix: the camera moves, so we just set to indentity now
     glm::mat4 view = glm::mat4(1.0f);
 
-    // Model and Normal transformation matrices for the objects in the scene: we set to identity
-    glm::mat4 sphereModelMatrix = glm::mat4(1.0f);
-    glm::mat3 sphereNormalMatrix = glm::mat3(1.0f);
-    glm::mat4 cubeModelMatrix = glm::mat4(1.0f);
-    glm::mat3 cubeNormalMatrix = glm::mat3(1.0f);
-    glm::mat4 bunnyModelMatrix = glm::mat4(1.0f);
-    glm::mat3 bunnyNormalMatrix = glm::mat3(1.0f);
-    glm::mat4 planeModelMatrix = glm::mat4(1.0f);
-    glm::mat3 planeNormalMatrix = glm::mat3(1.0f);
+    // Model and Normal transformation matrices for the object in the scene: we set to identity
+    glm::mat4 objModelMatrix = glm::mat4(1.0f);
+    glm::mat3 objNormalMatrix = glm::mat3(1.0f);
 
     // Rendering loop: this code is executed at each frame
     while(!glfwWindowShouldClose(window))
@@ -273,82 +246,40 @@ int main()
 
         // if animated rotation is activated, than we increment the rotation angle using delta time and the rotation speed parameter
         if (spinning)
-            orientationY+=(deltaTime*spin_speed);
+          orientationY+=(deltaTime*spin_speed);
 
-        /////////////////// PLANE ////////////////////////////////////////////////
-        // We render a plane under the objects. We apply the Blinn-Phong model only, and we do not apply the rotation applied to the other objects.
-        illumination_shader.Use();
-        // we search inside the Shader Program the name of the subroutine, and we get the numerical index
-        GLuint index = glGetSubroutineIndex(illumination_shader.Program, GL_FRAGMENT_SHADER, "BlinnPhong_ML");
+        /////////////////// OBJECT ////////////////////////////////////////////////
+        // We "install" the selected Shader Program as part of the current rendering process
+        reflection_shader.Use();
+        // we search inside the Shader Program the name of the subroutine currently selected, and we get the numerical index
+        GLuint index = glGetSubroutineIndex(reflection_shader.Program, GL_FRAGMENT_SHADER, shaders[current_subroutine].c_str());
         // we activate the subroutine using the index (this is where shaders swapping happens)
         glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &index);
+
+        // we activate the cube map
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, textureCube);
 
         // we determine the position in the Shader Program of the uniform variables
-        GLint matDiffuseLocation = glGetUniformLocation(illumination_shader.Program, "diffuseColor");
-        GLint matAmbientLocation = glGetUniformLocation(illumination_shader.Program, "ambientColor");
-        GLint matSpecularLocation = glGetUniformLocation(illumination_shader.Program, "specularColor");
-        GLint kaLocation = glGetUniformLocation(illumination_shader.Program, "Ka");
-        GLint kdLocation = glGetUniformLocation(illumination_shader.Program, "Kd");
-        GLint ksLocation = glGetUniformLocation(illumination_shader.Program, "Ks");
-        GLint shineLocation = glGetUniformLocation(illumination_shader.Program, "shininess");
-        GLint alphaLocation = glGetUniformLocation(illumination_shader.Program, "alpha");
-        GLint f0Location = glGetUniformLocation(illumination_shader.Program, "F0");
+        GLint textureLocation = glGetUniformLocation(reflection_shader.Program, "tCube");
+        // the shaders for reflection and refraction need the camera position in world coordinates
+        GLint cameraLocation = glGetUniformLocation(reflection_shader.Program, "cameraPosition");
+        GLint etaLocation = glGetUniformLocation(reflection_shader.Program, "Eta");
+        GLint powerLocation = glGetUniformLocation(reflection_shader.Program, "mFresnelPower");
+        GLint pointLightLocation = glGetUniformLocation(reflection_shader.Program, "pointLightPosition");
 
-         // we assign the value to the uniform variables
-        glUniform3fv(matAmbientLocation, 1, ambientColor);
-        glUniform3fv(matSpecularLocation, 1, specularColor);
-        glUniform1f(shineLocation, shininess);
-        glUniform1f(alphaLocation, alpha);
-        glUniform1f(f0Location, F0);
-        // for the plane, we make it mainly Lambertian, by setting at 0 the specular component
-        glUniform1f(kaLocation, 0.0f);
-        glUniform1f(kdLocation, 0.6f);
-        glUniform1f(ksLocation, 0.0f);
+
+        // we assign the value to the uniform variables
+        glUniform1i(textureLocation, 0);
+        glUniform3fv(cameraLocation, 1, glm::value_ptr(camera.Position));
+        glUniform1f(etaLocation, Eta);
+        glUniform1f(powerLocation, mFresnelPower);
+        glUniform3fv(pointLightLocation, 1, glm::value_ptr(lightPos0));
 
         // we pass projection and view matrices to the Shader Program
-        glUniformMatrix4fv(glGetUniformLocation(illumination_shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
-        glUniformMatrix4fv(glGetUniformLocation(illumination_shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(glGetUniformLocation(reflection_shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
+        glUniformMatrix4fv(glGetUniformLocation(reflection_shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
 
-
-        // we pass each light position to the shader
-        for (GLuint i = 0; i < NR_LIGHTS; i++)
-        {
-            string number = to_string(i);
-            glUniform3fv(glGetUniformLocation(illumination_shader.Program, ("lights[" + number + "]").c_str()), 1, glm::value_ptr(lightPositions[i]));
-        }
-
-        // the only difference with the other objects is the diffuse color of the plane (green)
-        // we assign green here, we will change to red for the other objects
-        glUniform3fv(matDiffuseLocation, 1, planeMaterial);
-
-        // we create the transformation matrix
-        // we reset to identity at each frame
-        planeModelMatrix = glm::mat4(1.0f);
-        planeNormalMatrix = glm::mat3(1.0f);
-        planeModelMatrix = glm::translate(planeModelMatrix, glm::vec3(0.0f, -1.0f, 0.0f));
-        planeModelMatrix = glm::scale(planeModelMatrix, glm::vec3(10.0f, 1.0f, 10.0f));
-        planeNormalMatrix = glm::inverseTranspose(glm::mat3(view*planeModelMatrix));
-        glUniformMatrix4fv(glGetUniformLocation(illumination_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(planeModelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(illumination_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(planeNormalMatrix));
-
-        // we render the plane
-        planeModel.Draw();
-
-
-        /////////////////// OBJECTS ////////////////////////////////////////////////
-        // we search inside the Shader Program the name of the subroutine currently selected, and we get the numerical index
-        index = glGetSubroutineIndex(illumination_shader.Program, GL_FRAGMENT_SHADER, shaders[current_subroutine].c_str());
-        // we activate the subroutine using the index (this is where shaders swapping happens)
-        glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &index);
-
-        // we assign red as diffuse color for the objects here
-        glUniform3fv(matDiffuseLocation, 1, diffuseColor);
-        // we set other parameters for the objects
-        glUniform1f(ksLocation, Ka);
-        glUniform1f(ksLocation, Kd);
-        glUniform1f(ksLocation, Ks);
-
-        // SPHERE
         /*
           we create the transformation matrix
 
@@ -357,52 +288,46 @@ int main()
           We need also the matrix for normals transformation, which is the inverse of the transpose of the 3x3 submatrix (upper left) of the modelview. We do not consider the 4th column because we do not need translations for normals.
           An explanation (where XT means the transpose of X, etc):
             "Two column vectors X and Y are perpendicular if and only if XT.Y=0. If We're going to transform X by a matrix M, we need to transform Y by some matrix N so that (M.X)T.(N.Y)=0. Using the identity (A.B)T=BT.AT, this becomes (XT.MT).(N.Y)=0 => XT.(MT.N).Y=0. If MT.N is the identity matrix then this reduces to XT.Y=0. And MT.N is the identity matrix if and only if N=(MT)-1, i.e. N is the inverse of the transpose of M.
-
         */
+        objModelMatrix = glm::mat4(1.0f);
+        objNormalMatrix = glm::mat3(1.0f);
+        objModelMatrix = glm::translate(objModelMatrix, glm::vec3(0.0f, -2.0f, 0.0f));
+        objModelMatrix = glm::rotate(objModelMatrix, glm::radians(orientationY), glm::vec3(0.0f, 1.0f, 0.0f));
+        objModelMatrix = glm::scale(objModelMatrix, glm::vec3(0.8f, 0.8f, 0.8f));
+        objNormalMatrix = glm::inverseTranspose(glm::mat3(view*objModelMatrix));
+        glUniformMatrix4fv(glGetUniformLocation(reflection_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(objModelMatrix));
+        glUniformMatrix3fv(glGetUniformLocation(reflection_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(objNormalMatrix));
 
-        // we reset to identity at each frame
-        sphereModelMatrix = glm::mat4(1.0f);
-        sphereNormalMatrix = glm::mat3(1.0f);
-        sphereModelMatrix = glm::translate(sphereModelMatrix, glm::vec3(-3.0f, 0.0f, 0.0f));
-        sphereModelMatrix = glm::rotate(sphereModelMatrix, glm::radians(orientationY), glm::vec3(0.0f, 1.0f, 0.0f));
-        sphereModelMatrix = glm::scale(sphereModelMatrix, glm::vec3(0.8f, 0.8f, 0.8f));
-        // if we cast a mat4 to a mat3, we are automatically considering the upper left 3x3 submatrix
-        sphereNormalMatrix = glm::inverseTranspose(glm::mat3(view*sphereModelMatrix));
-        glUniformMatrix4fv(glGetUniformLocation(illumination_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(sphereModelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(illumination_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(sphereNormalMatrix));
+        // we render the obj
+        objModel.Draw();
 
-        // we render the sphere
-        sphereModel.Draw();
 
-        //CUBE
-        // we create the transformation matrix and the normals transformation matrix
-        // we reset to identity at each frame
-        cubeModelMatrix = glm::mat4(1.0f);
-        cubeNormalMatrix = glm::mat3(1.0f);
-        cubeModelMatrix = glm::translate(cubeModelMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
-        cubeModelMatrix = glm::rotate(cubeModelMatrix, glm::radians(orientationY), glm::vec3(0.0f, 1.0f, 0.0f));
-        cubeModelMatrix = glm::scale(cubeModelMatrix, glm::vec3(0.8f, 0.8f, 0.8f));
-        cubeNormalMatrix = glm::inverseTranspose(glm::mat3(view*cubeModelMatrix));
-        glUniformMatrix4fv(glGetUniformLocation(illumination_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(cubeModelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(illumination_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(cubeNormalMatrix));
+        /////////////////// SKYBOX ////////////////////////////////////////////////
+        // we use the cube to attach the 6 textures of the environment map.
+        // we render it after all the other objects, in order to avoid the depth tests as much as possible.
+        // we will set, in the vertex shader for the skybox, all the values to the maximum depth. Thus, the environment map is rendered only where there are no other objects in the image (so, only on the background).
+        //Thus, we set the depth test to GL_LEQUAL, in order to let the fragments of the background pass the depth test (because they have the maximum depth possible, and the default setting is GL_LESS)
+        glDepthFunc(GL_LEQUAL);
+        skybox_shader.Use();
+        // we activate the cube map
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, textureCube);
+         // we pass projection and view matrices to the Shader Program of the skybox
+        glUniformMatrix4fv(glGetUniformLocation(skybox_shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
+        // to have the background fixed during camera movements, we have to remove the translations from the view matrix
+        // thus, we consider only the top-left submatrix, and we create a new 4x4 matrix
+        view = glm::mat4(glm::mat3(view)); // Remove any translation component of the view matrix
+        glUniformMatrix4fv(glGetUniformLocation(skybox_shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
 
-        // we render the cube
+        // we determine the position in the Shader Program of the uniform variables
+        textureLocation = glGetUniformLocation(skybox_shader.Program, "tCube");
+        // we assign the value to the uniform variable
+        glUniform1i(textureLocation, 0);
+
+        // we render the cube with the environment map
         cubeModel.Draw();
-
-        //BUNNY
-        // we create the transformation matrix and the normals transformation matrix
-        // we reset to identity at each frame
-        bunnyModelMatrix = glm::mat4(1.0f);
-        bunnyNormalMatrix = glm::mat3(1.0f);
-        bunnyModelMatrix = glm::translate(bunnyModelMatrix, glm::vec3(3.0f, 0.0f, 0.0f));
-        bunnyModelMatrix = glm::rotate(bunnyModelMatrix, glm::radians(orientationY), glm::vec3(0.0f, 1.0f, 0.0f));
-        bunnyModelMatrix = glm::scale(bunnyModelMatrix, glm::vec3(0.3f, 0.3f, 0.3f));
-        bunnyNormalMatrix = glm::inverseTranspose(glm::mat3(view*bunnyModelMatrix));
-        glUniformMatrix4fv(glGetUniformLocation(illumination_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(bunnyModelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(illumination_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(bunnyNormalMatrix));
-
-        // we render the bunny
-        bunnyModel.Draw();
+        // we set again the depth test to the default operation for the next frame
+        glDepthFunc(GL_LESS);
 
         // Swapping back and front buffers
         glfwSwapBuffers(window);
@@ -410,12 +335,70 @@ int main()
 
     // when I exit from the graphics loop, it is because the application is closing
     // we delete the Shader Program
-    illumination_shader.Delete();
+    reflection_shader.Delete();
+    skybox_shader.Delete();
     // we close and delete the created context
     glfwTerminate();
     return 0;
 }
 
+///////////////////////////////////////////
+// load one side of the cubemap, passing the name of the file and the side of the corresponding OpenGL cubemap
+void LoadTextureCubeSide(string path, string side_image, GLuint side_name)
+{
+    int w, h;
+    unsigned char* image;
+    string fullname;
+
+    // full name and path of the side of the cubemap
+    fullname = path + side_image;
+    // we load the image file
+    image = stbi_load(fullname.c_str(), &w, &h, 0, STBI_rgb);
+    if (image == nullptr)
+        std::cout << "Failed to load texture!" << std::endl;
+    // we set the image file as one of the side of the cubemap (passed as a parameter)
+    glTexImage2D(side_name, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+    // we free the memory once we have created an OpenGL texture
+    stbi_image_free(image);
+}
+
+
+//////////////////////////////////////////
+// we load the 6 images from disk and we create an OpenGL cube map
+GLint LoadTextureCube(string path)
+{
+    GLuint textureImage;
+
+    // we create and activate the OpenGL cubemap texture
+    glGenTextures(1, &textureImage);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureImage);
+
+    // we load and set the 6 images corresponding to the 6 views of the cubemap
+    // we use as convention that the names of the 6 images are "posx, negx, posy, negy, posz, negz", placed at the path passed as parameter
+    // we load the images individually and we assign them to the correct sides of the cube map
+    LoadTextureCubeSide(path, std::string("posx.jpg"), GL_TEXTURE_CUBE_MAP_POSITIVE_X);
+    LoadTextureCubeSide(path, std::string("negx.jpg"), GL_TEXTURE_CUBE_MAP_NEGATIVE_X);
+    LoadTextureCubeSide(path, std::string("posy.jpg"), GL_TEXTURE_CUBE_MAP_POSITIVE_Y);
+    LoadTextureCubeSide(path, std::string("negy.jpg"), GL_TEXTURE_CUBE_MAP_NEGATIVE_Y);
+    LoadTextureCubeSide(path, std::string("posz.jpg"), GL_TEXTURE_CUBE_MAP_POSITIVE_Z);
+    LoadTextureCubeSide(path, std::string("negz.jpg"), GL_TEXTURE_CUBE_MAP_NEGATIVE_Z);
+
+    // we set the filtering for minification and magnification
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    // we set how to consider the texture coordinates outside [0,1] range
+    // in this case we have a cube map, so
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    // we set the binding to 0 once we have finished
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
+    return textureImage;
+
+}
 
 ///////////////////////////////////////////
 // The function parses the content of the Shader Program, searches for the Subroutine type names,
@@ -542,28 +525,29 @@ void apply_camera_movements()
 }
 
 //////////////////////////////////////////
-// callback for mouse events
-void mouse_callback(GLFWwindow* window, double xpos, double ypos)
-{
-      // we move the camera view following the mouse cursor
-      // we calculate the offset of the mouse cursor from the position in the last frame
-      // when rendering the first frame, we do not have a "previous state" for the mouse, so we set the previous state equal to the initial values (thus, the offset will be = 0)
-      if(firstMouse)
-      {
-          lastX = xpos;
-          lastY = ypos;
-          firstMouse = false;
-      }
 
-      // offset of mouse cursor position
-      GLfloat xoffset = xpos - lastX;
-      GLfloat yoffset = lastY - ypos;
+  // callback for mouse events
+  void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+  {
+        // we move the camera view following the mouse cursor
+        // we calculate the offset of the mouse cursor from the position in the last frame
+        // when rendering the first frame, we do not have a "previous state" for the mouse, so we set the previous state equal to the initial values (thus, the offset will be = 0)
+        if(firstMouse)
+        {
+            lastX = xpos;
+            lastY = ypos;
+            firstMouse = false;
+        }
 
-      // the new position will be the previous one for the next frame
-      lastX = xpos;
-      lastY = ypos;
+        // offset of mouse cursor position
+        GLfloat xoffset = xpos - lastX;
+        GLfloat yoffset = lastY - ypos;
 
-      // we pass the offset to the Camera class instance in order to update the rendering
-      camera.ProcessMouseMovement(xoffset, yoffset);
+        // the new position will be the previous one for the next frame
+        lastX = xpos;
+        lastY = ypos;
 
-}
+        // we pass the offset to the Camera class instance in order to update the rendering
+        camera.ProcessMouseMovement(xoffset, yoffset);
+
+    }

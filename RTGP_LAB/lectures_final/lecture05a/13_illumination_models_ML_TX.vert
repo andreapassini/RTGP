@@ -1,5 +1,5 @@
 /*
-11_illumination_models_ML.vert: as 09_illumination_models.vert, but with multiple lights
+13_illumination_models_ML_TX.vert: as 11_illumination_models_ML.vert, but with texturing
 
 N.B. 1) In this example, we consider point lights only. For different kind of lights, the computation must be changed (for example, a directional light is defined by the direction of incident light, so the lightDir is passed as uniform and not calculated in the shader like in this case with a point light).
 
@@ -27,6 +27,8 @@ Universita' degli Studi di Milano
 layout (location = 0) in vec3 position;
 // vertex normal in world coordinate
 layout (location = 1) in vec3 normal;
+// UV coordinates
+layout (location = 2) in vec2 UV;
 // the numbers used for the location in the layout qualifier are the positions of the vertex attribute
 // as defined in the Mesh class
 
@@ -54,6 +56,9 @@ out vec3 vNormal;
 // to do this, we need to calculate in the vertex shader the view direction (in view coordinates) for each vertex, and to have it interpolated for each fragment by the rasterization stage
 out vec3 vViewPosition;
 
+// the output variable for UV coordinates
+out vec2 interp_UV;
+
 
 void main(){
 
@@ -73,6 +78,9 @@ void main(){
     vec4 lightPos = viewMatrix  * vec4(lights[i], 1.0);;
     lightDirs[i] = lightPos.xyz - mvPosition.xyz;
   }
+
+  // I assign the values to a variable with "out" qualifier so to use the per-fragment interpolated values in the Fragment shader
+  interp_UV = UV;
 
   // we apply the projection transformation
   gl_Position = projectionMatrix * mvPosition;

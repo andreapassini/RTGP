@@ -1,5 +1,18 @@
 /*
-work05c
+Es05c: shadow rendering with shadow mapping technique - PART 1
+- this example is not completed: in the current situation, we have just set up the Frame Buffer Object for the rendering of the depth map of the light source, but we have not yet implemented the first rendering step.
+- thus, the rendering of the scene is equal to work05c starting code
+- Es06a will present the final implementation
+
+N.B. 1) the application considers only a directional light. In case of more lights, and/or of different nature, the code must be modifies
+
+N.B. 2)
+see :
+https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
+http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/#basic-shadowmap
+https://docs.microsoft.com/en-us/windows/desktop/dxtecharts/common-techniques-to-improve-shadow-depth-maps
+for further details
+
 
 author: Davide Gadia
 
@@ -67,25 +80,17 @@ positive Z axis points "outside" the screen
 // dimensions of application's window
 GLuint screenWidth = 1200, screenHeight = 900;
 
+// the rendering steps used in the application
+enum render_passes{ SHADOWMAP, RENDER};
+
 // callback functions for keyboard and mouse events
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 // if one of the WASD keys is pressed, we call the corresponding method of the Camera class
 void apply_camera_movements();
 
-// index of the current shader subroutine (= 0 in the beginning)
-GLuint current_subroutine = 0;
-// a vector for all the shader subroutines names used and swapped in the application
-vector<std::string> shaders;
-
-// the name of the subroutines are searched in the shaders, and placed in the shaders vector (to allow shaders swapping)
-//void SetupShader(int shader_program);
-
-// print on console the name of current shader subroutine
-//void PrintCurrentShader(int subroutine);
-
 // in this application, we have isolated the models rendering using a function, which will be called in each rendering step
-void RenderObjects(Shader &shader, Model &planeModel, Model &cubeModel, Model &sphereModel, Model &bunnyModel);
+void RenderObjects(Shader &shader, Model &planeModel, Model &cubeModel, Model &sphereModel, Model &bunnyModel, GLint render_pass, GLuint depthMap);
 
 // load image from disk and create an OpenGL texture
 GLint LoadTexture(const char* path);
@@ -125,7 +130,7 @@ glm::mat3 bunnyNormalMatrix = glm::mat3(1.0f);
 glm::mat4 planeModelMatrix = glm::mat4(1.0f);
 glm::mat3 planeNormalMatrix = glm::mat3(1.0f);
 
-// we create a camera. We pass the initial position as a paramenter to the constructor. The last boolean tells that we want a camera "anchored" to the ground
+// we create a camera. We pass the initial position as a paramenter to the constructor. The last boolean tells if we want a camera "anchored" to the ground
 Camera camera(glm::vec3(0.0f, 0.0f, 7.0f), GL_TRUE);
 
 // in this example, we consider a directional light. We pass the direction of incoming light as an uniform to the shaders
@@ -133,7 +138,7 @@ glm::vec3 lightDir0 = glm::vec3(1.0f, 1.0f, 1.0f);
 
 // weight for the diffusive component
 GLfloat Kd = 3.0f;
-// roughness index for Cook-Torrance shader
+// roughness index for GGX shader
 GLfloat alpha = 0.2f;
 // Fresnel reflectance at 0 degree (Schlik's approximation)
 GLfloat F0 = 0.9f;
@@ -162,7 +167,7 @@ int main()
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
     // we create the application's window
-    GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "RGP_work05c", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "RGP_lecture05c", nullptr, nullptr);
     if (!window)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -195,14 +200,8 @@ int main()
     //the "clear" color for the frame buffer
     glClearColor(0.26f, 0.46f, 0.98f, 1.0f);
 
-    // we create the Shader Program used for objects (which presents different subroutines we can switch)
+    // we create the Shader Program used for objects
     Shader illumination_shader = Shader("21_ggx_tex_shadow_work.vert", "22_ggx_tex_shadow_work.frag");
-
-    // we parse the Shader Program to search for the number and names of the subroutines.
-    // the names are placed in the shaders vector
-    //SetupShader(illumination_shader.Program);
-    // we print on console the name of the first subroutine used
-    //PrintCurrentShader(current_subroutine);
 
     // we load the images and store them in a vector
     textureID.push_back(LoadTexture("../../textures/UV_Grid_Sm.png"));
@@ -213,6 +212,33 @@ int main()
     Model sphereModel("../../models/sphere.obj");
     Model bunnyModel("../../models/bunny_lp.obj");
     Model planeModel("../../models/plane.obj");
+
+    /////////////////// CREATION OF BUFFER FOR THE DEPTH MAP /////////////////////////////////////////
+    // buffer dimension: too large -> performance may slow down if we have many lights; too small -> strong aliasing
+    const GLuint SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+    GLuint depthMapFBO;
+    // we create a Frame Buffer Object: the first rendering step will render to this buffer, and not to the real frame buffer
+    glGenFramebuffers(1, &depthMapFBO);
+    // we create a texture for the depth map
+    GLuint depthMap;
+    glGenTextures(1, &depthMap);
+    glBindTexture(GL_TEXTURE_2D, depthMap);
+    // in the texture, we will save only the depth data of the fragments. Thus, we specify that we need to render only depth in the first rendering step
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    // we set to clamp the uv coordinates outside [0,1] to the color of the border
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+
+    // we bind the depth map FBO
+    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+    // we set that we are not calculating nor saving color data
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    ///////////////////////////////////////////////////////////////////
 
     // Projection matrix of the camera: FOV angle, aspect ratio, near and far planes
     glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);
@@ -234,6 +260,9 @@ int main()
         // we get the view matrix from the Camera class
         view = camera.GetViewMatrix();
 
+        // we activate back the standard Frame Buffer
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
         // we "clear" the frame and z buffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -251,13 +280,9 @@ int main()
         // we set the viewport for the final rendering step
         glViewport(0, 0, width, height);
 
-        // We "install" the selected Shader Program as part of the current rendering process. We pass to the shader the light transformation matrix, and the depth map rendered in the first rendering step
+        // We "install" the selected Shader Program as part of the current rendering process. 
         illumination_shader.Use();
-         // we search inside the Shader Program the name of the subroutine currently selected, and we get the numerical index
-        //GLuint index = glGetSubroutineIndex(illumination_shader.Program, GL_FRAGMENT_SHADER, shaders[current_subroutine].c_str());
-        // we activate the subroutine using the index (this is where shaders swapping happens)
-        //glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &index);
-
+        
         // we pass projection and view matrices to the Shader Program
         glUniformMatrix4fv(glGetUniformLocation(illumination_shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(glGetUniformLocation(illumination_shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
@@ -275,7 +300,7 @@ int main()
         glUniform1f(f0Location, F0);
 
         // we render the scene
-        RenderObjects(illumination_shader, planeModel, cubeModel, sphereModel, bunnyModel);
+        RenderObjects(illumination_shader, planeModel, cubeModel, sphereModel, bunnyModel, RENDER, depthMap);
 
         // Swapping back and front buffers
         glfwSwapBuffers(window);
@@ -292,9 +317,8 @@ int main()
 
 //////////////////////////////////////////
 // we render the objects. We pass also the current rendering step, and the depth map generated in the first step, which is used by the shaders of the second step
-void RenderObjects(Shader &shader, Model &planeModel, Model &cubeModel, Model &sphereModel, Model &bunnyModel)
+void RenderObjects(Shader &shader, Model &planeModel, Model &cubeModel, Model &sphereModel, Model &bunnyModel, GLint render_pass, GLuint depthMap)
 {
-
     // we pass the needed uniforms
     GLint textureLocation = glGetUniformLocation(shader.Program, "tex");
     GLint repeatLocation = glGetUniformLocation(shader.Program, "repeat");
@@ -412,60 +436,6 @@ GLint LoadTexture(const char* path)
     return textureImage;
 }
 
-///////////////////////////////////////////
-// The function parses the content of the Shader Program, searches for the Subroutine type names,
-// the subroutines implemented for each type, print the names of the subroutines on the terminal, and add the names of
-// the subroutines to the shaders vector, which is used for the shaders swapping
-void SetupShader(int program)
-{
-    int maxSub,maxSubU,countActiveSU;
-    GLchar name[256];
-    int len, numCompS;
-
-    // global parameters about the Subroutines parameters of the system
-    glGetIntegerv(GL_MAX_SUBROUTINES, &maxSub);
-    glGetIntegerv(GL_MAX_SUBROUTINE_UNIFORM_LOCATIONS, &maxSubU);
-    std::cout << "Max Subroutines:" << maxSub << " - Max Subroutine Uniforms:" << maxSubU << std::endl;
-
-    // get the number of Subroutine uniforms (only for the Fragment shader, due to the nature of the exercise)
-    // it is possible to add similar calls also for the Vertex shader
-    glGetProgramStageiv(program, GL_FRAGMENT_SHADER, GL_ACTIVE_SUBROUTINE_UNIFORMS, &countActiveSU);
-
-    // print info for every Subroutine uniform
-    for (int i = 0; i < countActiveSU; i++) {
-
-        // get the name of the Subroutine uniform (in this example, we have only one)
-        glGetActiveSubroutineUniformName(program, GL_FRAGMENT_SHADER, i, 256, &len, name);
-        // print index and name of the Subroutine uniform
-        std::cout << "Subroutine Uniform: " << i << " - name: " << name << std::endl;
-
-        // get the number of subroutines
-        glGetActiveSubroutineUniformiv(program, GL_FRAGMENT_SHADER, i, GL_NUM_COMPATIBLE_SUBROUTINES, &numCompS);
-
-        // get the indices of the active subroutines info and write into the array s
-        int *s =  new int[numCompS];
-        glGetActiveSubroutineUniformiv(program, GL_FRAGMENT_SHADER, i, GL_COMPATIBLE_SUBROUTINES, s);
-        std::cout << "Compatible Subroutines:" << std::endl;
-
-        // for each index, get the name of the subroutines, print info, and save the name in the shaders vector
-        for (int j=0; j < numCompS; ++j) {
-            glGetActiveSubroutineName(program, GL_FRAGMENT_SHADER, s[j], 256, &len, name);
-            std::cout << "\t" << s[j] << " - " << name << "\n";
-            shaders.push_back(name);
-        }
-        std::cout << std::endl;
-
-        delete[] s;
-    }
-}
-
-/////////////////////////////////////////
-// we print on console the name of the currently used shader subroutine
-void PrintCurrentShader(int subroutine)
-{
-    std::cout << "Current shader subroutine: " << shaders[subroutine]  << std::endl;
-}
-
 //////////////////////////////////////////
 // If one of the WASD keys is pressed, the camera is moved accordingly (the code is in utils/camera.h)
 void apply_camera_movements()
@@ -492,8 +462,6 @@ void apply_camera_movements()
 // callback for keyboard events
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
-    GLuint new_subroutine;
-
     // if ESC is pressed, we close the application
     if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GL_TRUE);
@@ -505,26 +473,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     // if L is pressed, we activate/deactivate wireframe rendering of models
     if(key == GLFW_KEY_L && action == GLFW_PRESS)
         wireframe=!wireframe;
-
-    // pressing a key number, we change the shader applied to the models
-    // if the key is between 1 and 9, we proceed and check if the pressed key corresponds to
-    // a valid subroutine
-    if((key >= GLFW_KEY_1 && key <= GLFW_KEY_9) && action == GLFW_PRESS)
-    {
-        // "1" to "9" -> ASCII codes from 49 to 59
-        // we subtract 48 (= ASCII CODE of "0") to have integers from 1 to 9
-        // we subtract 1 to have indices from 0 to 8
-        new_subroutine = (key-'0'-1);
-        // if the new index is valid ( = there is a subroutine with that index in the shaders vector),
-        // we change the value of the current_subroutine variable
-        // NB: we can just check if the new index is in the range between 0 and the size of the shaders vector,
-        // avoiding to use the std::find function on the vector
-        if (new_subroutine<shaders.size())
-        {
-            current_subroutine = new_subroutine;
-            PrintCurrentShader(current_subroutine);
-        }
-    }
 
     // we keep trace of the pressed keys
     // with this method, we can manage 2 keys pressed at the same time:

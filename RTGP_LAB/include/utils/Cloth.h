@@ -26,7 +26,9 @@ private:
     std::vector<GLuint> indices;
 
 	Particle* getParticle(int x, int y) {return &particles[x*dim + y];}
-	void makeConstraint(Particle *p1, Particle *p2) {constraints.push_back(Constraint(p1,p2));}
+	void makeConstraint(Particle *p1, Particle *p2, float rest_distance) {
+		constraints.push_back(Constraint(p1,p2, rest_distance));
+	}
 
 	glm::vec3 CalculateNormalSquare(float x, float y)
 	{
@@ -222,26 +224,26 @@ public:
 		}
 
 		// Connecting immediate neighbor particles with constraints (distance 1)
-		for(int x=0; x < dim -1; x++)
+		for(int x=0; x < dim -1; x+=2)
 		{
-			for(int y=0; y < dim - 1; y++)
+			for(int y=0; y < dim - 1; y+=2)
 			{
-				if (x +1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x + 1) * dim ) + y]);
-				if (x -1 < dim && x - 1 >= 0) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x - 1) * dim ) + y]);
-				if (y +1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[(x * dim ) + (y +1)]);
-				if (y -1 < dim && y - 1 >= 0) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[(x * dim ) + (y - 1)]);
+				if (x +1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x + 1) * dim ) + y], particleDistance);
+				if (x - 1 >= 0) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x - 1) * dim ) + y], particleDistance);
+				if (y +1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[(x * dim ) + (y +1)], particleDistance);
+				if (y - 1 >= 0) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[(x * dim ) + (y - 1)], particleDistance);
 			}
 		}
 
 		// Constraints on the 4 diagonals
-		for(int x=0; x < dim - 1; x++)
+		for(int x=0; x < dim - 1; x+=2)
 		{
-			for(int y=0; y < dim - 1; y++)
+			for(int y=0; y < dim - 1; y+=2)
 			{
-				if (x +1 < dim && y + 1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x + 1) * dim ) + (y + 1)]);
-				if (x +1 < dim && y - 1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x + 1) * dim ) + (y - 1)]);
-				if (x -1 < dim && y + 1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x + 1) * dim ) + (y + 1)]);
-				if (x -1 < dim && y - 1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x - 1) * dim ) + (y - 1)]);			
+				if (x +1 < dim && y + 1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x + 1) * dim ) + (y + 1)], particleDistance*sqrt(2));
+				if (x +1 < dim && y - 1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x + 1) * dim ) + (y - 1)], particleDistance*sqrt(2));
+				if (x -1 < dim && y + 1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x - 1) * dim ) + (y + 1)], particleDistance*sqrt(2));
+				if (x -1 < dim && y - 1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x - 1) * dim ) + (y - 1)], particleDistance*sqrt(2));			
 			}
 		}
 
