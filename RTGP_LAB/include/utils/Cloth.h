@@ -242,10 +242,10 @@ public:
 		{
 			for(int y=0; y < dim - 1; y+=2)
 			{
-				if (x +1 < dim && y + 1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x + 1) * dim ) + (y + 1)], particleDistance*sqrt(2));
-				if (x +1 < dim && y - 1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x + 1) * dim ) + (y - 1)], particleDistance*sqrt(2));
-				if (x -1 < dim && y + 1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x - 1) * dim ) + (y + 1)], particleDistance*sqrt(2));
-				if (x -1 < dim && y - 1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x - 1) * dim ) + (y - 1)], particleDistance*sqrt(2));			
+				if (x +1 < dim && y + 1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x + 1) * dim ) + (y + 1)], particleDistance*glm::sqrt(2.0f));
+				if (x +1 < dim && y - 1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x + 1) * dim ) + (y - 1)], particleDistance*glm::sqrt(2.0f));
+				if (x -1 < dim && y + 1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x - 1) * dim ) + (y + 1)], particleDistance*glm::sqrt(2.0f));
+				if (x -1 < dim && y - 1 < dim) makeConstraint(&this->particles[(x * dim ) + y], &this->particles[((x - 1) * dim ) + (y - 1)], particleDistance*glm::sqrt(2.0f));			
 			}
 		}
 
