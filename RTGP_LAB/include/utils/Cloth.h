@@ -6,6 +6,7 @@
 
 // GLFW
 #include <glfw/glfw3.h>
+#include <utils/Transform.h>
 
 #include <cstdlib>
 #include <random>
@@ -14,7 +15,7 @@
 class Cloth
 {
 private:
-
+	Transform *transform;
 	int dim; // number of particles in "width" direction
 	// total number of particles is dim*dim
 
@@ -197,8 +198,9 @@ private:
 public:
 	std::vector<Particle> particles; // all particles that are part of this cloth
 
-	Cloth(float dim, float particleDistance, glm::vec3 topLeftPosition){
+	Cloth(float dim, float particleDistance, glm::vec3 topLeftPosition, Transform *t){
 		this->dim = dim;
+		this->transform = t;
 
 		particles.resize(dim*dim); //I am essentially using this vector as an array with room for num_particles_width*dim particles
 		
