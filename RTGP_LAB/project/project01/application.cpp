@@ -286,7 +286,7 @@ int main()
         // }
 
         //glm::vec3 spherePosition_World = glm::vec3(sphereTransform.modelMatrix * glm::vec4(spherePosition, 1.0f));
-        cloth.PhysicsSteps(deltaTime.count(), -5.0f);
+        cloth.PhysicsSteps(deltaTime.count());
         //CLOTH
         clothTransform.Transformation(
             glm::vec3(1.0f, 1.0f, 1.0f),

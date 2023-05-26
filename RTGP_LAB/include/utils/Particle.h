@@ -24,7 +24,7 @@ public:
 	Particle(glm::vec3 pos) : pos(pos), old_pos(pos),force(glm::vec3(0.0f)), mass(1.0f), movable(true), normal(glm::vec3(0.0f)){}
 	Particle(){}
 
-	void AddForce(glm::vec3 f)
+	void addForce(glm::vec3 f)
 	{
 		this->force += f;
 	}
@@ -50,32 +50,30 @@ public:
 
 	void resetForce() {this->force = glm::vec3(0.0f);}
 
-	void OffsetPos(glm::vec3 v) 
+	void offsetPos(glm::vec3 v) 
 	{
 		if(movable) 
 		 	pos += v;
 	}
 
-	void MakeUnmovable() {movable = false;}
+	void makeUnmovable() {movable = false;}
+
 	void addToNormal(glm::vec3 normal)
 	{
 		normal += glm::normalize(normal); // normal.normalized();
 	}
+
 	glm::vec3& getNormal() { return normal;} // notice, the normal is not unit length
-	void ResetNormal() {this->normal = glm::vec3(0.0f);}
+
+	void resetNormal() {this->normal = glm::vec3(0.0f);}
+
 	void BallCollision(const glm::vec3 center,const float radius){
 		glm::vec3 v = this->getPos()-center;
 		float l = glm::length(v);
 		if ( glm::length(v) < radius) // if the particle is inside the ball
 		{
-			this->OffsetPos(glm::normalize(v)*(radius-l)); // project the particle to the surface of the ball
+			this->offsetPos(glm::normalize(v)*(radius-l)); // project the particle to the surface of the ball
 		}
 	}
-	void PlaneCollision(const float lowerLimit){
-		glm::vec3 pos = this->getPos();
-		if(pos.y <= lowerLimit)
-		{
-			OffsetPos(glm::vec3(pos.x, lowerLimit, pos.z));
-		}
-	}
+
 };
