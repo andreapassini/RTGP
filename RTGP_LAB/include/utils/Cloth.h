@@ -136,7 +136,7 @@ private:
 		std::vector<Particle>::iterator particle;
 		for(particle = particles.begin(); particle != particles.end(); particle++)
 		{
-			particle->resetNormal();
+			particle->ResetNormal();
 		}
 
 		//create smooth per particle normals by adding up all the (hard) triangle normals that each particle is part of
@@ -242,8 +242,8 @@ public:
 		// making the upper left most three and right most three particles unmovable
 		for(int i=0 ; i<3 ; i++)
 		{
-			this->particles[0 + i ].makeUnmovable(); 
-			this->particles[0 + (dim - 1 -i)].makeUnmovable();
+			this->particles[0 + i ].MakeUnmovable(); 
+			this->particles[0 + (dim - 1 -i)].MakeUnmovable();
 		}
 
 		SetUp();
@@ -270,7 +270,7 @@ public:
 	// 	std::vector<Particle>::iterator particle;
 	// 	for(particle = particles.begin(); particle != particles.end(); particle++)
 	// 	{
-	// 		(*particle).resetNormal();
+	// 		(*particle).ResetNormal();
 	// 	}
 
 	// 	//create smooth per particle normals by adding up all the (hard) triangle normals that each particle is part of
@@ -311,7 +311,7 @@ public:
 	/* this is an important methods where the time is progressed one time step for the entire cloth.
 	This includes calling satisfyConstraint_Physics() for every constraint, and calling timeStep() for all particles
 	*/
-	void PhysicsSteps(float deltaTime)
+	void PhysicsSteps(float deltaTime, float lowerLim)
 	{
 		std::vector<Particle>::iterator particle;
 		for(particle = particles.begin(); particle != particles.end(); particle++)
@@ -331,6 +331,7 @@ public:
 		for(particle = particles.begin(); particle != particles.end(); particle++)
 		{
 			//particle->BallCollision(sphereCenter, radius); // calculate the position of each particle at the next time step.
+			//particle->PlaneCollision(lowerLim);
 		}
 
 		UpdateNormals();
@@ -351,7 +352,7 @@ public:
 		{
 			randomIntensity = min + ((max - min) * (rand()%2));
 			force *= randomIntensity;
-			particle->addForce(force); // add the forces to each particle
+			particle->AddForce(force); // add the forces to each particle
 		}
 	}
 	void AddForceToAllParticles(const glm::vec3 forceVector)
@@ -359,7 +360,7 @@ public:
 		std::vector<Particle>::iterator particle;
 		for(particle = particles.begin(); particle != particles.end(); particle++)
 		{
-			particle->addForce(forceVector); // add the forces to each particle
+			particle->AddForce(forceVector); // add the forces to each particle
 		}
 	}
 	void windForce(const glm::vec3 direction)
