@@ -180,7 +180,7 @@ int main()
     bool clothExist = true;
     unsigned int prints = 0;
     Transform clothTransform(view);
-    Cloth cloth(8, 0.25f, startingPosition, &clothTransform);
+    Cloth cloth(10, 0.25f, startingPosition, &clothTransform);
 
     // DELTA TIME using std::chrono
     // https://stackoverflow.com/questions/14391327/how-to-get-duration-as-int-millis-and-float-seconds-from-chrono
@@ -255,7 +255,7 @@ int main()
           we create the transformation matrix
           N.B.) the last defined is the first applied
 
-          We need also the matrix for normals transformation, which is the inverse of the transpose of the 3x3 submatrix (upper left) of the modelview.
+          We need also the matrix for normals transformation, which is the inverse of the transpose of the 3x3 sub-matrix (upper left) of the modelview.
           We do not consider the 4th column because we do not need translations for normals.
           An explanation (where XT means the transpose of X, etc):
             "Two column vectors X and Y are perpendicular if and only if XT.Y=0.

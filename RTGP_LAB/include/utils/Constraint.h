@@ -16,10 +16,10 @@ public:
 		//rest_distance = glm::length(vec);
 	}
 
-	/* This is one of the important methods, where a single constraint between two particles p1 and p2 is solved
-	the method is called by Cloth.time_step() many times per frame*/
+	// Set K at like 2.0f
 	void satisfyConstraint_Physics()
 	{
+		float K = 2.0f;
 		glm::vec3 p1_to_p2 = this->p2->getPos() - this->p1->getPos(); // vector from p1 to p2
 		float current_distance = glm::length(p1_to_p2); // current distance between p1 and p2
 		p1_to_p2 /= current_distance;
@@ -31,8 +31,10 @@ public:
 		this->p2->addForce(-correctionVector); // we must move p2 the negative direction of correctionVectorHalf since it points from p2 to p1, and not p1 to p2.	
 	}
 
+	// Set K between .5f - .25f
 	void satisfyConstraint()
 	{
+		float K = 0.5f;
 		glm::vec3 p1_to_p2 = this->p2->getPos() - this->p1->getPos(); // vector from p1 to p2
 		float current_distance = glm::length(p1_to_p2); // current distance between p1 and p2
 		p1_to_p2 /= current_distance;

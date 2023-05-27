@@ -239,11 +239,15 @@ public:
 			}
 		}
 
+		makeConstraint(getParticle(dim-1, dim-1, dim), getParticle(dim-2, dim-1, dim), particleDistance);
+		makeConstraint(getParticle(dim-1, dim-1, dim), getParticle(dim-1, dim-2, dim), particleDistance);
+		makeConstraint(getParticle(dim-1, dim-1, dim), getParticle(dim-2, dim-2, dim), particleDistance*glm::sqrt(2.0f));
+
 		// making the upper left most three and right most three particles unmovable
 		for(int i=0 ; i<3 ; i++)
 		{
-			this->particles[0 + i ].makeUnmovable(); 
-			this->particles[0 + (dim - 1 -i)].makeUnmovable();
+			// this->particles[0 + i ].makeUnmovable(); 
+			// this->particles[0 + (dim - 1 -i)].makeUnmovable();
 		}
 
 		SetUp();
@@ -331,6 +335,7 @@ public:
 		for(particle = particles.begin(); particle != particles.end(); particle++)
 		{
 			//particle->BallCollision(sphereCenter, radius); // calculate the position of each particle at the next time step.
+			particle->PlaneCollision(-5.0f);
 		}
 
 		UpdateNormals();
@@ -381,6 +386,14 @@ public:
 		for(particle = particles.begin(); particle != particles.end(); particle++)
 		{
 			particle->BallCollision(center, radius);
+		}
+	}
+
+	void PlaneCollisions(const float yLimit){
+		std::vector<Particle>::iterator particle;
+		for(particle = particles.begin(); particle != particles.end(); particle++)
+		{
+			particle->PlaneCollision(yLimit);
 		}
 	}
 

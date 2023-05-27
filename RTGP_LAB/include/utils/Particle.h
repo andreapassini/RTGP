@@ -6,7 +6,6 @@
 #define DAMPING 0.01f // how much to damp the cloth simulation each frame
 #define TIME_STEPSIZE2 0.5f*0.5f // how large time step each particle takes each frame
 #define CONSTRAINT_ITERATIONS 15 // how many iterations of constraint satisfaction each frame (more is rigid, less is soft)
-#define K 2.5f
 
 /* The particle class represents a particle of mass that can move around in 3D space*/
 class Particle
@@ -75,5 +74,10 @@ public:
 			this->offsetPos(glm::normalize(v)*(radius-l)); // project the particle to the surface of the ball
 		}
 	}
-
+	void PlaneCollision(const float yLimit){
+		if (this->pos.y < yLimit) // if the particle is inside the ball
+		{
+			this->pos = glm::vec3(this->pos.x, yLimit, this->pos.z); // project the particle to the surface of the ball
+		}
+	}
 };
