@@ -134,14 +134,12 @@ private:
 		}
 	}
 	void UpdateNormals(){
-		// reset normals (which where written to last frame)
 		std::vector<Particle>::iterator particle;
 		for(particle = particles.begin(); particle != particles.end(); particle++)
 		{
 			particle->resetNormal();
 		}
 
-		//create smooth per particle normals by adding up all the (hard) triangle normals that each particle is part of
 		for(int x = 0; x < dim-1; x++)
 		{
 			for(int y=0; y < dim-1; y++)
@@ -163,8 +161,6 @@ private:
 		}	
 	}
 	void UpdateBuffers(){
-
-		// POSITION WORKING WITH THIS SECTION
 		glBindVertexArray(this->VAO);
 		glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
         glBufferData(GL_ARRAY_BUFFER, this->dim * this->dim * sizeof(Particle), this->particles.data(), GL_DYNAMIC_DRAW);
@@ -195,7 +191,7 @@ private:
 public:
 	std::vector<Particle> particles; // all particles that are part of this cloth
 
-	Cloth(int dim, float particleDistance, glm::vec3 topLeftPosition, Transform *t){
+	Cloth(int dim, float particleDistance, glm::vec3 topLeftPosition, Transform *t, bool pinned){
 		this->dim = dim;
 		this->transform = t;
 
@@ -232,7 +228,6 @@ public:
 				if (x +1 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+1, y, dim), particleDistance);	// BOT
 				if (x - 1 >= 0) makeConstraint(getParticle(x, y, dim), getParticle(x-1, y, dim), particleDistance);	// TOP
 
-
 				// Constraints on the 4 diagonals
 				if (x +1 < dim && y + 1 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+1, y+1, dim), particleDistance*glm::sqrt(2.0f));
 				if (x + 1 < dim && y - 1 >= 0) makeConstraint(getParticle(x, y, dim), getParticle(x+1, y-1, dim), particleDistance*glm::sqrt(2.0f));
@@ -241,15 +236,13 @@ public:
 			}
 		}
 
-		// makeConstraint(getParticle(dim-1, dim-1, dim), getParticle(dim-2, dim-1, dim), particleDistance);
-		// makeConstraint(getParticle(dim-1, dim-1, dim), getParticle(dim-1, dim-2, dim), particleDistance);
-		// makeConstraint(getParticle(dim-1, dim-1, dim), getParticle(dim-2, dim-2, dim), particleDistance*glm::sqrt(2.0f));
-
-		// making the upper left most three and right most three particles unmovable
-		for(int i=0 ; i<3 ; i++)
-		{
-			// this->particles[0 + i ].makeUnmovable(); 
-			// this->particles[0 + (dim - 1 -i)].makeUnmovable();
+		if(pinned){
+			// Lock the upper left most three particles and right most three particles
+			for(int i=0 ; i<3 ; i++)
+			{
+				this->particles[0 + i ].makeUnmovable(); 
+				this->particles[0 + (dim - 1 -i)].makeUnmovable();
+			}
 		}
 
 		SetUp();
@@ -260,63 +253,6 @@ public:
 		freeGPUresources();
 	}
 
-	/* drawing the cloth as a smooth shaded (and colored according to column) OpenGL triangular mesh
-	Called from the display() method
-	The cloth is seen as consisting of triangles for four particles in the grid as follows:
-
-	(x,y)   *--* (x+1,y)
-	        | /|
-	        |/ |
-	(x,y+1) *--* (x+1,y+1)
-
-	*/
-	// void drawShaded()
-	// {
-	// 	// reset normals (which where written to last frame)
-	// 	std::vector<Particle>::iterator particle;
-	// 	for(particle = particles.begin(); particle != particles.end(); particle++)
-	// 	{
-	// 		(*particle).resetNormal();
-	// 	}
-
-	// 	//create smooth per particle normals by adding up all the (hard) triangle normals that each particle is part of
-	// 	for(int x = 0; x<dim-1; x++)
-	// 	{
-	// 		for(int y=0; y<dim-1; y++)
-	// 		{
-	// 			glm::vec3 normal = CalculateNormalSquare(getParticle(x+1,y),getParticle(x,y),getParticle(x,y+1));
-	// 			getParticle(x+1,y)->addToNormal(normal);
-	// 			getParticle(x,y)->addToNormal(normal);
-	// 			getParticle(x,y+1)->addToNormal(normal);
-
-	// 			normal = CalculateNormalSquare(getParticle(x+1,y+1),getParticle(x+1,y),getParticle(x,y+1));
-	// 			getParticle(x+1,y+1)->addToNormal(normal);
-	// 			getParticle(x+1,y)->addToNormal(normal);
-	// 			getParticle(x,y+1)->addToNormal(normal);
-	// 		}
-	// 	}
-
-	// 	glBegin(GL_TRIANGLES);
-	// 	for(int x = 0; x<dim-1; x++)
-	// 	{
-	// 		for(int y=0; y<dim-1; y++)
-	// 		{
-	// 			glm::vec3 color(0,0,0);
-	// 			if (x%2) // red and white color is interleaved according to which column number
-	// 				color = glm::vec3(0.6f,0.2f,0.2f);
-	// 			else
-	// 				color = glm::vec3(1.0f,1.0f,1.0f);
-
-	// 			drawTriangle(getParticle(x+1,y),getParticle(x,y),getParticle(x,y+1),color);
-	// 			drawTriangle(getParticle(x+1,y+1),getParticle(x+1,y),getParticle(x,y+1),color);
-	// 		}
-	// 	}
-	// 	glEnd();
-	// }
-
-	/* this is an important methods where the time is progressed one time step for the entire cloth.
-	This includes calling satisfyConstraint_Physics() for every constraint, and calling timeStep() for all particles
-	*/
 	void PhysicsSteps(float deltaTime, glm::vec3 ballCenterWorld, float ballRadius, float planeLimit)
 	{
 		std::vector<Particle>::iterator particle;
@@ -401,7 +337,6 @@ public:
 			for(int y=0; y < dim; y++)
 			{
 				std::cout << std::endl;
-				//glm::vec3 normCalc = CalculateNormalSquare(x, y);
 				std::cout << "Normal: " << getParticle(x, y, dim)->normal.x << ", " << getParticle(x, y, dim)->normal.y << ", " << getParticle(x, y, dim)->normal.z  << std::endl;
 				std::cout << "Position: " << getParticle(x, y, dim)->pos.x << ", " << getParticle(x, y, dim)->pos.y << ", " << getParticle(x, y, dim)->pos.z << std::endl;
 			}

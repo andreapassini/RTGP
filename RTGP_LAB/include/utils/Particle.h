@@ -31,9 +31,6 @@ public:
 		this->force += f;
 	}
 
-	/* This is one of the important methods, where the time is progressed a single step size (TIME_STEPSIZE)
-	   The method is called by Cloth.time_step()
-	   Given the equation "force = mass * force" the next position is found through verlet integration*/
 	void PhysicStep(float deltaTime)
 	{
 		if(!movable){

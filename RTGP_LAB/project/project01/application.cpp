@@ -139,6 +139,8 @@ vector<Shader> shaders;
 GLfloat myColor[] = {1.0f,0.0f,0.0f};
 GLfloat clothColor[] = {0.0f, 1.0f, 0.0f};
 GLfloat coral[] = {1.0f, 0.5f, 0.31f};
+GLfloat planeColor[] = {0.13f, 0.07f, 0.34f};
+
 // weight and velocity for the animation of Wave shader
 GLfloat weight = 0.2f;
 GLfloat speed = 5.0f;
@@ -181,8 +183,9 @@ int main()
     bool once = true;
     bool clothExist = true;
     unsigned int prints = 0;
+    bool pinned = true;
     Transform clothTransform(view);
-    Cloth cloth(30, 0.15f, startingPosition, &clothTransform);
+    Cloth cloth(30, 0.15f, startingPosition, &clothTransform, pinned);
 
     // DELTA TIME using std::chrono
     // https://stackoverflow.com/questions/14391327/how-to-get-duration-as-int-millis-and-float-seconds-from-chrono
@@ -280,6 +283,7 @@ int main()
         fsec deltaTime = (current_time - start_time);
         start_time = Time::now();
 
+        // CLOTH
         cloth.AddGravityForce();
         
         clothTransform.Transformation(
@@ -289,12 +293,28 @@ int main()
             view
         );
 
-        cloth.PhysicsSteps(deltaTime.count(), (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, -10.0f);
+        cloth.PhysicsSteps(deltaTime.count(), (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, -9.9f);
 
         glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.modelMatrix));
         glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.normalMatrix));
         cloth.Draw();
 
+        
+        if(!spinning && once)
+        {
+            // prints++;
+            // cloth.PrintParticles(prints);
+            // std::cout << "deltaTime in sec" << deltaTime.count() << std::endl;
+            cloth.~Cloth();
+            pinned = !pinned;
+            new(&cloth) Cloth(30, 0.15f, startingPosition, &clothTransform, pinned);
+            once = false;
+        } else if(spinning && !once){
+            once = true; 
+        }
+
+
+        //SPHERE
         if (current_program == FULLCOLOR || current_program == FLATTEN)
         {
             // we determine the position in the Shader Program of the uniform variable
@@ -302,18 +322,7 @@ int main()
             // we assign the value to the uniform variable
             glUniform3fv(fragColorLocation, 1, myColor);
         }
-        
-        if(!spinning && once)
-        {
-            prints++;
-            cloth.PrintParticles(prints);
-            std::cout << "deltaTime in sec" << deltaTime.count() << std::endl;
-            once = false;
-        } else if(spinning && !once){
-           once = true; 
-        }
 
-       //SPHERE
         sphereTransform.Transformation(
             glm::vec3(1.0f, 1.0f, 1.0f),
             0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
@@ -323,15 +332,25 @@ int main()
         glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.normalMatrix));
         sphereModel.Draw();
         
+        
         // PLANE
+        if (current_program == FULLCOLOR || current_program == FLATTEN)
+        {
+            // we determine the position in the Shader Program of the uniform variable
+            GLint fragColorLocation = glGetUniformLocation(shaders[current_program].Program, "colorIn");
+            // we assign the value to the uniform variable
+            glUniform3fv(fragColorLocation, 1, planeColor);
+        }
+
         planeTransform.Transformation(
-            glm::vec3(10.0f, 1.0f, 10.0f),
+            glm::vec3(2.5f, 1.0f, 2.5f),
             0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
-            glm::vec3(0.0f, -3.0f, 0.0f),
+            glm::vec3(0.0f, -10.0f, 0.0f),
             view);
         glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(planeTransform.modelMatrix));
         glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(planeTransform.normalMatrix));
-        //planeModel.Draw();
+        planeModel.Draw();
+
 
         // Swapping back and front buffers
         glfwSwapBuffers(window);
