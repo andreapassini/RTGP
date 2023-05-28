@@ -175,13 +175,6 @@ private:
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, normal));
 		glBindVertexArray(0);
-
-		// NORMAL WORKING with only this
-		glBindVertexArray(this->VAO);
-    	glBufferSubData(GL_ARRAY_BUFFER, 0, this->dim * this->dim * sizeof(Particle), &this->particles[0]);
-		
-		glBindBuffer(GL_ARRAY_BUFFER, 0); 
-    	glBindVertexArray(0);
 	}
 	void freeGPUresources()
     {
@@ -229,9 +222,9 @@ public:
 			}
 		}
 
-		for(int x=0; x < dim -1; x++)
+		for(int x=0; x < dim; x++)
 		{
-			for(int y=0; y < dim - 1; y++)
+			for(int y=0; y < dim; y++)
 			{
 				// Connecting immediate neighbor particles with constraints (distance 1)
 				if (y +1 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x, y+1, dim), particleDistance);	// RIGHT
@@ -248,15 +241,15 @@ public:
 			}
 		}
 
-		makeConstraint(getParticle(dim-1, dim-1, dim), getParticle(dim-2, dim-1, dim), particleDistance);
-		makeConstraint(getParticle(dim-1, dim-1, dim), getParticle(dim-1, dim-2, dim), particleDistance);
-		makeConstraint(getParticle(dim-1, dim-1, dim), getParticle(dim-2, dim-2, dim), particleDistance*glm::sqrt(2.0f));
+		// makeConstraint(getParticle(dim-1, dim-1, dim), getParticle(dim-2, dim-1, dim), particleDistance);
+		// makeConstraint(getParticle(dim-1, dim-1, dim), getParticle(dim-1, dim-2, dim), particleDistance);
+		// makeConstraint(getParticle(dim-1, dim-1, dim), getParticle(dim-2, dim-2, dim), particleDistance*glm::sqrt(2.0f));
 
 		// making the upper left most three and right most three particles unmovable
 		for(int i=0 ; i<3 ; i++)
 		{
-			this->particles[0 + i ].makeUnmovable(); 
-			this->particles[0 + (dim - 1 -i)].makeUnmovable();
+			// this->particles[0 + i ].makeUnmovable(); 
+			// this->particles[0 + (dim - 1 -i)].makeUnmovable();
 		}
 
 		SetUp();
@@ -380,31 +373,10 @@ public:
 	}
 	void windForce(const glm::vec3 direction)
 	{
-		for(int x = 0; x<dim-1; x++)
-		{
-			for(int y=0; y<dim-1; y++)
-			{
-			}
-		}
-	}
-
-	/* used to detect and resolve the collision of the cloth with the ball.
-	This is based on a very simples scheme where the position of each particle is simply compared to the sphere and corrected.
-	This also means that the sphere can "slip through" if the ball is small enough compared to the distance in the grid bewteen particles
-	*/
-	void BallCollisions(const glm::vec3 center,const float radius){
 		std::vector<Particle>::iterator particle;
 		for(particle = particles.begin(); particle != particles.end(); particle++)
 		{
-			//particle->BallCollision(center, radius, );
-		}
-	}
-
-	void PlaneCollisions(const float yLimit){
-		std::vector<Particle>::iterator particle;
-		for(particle = particles.begin(); particle != particles.end(); particle++)
-		{
-			particle->PlaneCollision(yLimit);
+			particle->addForce(direction); // add the forces to each particle
 		}
 	}
 
