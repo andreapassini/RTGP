@@ -137,7 +137,7 @@ vector<Shader> shaders;
 // Uniforms to pass to shaders
 // color to be passed to Fullcolor and Flatten shaders
 GLfloat myColor[] = {1.0f,0.0f,0.0f};
-GLfloat clothColor[] = {0.0f, 1.0f, 0.0f};
+GLfloat clothColor[] = {0.0f, 31.0f, 0.0f};
 GLfloat coral[] = {1.0f, 0.5f, 0.31f};
 GLfloat planeColor[] = {0.13f, 0.07f, 0.34f};
 
@@ -219,18 +219,6 @@ int main()
         else
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-        // if animated rotation is activated, then we increment the rotation angle using delta time and the rotation speed parameter
-        if (spinning)
-            orientationY+=(deltaTime*spin_speed);
-
-        // Moving Sphere on X axis
-        if(movingOnX){
-            if(positionZ >= 6 || positionZ <= -6)
-                directionZ *= -1;
-
-            positionZ += directionZ * (deltaTime * movement_speed);
-        }
-
         // We "install" the selected Shader Program as part of the current rendering process
         shaders[current_program].Use();
         // uniforms are passed to the corresponding shader
@@ -255,22 +243,13 @@ int main()
         glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
 
-        //SPHERE
-        /*
-          we create the transformation matrix
-          N.B.) the last defined is the first applied
 
-          We need also the matrix for normals transformation, which is the inverse of the transpose of the 3x3 sub-matrix (upper left) of the modelview.
-          We do not consider the 4th column because we do not need translations for normals.
-          An explanation (where XT means the transpose of X, etc):
-            "Two column vectors X and Y are perpendicular if and only if XT.Y=0.
-            If we're going to transform X by a matrix M, we need to transform Y by some matrix N so that (M.X)T.(N.Y)=0.
-            Using the identity (A.B)T=BT.AT, this becomes (XT.MT).(N.Y)=0 => XT.(MT.N).Y=0.
-            If MT.N is the identity matrix then this reduces to XT.Y=0.
-            And MT.N is the identity matrix if and only if N=(MT)-1, i.e. N is the inverse of the transpose of M.
+        auto current_time = Time::now();
+        fsec deltaTime = (current_time - start_time);
+        start_time = Time::now();
 
-        */
 
+        // CLOTH
         if (current_program == FULLCOLOR || current_program == FLATTEN)
         {
             // we determine the position in the Shader Program of the uniform variable
@@ -278,12 +257,7 @@ int main()
             // we assign the value to the uniform variable
             glUniform3fv(fragColorLocation, 1, clothColor);
         }
-
-        auto current_time = Time::now();
-        fsec deltaTime = (current_time - start_time);
-        start_time = Time::now();
-
-        // CLOTH
+        
         cloth.AddGravityForce();
         
         clothTransform.Transformation(
@@ -302,9 +276,6 @@ int main()
         
         if(!spinning && once)
         {
-            // prints++;
-            // cloth.PrintParticles(prints);
-            // std::cout << "deltaTime in sec" << deltaTime.count() << std::endl;
             cloth.~Cloth();
             pinned = !pinned;
             new(&cloth) Cloth(30, 0.15f, startingPosition, &clothTransform, pinned);
