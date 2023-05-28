@@ -255,8 +255,8 @@ public:
 		// making the upper left most three and right most three particles unmovable
 		for(int i=0 ; i<3 ; i++)
 		{
-			// this->particles[0 + i ].makeUnmovable(); 
-			// this->particles[0 + (dim - 1 -i)].makeUnmovable();
+			this->particles[0 + i ].makeUnmovable(); 
+			this->particles[0 + (dim - 1 -i)].makeUnmovable();
 		}
 
 		SetUp();
