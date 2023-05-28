@@ -33,9 +33,9 @@ private:
 
 	glm::vec3 CalculateNormalSquare(float x, float y)
 	{
-		if(x + 1 >= dim &&
-			y + 1 >= dim)
-			return glm::vec3(0.0f);
+		if(x < dim - 1 ||
+			y < dim -1)
+			return glm::normalize(glm::vec3(1.0f));
 
 		float idTopLeft = (x * dim) + y;
 
@@ -106,8 +106,10 @@ private:
 		// we copy data in the VBO - we must set the data dimension, and the pointer to the structure containing the data
         glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
         glBufferData(GL_ARRAY_BUFFER, this->particles.size() * sizeof(Particle), &this->particles[0], GL_DYNAMIC_DRAW);
+		
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, pos));
+		
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, normal));
 	
@@ -154,7 +156,10 @@ private:
 
 		for(particle = particles.begin(); particle != particles.end(); particle++)
 		{
-			glm::normalize(particle->normal);
+			if(particle->normal.x == 0.0f && particle->normal.y == 0.0f && particle->normal.z == 0.0f)
+				return;
+
+			particle->normal = glm::normalize(particle->normal);
 		}	
 	}
 	void UpdateBuffers(){
@@ -163,8 +168,10 @@ private:
 		glBindVertexArray(this->VAO);
 		glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
         glBufferData(GL_ARRAY_BUFFER, this->dim * this->dim * sizeof(Particle), this->particles.data(), GL_DYNAMIC_DRAW);
+		
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, pos));
+		
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, normal));
 		glBindVertexArray(0);
@@ -172,6 +179,8 @@ private:
 		// NORMAL WORKING with only this
 		glBindVertexArray(this->VAO);
     	glBufferSubData(GL_ARRAY_BUFFER, 0, this->dim * this->dim * sizeof(Particle), &this->particles[0]);
+		
+		glBindBuffer(GL_ARRAY_BUFFER, 0); 
     	glBindVertexArray(0);
 	}
 	void freeGPUresources()
@@ -315,7 +324,7 @@ public:
 	/* this is an important methods where the time is progressed one time step for the entire cloth.
 	This includes calling satisfyConstraint_Physics() for every constraint, and calling timeStep() for all particles
 	*/
-	void PhysicsSteps(float deltaTime)
+	void PhysicsSteps(float deltaTime, glm::vec3 ballCenterWorld, float ballRadius, float planeLimit)
 	{
 		std::vector<Particle>::iterator particle;
 		for(particle = particles.begin(); particle != particles.end(); particle++)
@@ -332,10 +341,12 @@ public:
 			}
 		}
 
-		for(particle = particles.begin(); particle != particles.end(); particle++)
-		{
-			//particle->BallCollision(sphereCenter, radius); // calculate the position of each particle at the next time step.
-			particle->PlaneCollision(-5.0f);
+		for(size_t i = 0; i < CONSTRAINT_ITERATIONS; i++){
+			for(particle = particles.begin(); particle != particles.end(); particle++)
+			{
+				particle->BallCollision(transform->modelMatrix, ballCenterWorld, ballRadius); // calculate the position of each particle at the next time step.
+				particle->PlaneCollision(planeLimit);
+			}
 		}
 
 		UpdateNormals();
@@ -385,7 +396,7 @@ public:
 		std::vector<Particle>::iterator particle;
 		for(particle = particles.begin(); particle != particles.end(); particle++)
 		{
-			particle->BallCollision(center, radius);
+			//particle->BallCollision(center, radius, );
 		}
 	}
 
@@ -409,14 +420,20 @@ public:
 
 	void PrintParticles(unsigned int times)
 	{
-		std::vector<Particle>::iterator particle;
+		Particle p;
 		std::cout << "Print number: " << times << " ----------------------------" << std::endl;
 		std::cout << "Constraints number: " << constraints.size() << std::endl;
-		for(particle = particles.begin(); particle != particles.end(); particle++)
+		UpdateNormals();
+		for(int x=0; x < dim; x++)
 		{
-			std::cout << std::endl;
-			std::cout << "Force: " << particle->force.x << ", " << particle->force.y << ", " << particle->force.z  << std::endl;
-			std::cout << "Position: " <<particle->pos.x << ", " << particle->pos.y << ", " << particle->pos.z << std::endl;
+			for(int y=0; y < dim; y++)
+			{
+				std::cout << std::endl;
+				//glm::vec3 normCalc = CalculateNormalSquare(x, y);
+				std::cout << "Normal: " << getParticle(x, y, dim)->normal.x << ", " << getParticle(x, y, dim)->normal.y << ", " << getParticle(x, y, dim)->normal.z  << std::endl;
+				std::cout << "Position: " << getParticle(x, y, dim)->pos.x << ", " << getParticle(x, y, dim)->pos.y << ", " << getParticle(x, y, dim)->pos.z << std::endl;
+			}
 		}
+
 	}
 };

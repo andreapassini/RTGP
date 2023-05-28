@@ -15,12 +15,14 @@ private:
 public:
 	glm::vec3 pos; // the current position of the particle in 3D space
 	glm::vec3 normal; // an accumulated normal (i.e. non normalized), used for OpenGL soft shading
-	bool movable; // can the particle move or not ? used to pin parts of the cloth
-	float mass; // the mass of the particle (is always 1 in this example)
 	glm::vec3 old_pos; // the position of the particle in the previous time step, used as part of the verlet numerical integration scheme
 	glm::vec3 force; // a vector representing the current force of the particle
+	bool movable; // can the particle move or not ? used to pin parts of the cloth
+	float mass; // the mass of the particle (is always 1 in this example)
 	
-	Particle(glm::vec3 pos) : pos(pos), old_pos(pos),force(glm::vec3(0.0f)), mass(1.0f), movable(true), normal(glm::vec3(0.0f)){}
+	Particle(glm::vec3 pos) : pos(pos), normal(glm::vec3(1.0f)),  old_pos(pos),force(glm::vec3(0.0f)), mass(1.0f), movable(true){
+		
+	}
 	Particle(){}
 
 	void addForce(glm::vec3 f)
@@ -57,19 +59,19 @@ public:
 
 	void makeUnmovable() {movable = false;}
 
-	void addToNormal(glm::vec3 normal)
+	void addToNormal(glm::vec3 n)
 	{
-		normal += glm::normalize(normal); // normal.normalized();
+		this->normal += n;	//glm::normalize(normal);
 	}
 
 	glm::vec3& getNormal() { return normal;} // notice, the normal is not unit length
 
 	void resetNormal() {this->normal = glm::vec3(0.0f);}
 
-	void BallCollision(const glm::vec3 center,const float radius){
-		glm::vec3 v = this->getPos()-center;
+	void BallCollision(glm::mat4 matrixToWorld, const glm::vec3 centerWorld,const float radius){
+		glm::vec3 v = glm::vec3(glm::vec4(this->getPos(), 1.0f) * matrixToWorld) - centerWorld;
 		float l = glm::length(v);
-		if ( glm::length(v) < radius) // if the particle is inside the ball
+		if (glm::length(v) < radius) // if the particle is inside the ball
 		{
 			this->offsetPos(glm::normalize(v)*(radius-l)); // project the particle to the surface of the ball
 		}

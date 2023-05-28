@@ -137,6 +137,8 @@ vector<Shader> shaders;
 // Uniforms to pass to shaders
 // color to be passed to Fullcolor and Flatten shaders
 GLfloat myColor[] = {1.0f,0.0f,0.0f};
+GLfloat clothColor[] = {0.0f, 1.0f, 0.0f};
+GLfloat coral[] = {1.0f, 0.5f, 0.31f};
 // weight and velocity for the animation of Wave shader
 GLfloat weight = 0.2f;
 GLfloat speed = 5.0f;
@@ -168,7 +170,7 @@ int main()
     Model cubeModel("../../models/cube.obj");
 
     // Model and Normal transformation matrices for the objects in the scene: we set to identity
-    glm::vec3 spherePosition(1.0f, -4.0f, 0.0f);
+    glm::vec3 spherePosition(3.0f, -5.0f, -2.0f);
     Transform sphereTransform(view);
     positionZ = 0.8f;
     GLint directionZ = 1;
@@ -180,7 +182,8 @@ int main()
     bool clothExist = true;
     unsigned int prints = 0;
     Transform clothTransform(view);
-    Cloth cloth(10, 0.25f, startingPosition, &clothTransform);
+    Cloth cloth(25, 0.25f, startingPosition, &clothTransform);
+
 
     // DELTA TIME using std::chrono
     // https://stackoverflow.com/questions/14391327/how-to-get-duration-as-int-millis-and-float-seconds-from-chrono
@@ -266,7 +269,13 @@ int main()
 
         */
 
-        
+        if (current_program == FULLCOLOR || current_program == FLATTEN)
+        {
+            // we determine the position in the Shader Program of the uniform variable
+            GLint fragColorLocation = glGetUniformLocation(shaders[current_program].Program, "colorIn");
+            // we assign the value to the uniform variable
+            glUniform3fv(fragColorLocation, 1, clothColor);
+        }
 
         cloth.AddGravityForce();
         //cloth.AddRandomIntensityForce(glm::vec3(1.0f, 0.0f, 0.0f), 0.5f, 1.5f);
@@ -275,18 +284,9 @@ int main()
         start_time = Time::now();
         //cloth.windForce(glm::vec3(0.3f, 0.0f, 0.0f));
 
-        // if(!spinning && once)
-        // {
-        //     prints++;
-        //     cloth.PrintParticles(prints);
-        //     std::cout << "deltaTime in sec" << deltaTime.count() << std::endl;
-        //     once = false;
-        // } else if(spinning && !once){
-        //    once = true; 
-        // }
 
         //glm::vec3 spherePosition_World = glm::vec3(sphereTransform.modelMatrix * glm::vec4(spherePosition, 1.0f));
-        cloth.PhysicsSteps(deltaTime.count());
+        cloth.PhysicsSteps(deltaTime.count(), (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, -10.0f);
         //CLOTH
         clothTransform.Transformation(
             glm::vec3(1.0f, 1.0f, 1.0f),
@@ -297,6 +297,24 @@ int main()
         glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.modelMatrix));
         glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.normalMatrix));
         cloth.Draw();
+
+        if (current_program == FULLCOLOR || current_program == FLATTEN)
+        {
+            // we determine the position in the Shader Program of the uniform variable
+            GLint fragColorLocation = glGetUniformLocation(shaders[current_program].Program, "colorIn");
+            // we assign the value to the uniform variable
+            glUniform3fv(fragColorLocation, 1, myColor);
+        }
+        
+        if(!spinning && once)
+        {
+            prints++;
+            cloth.PrintParticles(prints);
+            std::cout << "deltaTime in sec" << deltaTime.count() << std::endl;
+            once = false;
+        } else if(spinning && !once){
+           once = true; 
+        }
 
        //SPHERE
         sphereTransform.Transformation(
