@@ -170,7 +170,7 @@ int main()
     Model cubeModel("../../models/cube.obj");
 
     // Model and Normal transformation matrices for the objects in the scene: we set to identity
-    glm::vec3 spherePosition(3.0f, -5.0f, -2.0f);
+    glm::vec3 spherePosition(3.0f, -5.0f, -2.5f);
     Transform sphereTransform(view);
     positionZ = 0.8f;
     GLint directionZ = 1;
@@ -182,7 +182,7 @@ int main()
     bool clothExist = true;
     unsigned int prints = 0;
     Transform clothTransform(view);
-    Cloth cloth(25, 0.25f, startingPosition, &clothTransform);
+    Cloth cloth(30, 0.15f, startingPosition, &clothTransform);
 
 
     // DELTA TIME using std::chrono
