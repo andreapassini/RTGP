@@ -1,24 +1,4 @@
 /*
-Es03a: Basic shaders, animation of rotation transform, wireframe visualization
-- swapping between different basic shaders pressing keys from 1 to 5
-
-N.B. 1)
-The lecture uses a very "basic" shader swapping method.
-This method was used until OpenGL 3.3 (thus, still valid for OpenGL ES and WebGL), and it can still be used for simple scenes and few shaders.
-In the next lectures, a more advances method based on Shader Subroutines will be used.
-
-N.B. 2) no texturing in this version of the classes
-
-N.B. 3) to test different parameters of the shaders, it is convenient to use some GUI library, like e.g. Dear ImGui (https://github.com/ocornut/imgui)
-
-author: Davide Gadia
-
-Real-Time Graphics Programming - a.a. 2022/2023
-Master degree in Computer Science
-Universita' degli Studi di Milano
-*/
-
-/*
 OpenGL coordinate system (right-handed)
 positive X axis points right
 positive Y axis points up
@@ -35,7 +15,6 @@ positive Z axis points "outside" the screen
                           Z
 */
 
-// Std. Includes
 #include <string>
 #include <iostream>
 #include <chrono>
@@ -51,122 +30,95 @@ positive Z axis points "outside" the screen
 
 #include <glad/glad.h>
 
-// GLFW library to create window and to manage I/O
 #include <glfw/glfw3.h>
 
-// another check related to OpenGL loader
-// confirm that GLAD didn't include windows.h
 #ifdef _WINDOWS_
     #error windows.h was included!
 #endif
 
-// classes developed during lab lectures to manage shaders and to load models
 #include <utils/shader.h>
 #include <utils/model.h>
 #include <utils/camera.h>
 
-// we load the GLM classes used in the application
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-// My classes
 #include <utils/Transform.h>
 #include <utils/cloth.h>
 
-// dimensions of application's window
+
+GLFWwindow* window;
 GLuint screenWidth = 1200, screenHeight = 900;
+
+int SetupOpenGL();
+
+void SetupShaders();
+void DeleteShaders();
+void PrintCurrentShader(int shader);
 
 // callback functions for keyboard events
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-// if one of the WASD keys is pressed, we call the corresponding method of the Camera class
 void apply_camera_movements();
-
-// setup of Shader Programs for the 5 shaders used in the application
-void SetupShaders();
-// delete Shader Programs whan application ends
-void DeleteShaders();
-// print on console the name of current shader
-void PrintCurrentShader(int shader);
-
-int SetupOpenGL();
-
-// we initialize an array of booleans for each keyboard key
 bool keys[1024];
 bool R_KEY = false;
-
-// we need to store the previous mouse position to calculate the offset with the current frame
 GLfloat lastX, lastY;
-// when rendering the first frame, we do not have a "previous state" for the mouse, so we need to manage this situation
 bool firstMouse = true;
 
-// parameters for time calculation (for animations)
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
 
-// rotation angle on Y axis
 GLfloat orientationY = 0.0f;
-// rotation speed on Y axis
 GLfloat spin_speed = 30.0f;
-// boolean to start/stop animated rotation on Y angle
 GLboolean spinning = GL_TRUE;
-
 GLfloat positionZ = 0.0f;
 GLfloat movement_speed = 5.0f;
 GLboolean movingOnX = GL_TRUE;
 GLboolean instantiate = GL_FALSE;
 
-// boolean to activate/deactivate wireframe rendering
 GLboolean wireframe = GL_FALSE;
 
-// we create a camera. We pass the initial position as a parameter to the constructor. The last boolean tells if we want a camera "anchored" to the ground
 Camera camera(glm::vec3(0.0f, -2.0f, 7.0f), GL_FALSE);
 
-// enum data structure to manage indices for shaders swapping
 enum available_ShaderPrograms{ FULLCOLOR, FLATTEN, NORMAL2COLOR, WAVE, UV2COLOR };
-// strings with shaders names to print the name of the current one on console
 const char * print_available_ShaderPrograms[] = { "FULLCOLOR", "FLATTEN", "NORMAL2COLOR", "WAVE", "UV2COLOR" };
-
-// index of the current shader (= 0 in the beginning)
 GLuint current_program = FULLCOLOR;
-// a vector for all the Shader Programs used and swapped in the application
 vector<Shader> shaders;
 
-// Uniforms to pass to shaders
-// color to be passed to Fullcolor and Flatten shaders
 GLfloat myColor[] = {1.0f,0.0f,0.0f};
 GLfloat clothColor[] = {0.0f, 31.0f, 0.0f};
 GLfloat coral[] = {1.0f, 0.5f, 0.31f};
 GLfloat planeColor[] = {0.13f, 0.07f, 0.34f};
 
-// weight and velocity for the animation of Wave shader
 GLfloat weight = 0.2f;
 GLfloat speed = 5.0f;
 
-
-// OpenGL Setup
-GLFWwindow* window;
-
 glm::vec3 startingPosition(0.0f, 0.0f, 0.0f);
 
-/////////////////// MAIN function ///////////////////////
+bool once = true;
+bool clothExist = true;
+unsigned int prints = 0;
+bool pinned = true;
+bool usePhysicConstraints = false;
+float gravity = -9.8f;
+float k = 0.5f;
+unsigned int contraintIterations = 5;
+unsigned int collisionIterations = 15;
+
 int main()
 {
     if(SetupOpenGL() == -1)
         return -1;
 
-    // we create the Shader Programs used in the application
     SetupShaders();
-    // we print on console the name of the first shader used
     PrintCurrentShader(current_program);
 
     glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);
     // View matrix (=camera): position, view direction, camera "up" vector
     glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 7.0f), glm::vec3(0.0f, 0.0f, -7.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-    // we load the model(s) (code of Model class is in include/utils/model.h)
     Model sphereModel("../../models/sphere.obj");
     Model planeModel("../../models/plane.obj");
     Model cubeModel("../../models/cube.obj");
@@ -180,15 +132,6 @@ int main()
     Transform planeTransform(view);
     Transform cubeTransform(view);
 
-    bool once = true;
-    bool clothExist = true;
-    unsigned int prints = 0;
-    bool pinned = true;
-    bool usePhysicConstraints = false;
-    float gravity = -9.8f;
-    float k = 0.5f;
-    unsigned int contraintIterations = 5;
-    unsigned int collisionIterations = 15;
     Transform clothTransform(view);
     Cloth cloth(30, 0.15f, startingPosition, &clothTransform, pinned, usePhysicConstraints, k, contraintIterations, gravity, collisionIterations);
 
@@ -207,77 +150,58 @@ int main()
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        // Check is an I/O event is happening
         glfwPollEvents();
-        // we apply FPS camera movements
         apply_camera_movements();
         // View matrix (=camera): position, view direction, camera "up" vector
         view = camera.GetViewMatrix();
 
-        // we "clear" the frame and z buffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // we set the rendering mode
         if (wireframe)
-            // Draw in wireframe
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         else
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-        // We "install" the selected Shader Program as part of the current rendering process
         shaders[current_program].Use();
         // uniforms are passed to the corresponding shader
         if (current_program == FULLCOLOR || current_program == FLATTEN)
         {
-            // we determine the position in the Shader Program of the uniform variable
             GLint fragColorLocation = glGetUniformLocation(shaders[current_program].Program, "colorIn");
-            // we assign the value to the uniform variable
             glUniform3fv(fragColorLocation, 1, myColor);
         }
         else if (current_program == WAVE)
         {
-            // we determine the position in the Shader Program of the uniform variables
             GLint weightLocation = glGetUniformLocation(shaders[current_program].Program, "weight");
             GLint timerLocation = glGetUniformLocation(shaders[current_program].Program, "timer");
-            // we assign the value to the uniform variables
             glUniform1f(weightLocation, weight);
             glUniform1f(timerLocation, currentFrame*speed);
         }
 
-        // we pass projection and view matrices to the Shader Program
         glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
-
 
         auto current_time = Time::now();
         fsec deltaTime = (current_time - start_time);
         start_time = Time::now();
 
-
         // CLOTH
         if (current_program == FULLCOLOR || current_program == FLATTEN)
         {
-            // we determine the position in the Shader Program of the uniform variable
             GLint fragColorLocation = glGetUniformLocation(shaders[current_program].Program, "colorIn");
-            // we assign the value to the uniform variable
             glUniform3fv(fragColorLocation, 1, clothColor);
         }
         
         cloth.AddGravityForce();
-        
         clothTransform.Transformation(
             glm::vec3(1.0f, 1.0f, 1.0f),
             0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
             startingPosition,
             view
         );
-
         cloth.PhysicsSteps(deltaTime.count(), (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, -9.9f);
-
         glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.modelMatrix));
         glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.normalMatrix));
         cloth.Draw();
-
         
         if(!spinning && once)
         {
@@ -293,9 +217,7 @@ int main()
         //SPHERE
         if (current_program == FULLCOLOR || current_program == FLATTEN)
         {
-            // we determine the position in the Shader Program of the uniform variable
             GLint fragColorLocation = glGetUniformLocation(shaders[current_program].Program, "colorIn");
-            // we assign the value to the uniform variable
             glUniform3fv(fragColorLocation, 1, myColor);
         }
 
@@ -312,9 +234,7 @@ int main()
         // PLANE
         if (current_program == FULLCOLOR || current_program == FLATTEN)
         {
-            // we determine the position in the Shader Program of the uniform variable
             GLint fragColorLocation = glGetUniformLocation(shaders[current_program].Program, "colorIn");
-            // we assign the value to the uniform variable
             glUniform3fv(fragColorLocation, 1, planeColor);
         }
 
@@ -328,14 +248,10 @@ int main()
         planeModel.Draw();
 
 
-        // Swapping back and front buffers
         glfwSwapBuffers(window);
     }
 
-    // when I exit from the graphics loop, it is because the application is closing
-    // we delete the Shader Programs
     DeleteShaders();
-    // we close and delete the created context
     glfwTerminate();
     return 0;
 }
