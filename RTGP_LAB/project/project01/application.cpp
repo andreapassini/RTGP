@@ -39,6 +39,7 @@ positive Z axis points "outside" the screen
 #include <utils/shader.h>
 #include <utils/model.h>
 #include <utils/camera.h>
+#include <utils/performanceCalculator.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -107,6 +108,9 @@ float k = 0.5f;
 unsigned int contraintIterations = 5;
 unsigned int collisionIterations = 15;
 
+unsigned int windowSize = 10;
+unsigned int overlap = 3;
+
 int main()
 {
     if(SetupOpenGL() == -1)
@@ -135,6 +139,7 @@ int main()
     Transform clothTransform(view);
     Cloth cloth(30, 0.15f, startingPosition, &clothTransform, pinned, usePhysicConstraints, k, contraintIterations, gravity, collisionIterations);
 
+    PerformanceCalculator performanceCalculator(windowSize, overlap);
     // DELTA TIME using std::chrono
     // https://stackoverflow.com/questions/14391327/how-to-get-duration-as-int-millis-and-float-seconds-from-chrono
     typedef std::chrono::high_resolution_clock Time;
@@ -149,6 +154,12 @@ int main()
         GLfloat currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
+
+        auto current_time = Time::now();
+        fsec deltaTime = (current_time - start_time);
+        start_time = Time::now();
+
+        performanceCalculator.Step(deltaTime.count());
 
         glfwPollEvents();
         apply_camera_movements();
@@ -180,9 +191,6 @@ int main()
         glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
 
-        auto current_time = Time::now();
-        fsec deltaTime = (current_time - start_time);
-        start_time = Time::now();
 
         // CLOTH
         if (current_program == FULLCOLOR || current_program == FLATTEN)
@@ -209,6 +217,7 @@ int main()
             pinned = !pinned;
             new(&cloth) Cloth(30, 0.15f, startingPosition, &clothTransform, pinned, usePhysicConstraints, k, contraintIterations, gravity, collisionIterations);
             once = false;
+            std::cout << "Framerate: " << (int)performanceCalculator.framerate << std::endl;
         } else if(spinning && !once){
             once = true; 
         }
@@ -310,7 +319,7 @@ int SetupOpenGL(){
     return 1;
 }
 
-//////////////////////////////////////////
+//-------------------------------------------------------------------------------------
 // we create and compile shaders (code of Shader class is in include/utils/shader.h), and we add them to the list of available shaders
 void SetupShaders()
 {
@@ -326,7 +335,7 @@ void SetupShaders()
     shaders.push_back(shader5);
 }
 
-//////////////////////////////////////////
+//---------------------------------------------------------------------------------
 // we delete all the Shaders Programs
 void DeleteShaders()
 {
@@ -334,7 +343,7 @@ void DeleteShaders()
         shaders[i].Delete();
 }
 
-//////////////////////////////////////////
+//---------------------------------------------------------------------------------
 // we print on console the name of the currently used shader
 void PrintCurrentShader(int shader)
 {
@@ -342,7 +351,7 @@ void PrintCurrentShader(int shader)
 
 }
 
-//////////////////////////////////////////
+//---------------------------------------------------------------------------------
 // callback for keyboard events
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
@@ -386,7 +395,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         keys[key] = false;
 }
 
-//////////////////////////////////////////
+//---------------------------------------------------------------------------------
 // If one of the WASD keys is pressed, the camera is moved accordingly (the code is in utils/camera.h)
 void apply_camera_movements()
 {
@@ -416,7 +425,7 @@ void apply_camera_movements()
     }
 }
 
-//////////////////////////////////////////
+//---------------------------------------------------------------------------------
 // callback for mouse events
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
