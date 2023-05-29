@@ -23,6 +23,7 @@ private:
 	bool springs;
 	unsigned int constraintIterations;
 	unsigned int collisionIterations;
+	float gravityForce;
 
 	GLuint VAO;
 	GLuint EBO;
@@ -200,6 +201,7 @@ public:
 		this->springs = usePhysicConstraints;
 		this->constraintIterations = contraintIt;
 		this->collisionIterations = collisionIt;
+		this->gravityForce = gravity;
 
 		particles.resize(dim*dim); //I am essentially using this vector as an array with room for num_particles_width*dim particles
 		
@@ -299,7 +301,7 @@ public:
 		UpdateBuffers();
 	}
 	void AddGravityForce(){
-		glm::vec3 gravityVec = glm::vec3(0.0f, 1.0f * (-9.8f), 0.0f);
+		glm::vec3 gravityVec = glm::vec3(0.0f, 1.0f * (gravityForce), 0.0f);
 
 		AddForceToAllParticles(gravityVec);
 	}

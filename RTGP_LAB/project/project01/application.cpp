@@ -105,7 +105,7 @@ bool pinned = true;
 bool usePhysicConstraints = false;
 float gravity = -9.8f;
 float k = 0.5f;
-unsigned int contraintIterations = 5;
+unsigned int contraintIterations = 15;
 unsigned int collisionIterations = 15;
 
 unsigned int windowSize = 10;
