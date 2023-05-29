@@ -134,3 +134,15 @@ Methods
 
         Foreach Particles: 
                 - Divide the quad of the matrix into 2 triangles
+
+
+# **FINAL SCENE**
+
+- Cube map (
+https://sketchfab.com/3d-models/free-cubemap-sphere-45d9cf7df0ad481eab7ca199d458d825
+)
+- a couple of shaders
+- performance (window method)
+- cloth
+- sphere (texture)
+- plane (texture)
