@@ -19,7 +19,7 @@ public:
 	// Set K at like 2.0f
 	void satisfyConstraint_Physics()
 	{
-		float K = 2.0f;
+		float K = 3.0f;
 		glm::vec3 p1_to_p2 = this->p2->getPos() - this->p1->getPos(); // vector from p1 to p2
 		float current_distance = glm::length(p1_to_p2); // current distance between p1 and p2
 		p1_to_p2 /= current_distance;

@@ -253,7 +253,7 @@ public:
 		freeGPUresources();
 	}
 
-	void PhysicsSteps(float deltaTime, glm::vec3 ballCenterWorld, float ballRadius, float planeLimit)
+	void PhysicsSteps(float deltaTime, glm::vec3 ballCenterWorld, float ballRadius, float planeLimit, float spring)
 	{
 		std::vector<Particle>::iterator particle;
 		for(particle = particles.begin(); particle != particles.end(); particle++)
@@ -261,12 +261,23 @@ public:
 			particle->PhysicStep(deltaTime); // calculate the position of each particle at the next time step.
 		}
 
-		std::vector<Constraint>::iterator constraint;
-		for(size_t i=0; i < CONSTRAINT_ITERATIONS; i++) // iterate over all constraints several times
-		{
-			for(constraint = constraints.begin(); constraint != constraints.end(); constraint++ )
+		if(spring){
+			std::vector<Constraint>::iterator constraint;
+			for(size_t i=0; i < CONSTRAINT_ITERATIONS_SPRINGS; i++) // iterate over all constraints several times
 			{
-				constraint->satisfyConstraint(); // satisfy constraint.
+				for(constraint = constraints.begin(); constraint != constraints.end(); constraint++ )
+				{
+					constraint->satisfyConstraint_Physics(); // satisfy constraint.
+				}
+			}
+		} else {
+			std::vector<Constraint>::iterator constraint;
+			for(size_t i=0; i < CONSTRAINT_ITERATIONS; i++) // iterate over all constraints several times
+			{
+				for(constraint = constraints.begin(); constraint != constraints.end(); constraint++ )
+				{
+					constraint->satisfyConstraint(); // satisfy constraint.
+				}
 			}
 		}
 
