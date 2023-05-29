@@ -138,6 +138,8 @@ Methods
 
 # **FINAL SCENE**
 
+- Use P to respawn the cloth and pin-unpin
+
 - Cube map (
 https://sketchfab.com/3d-models/free-cubemap-sphere-45d9cf7df0ad481eab7ca199d458d825
 )

@@ -184,8 +184,13 @@ int main()
     bool clothExist = true;
     unsigned int prints = 0;
     bool pinned = true;
+    bool usePhysicConstraints = false;
+    float gravity = -9.8f;
+    float k = 0.5f;
+    unsigned int contraintIterations = 5;
+    unsigned int collisionIterations = 15;
     Transform clothTransform(view);
-    Cloth cloth(30, 0.15f, startingPosition, &clothTransform, pinned);
+    Cloth cloth(30, 0.15f, startingPosition, &clothTransform, pinned, usePhysicConstraints, k, contraintIterations, gravity, collisionIterations);
 
     // DELTA TIME using std::chrono
     // https://stackoverflow.com/questions/14391327/how-to-get-duration-as-int-millis-and-float-seconds-from-chrono
@@ -267,7 +272,7 @@ int main()
             view
         );
 
-        cloth.PhysicsSteps(deltaTime.count(), (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, -9.9f, false);
+        cloth.PhysicsSteps(deltaTime.count(), (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, -9.9f);
 
         glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.modelMatrix));
         glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.normalMatrix));
@@ -278,7 +283,7 @@ int main()
         {
             cloth.~Cloth();
             pinned = !pinned;
-            new(&cloth) Cloth(30, 0.15f, startingPosition, &clothTransform, pinned);
+            new(&cloth) Cloth(30, 0.15f, startingPosition, &clothTransform, pinned, usePhysicConstraints, k, contraintIterations, gravity, collisionIterations);
             once = false;
         } else if(spinning && !once){
             once = true; 

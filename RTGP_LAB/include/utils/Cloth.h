@@ -20,6 +20,9 @@ private:
 	// total number of particles is dim*dim
 
 	std::vector<Constraint> constraints; // alle constraints between particles as part of this cloth
+	bool springs;
+	unsigned int constraintIterations;
+	unsigned int collisionIterations;
 
 	GLuint VAO;
 	GLuint EBO;
@@ -191,9 +194,12 @@ private:
 public:
 	std::vector<Particle> particles; // all particles that are part of this cloth
 
-	Cloth(int dim, float particleDistance, glm::vec3 topLeftPosition, Transform *t, bool pinned){
+	Cloth(int dim, float particleDistance, glm::vec3 topLeftPosition, Transform *t, bool pinned, bool usePhysicConstraints, float k, unsigned int contraintIt, float gravity, unsigned int collisionIt){
 		this->dim = dim;
 		this->transform = t;
+		this->springs = usePhysicConstraints;
+		this->constraintIterations = contraintIt;
+		this->collisionIterations = collisionIt;
 
 		particles.resize(dim*dim); //I am essentially using this vector as an array with room for num_particles_width*dim particles
 		
@@ -253,7 +259,7 @@ public:
 		freeGPUresources();
 	}
 
-	void PhysicsSteps(float deltaTime, glm::vec3 ballCenterWorld, float ballRadius, float planeLimit, float spring)
+	void PhysicsSteps(float deltaTime, glm::vec3 ballCenterWorld, float ballRadius, float planeLimit)
 	{
 		std::vector<Particle>::iterator particle;
 		for(particle = particles.begin(); particle != particles.end(); particle++)
@@ -261,9 +267,9 @@ public:
 			particle->PhysicStep(deltaTime); // calculate the position of each particle at the next time step.
 		}
 
-		if(spring){
+		if(springs){
 			std::vector<Constraint>::iterator constraint;
-			for(size_t i=0; i < CONSTRAINT_ITERATIONS_SPRINGS; i++) // iterate over all constraints several times
+			for(size_t i=0; i < this->constraintIterations; i++) // iterate over all constraints several times
 			{
 				for(constraint = constraints.begin(); constraint != constraints.end(); constraint++ )
 				{
@@ -272,7 +278,7 @@ public:
 			}
 		} else {
 			std::vector<Constraint>::iterator constraint;
-			for(size_t i=0; i < CONSTRAINT_ITERATIONS; i++) // iterate over all constraints several times
+			for(size_t i=0; i < this->constraintIterations; i++) // iterate over all constraints several times
 			{
 				for(constraint = constraints.begin(); constraint != constraints.end(); constraint++ )
 				{
@@ -281,7 +287,7 @@ public:
 			}
 		}
 
-		for(size_t i = 0; i < CONSTRAINT_ITERATIONS; i++){
+		for(size_t i = 0; i < this->collisionIterations; i++){
 			for(particle = particles.begin(); particle != particles.end(); particle++)
 			{
 				particle->BallCollision(transform->modelMatrix, ballCenterWorld, ballRadius); // calculate the position of each particle at the next time step.
