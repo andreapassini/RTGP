@@ -63,18 +63,6 @@ uniform float shininess;
 uniform float alpha; // rugosity - 0 : smooth, 1: rough
 uniform float F0; // fresnel reflectance at normal incidence
 
-////////////////////////////////////////////////////////////////////
-
-// the "type" of the Subroutine
-subroutine vec4 ill_model();
-
-// Subroutine Uniform (it is conceptually similar to a C pointer function)
-subroutine uniform ill_model Illumination_Model_ML_TX;
-
-////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////
-// a subroutine for the Blinn-Phong model for multiple lights and texturing
 vec4 BlinnPhong_ML_TX() // this name is the one which is detected by the SetupShaders() function in the main application, and the one used to swap subroutines
 {
     // we repeat the UVs and we sample the texture
