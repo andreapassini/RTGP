@@ -3,17 +3,24 @@
         {
             "name": "Mac",
             "includePath": [
-                "${workspaceFolder:IncludeDir}/**"
+                "${workspaceFolder}\\**",
+                "D:\\Programmi\\Microsoft Visual Studio\\BuildTools2022\\VC\\Tools\\MSVC\\14.35.32215\\include",
+                "D:\\ANDREA\\UNI\\MAGISTRALE\\ANNO_2\\II_Semestre\\REAL-TIME_GP\\RTGP\\RTGP_LAB\\include",
+                "D:\\ANDREA\\UNI\\MAGISTRALE\\ANNO_2\\II_Semestre\\REAL-TIME_GP\\RTGP\\RTGP_LAB\\include\\glm",
+                "${workspaceFolder}",
+                "${workspaceFolder}",
+                "${workspaceFolder}",
+                "${workspaceFolder}"
             ],
             "defines": [],
             "macFrameworkPath": [
                 "/System/Library/Frameworks",
                 "/Library/Frameworks"
             ],
-            "compilerPath": "/usr/bin/clang++",
+            "compilerPath": "D:\\Programmi\\Microsoft Visual Studio\\BuildTools2022\\VC\\Tools\\MSVC\\14.35.32215\\bin\\Hostx64\\x64\\cl.exe",
             "cStandard": "c11",
             "cppStandard": "c++17",
-            "intelliSenseMode": "clang-x64"
+            "intelliSenseMode": "msvc-x64"
         },
         {
             "name": "Win32",

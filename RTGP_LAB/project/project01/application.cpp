@@ -50,6 +50,9 @@ positive Z axis points "outside" the screen
 #include <utils/cloth.h>
 
 
+#define NR_LIGHTS 3
+
+
 GLFWwindow* window;
 GLuint screenWidth = 1200, screenHeight = 900;
 
@@ -58,6 +61,8 @@ int SetupOpenGL();
 void SetupShaders();
 void DeleteShaders();
 void PrintCurrentShader(int shader);
+
+void SetupBlinPhong();
 
 // callback functions for keyboard events
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
@@ -83,10 +88,35 @@ GLboolean wireframe = GL_FALSE;
 
 Camera camera(glm::vec3(0.0f, -2.0f, 7.0f), GL_FALSE);
 
-enum available_ShaderPrograms{ FULLCOLOR, FLATTEN, NORMAL2COLOR, WAVE, UV2COLOR };
-const char * print_available_ShaderPrograms[] = { "FULLCOLOR", "FLATTEN", "NORMAL2COLOR", "WAVE", "UV2COLOR" };
+enum available_ShaderPrograms{ FULLCOLOR, FLATTEN, NORMAL2COLOR, WAVE, BLINPHONG };
+const char * print_available_ShaderPrograms[] = { "FULLCOLOR", "FLATTEN", "NORMAL2COLOR", "WAVE", "BLINPHONG" };
 GLuint current_program = FULLCOLOR;
 vector<Shader> shaders;
+
+// Uniforms to pass to shaders
+// pointlights positions
+glm::vec3 lightPositions[] = {
+    glm::vec3(5.0f, 10.0f, 10.0f),
+    glm::vec3(-5.0f, 10.0f, 10.0f),
+    glm::vec3(5.0f, 10.0f, -10.0f),
+};
+
+// diffusive, specular and ambient components
+GLfloat diffuseColor[] = {1.0f,0.0f,0.0f};
+GLfloat specularColor[] = {1.0f,1.0f,1.0f};
+GLfloat ambientColor[] = {0.1f,0.1f,0.1f};
+// weights for the diffusive, specular and ambient components
+GLfloat Kd = 0.5f;
+GLfloat Ks = 0.4f;
+GLfloat Ka = 0.1f;
+// shininess coefficient for Blinn-Phong shader
+GLfloat shininess = 25.0f;
+
+// roughness index for GGX shader
+GLfloat alpha = 0.2f;
+// Fresnel reflectance at 0 degree (Schlik's approximation)
+GLfloat F0 = 0.9f;
+
 
 GLfloat myColor[] = {1.0f,0.0f,0.0f};
 GLfloat clothColor[] = {0.0f, 31.0f, 0.0f};
@@ -186,11 +216,18 @@ int main()
             GLint timerLocation = glGetUniformLocation(shaders[current_program].Program, "timer");
             glUniform1f(weightLocation, weight);
             glUniform1f(timerLocation, currentFrame*speed);
+        } else if (current_program == BLINPHONG) {
+            SetupBlinPhong();
         }
 
         glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
 
+        for (GLuint i = 0; i < NR_LIGHTS; i++)
+        {
+            string number = to_string(i);
+            glUniform3fv(glGetUniformLocation(shaders[current_program].Program, ("lights[" + number + "]").c_str()), 1, glm::value_ptr(lightPositions[i]));
+        }
 
         // CLOTH
         if (current_program == FULLCOLOR || current_program == FLATTEN)
@@ -319,6 +356,32 @@ int SetupOpenGL(){
     return 1;
 }
 
+void SetupBlinPhong(){
+    // we determine the position in the Shader Program of the uniform variables
+    GLint matDiffuseLocation = glGetUniformLocation(shaders[current_program].Program, "diffuseColor");
+    GLint matAmbientLocation = glGetUniformLocation(shaders[current_program].Program, "ambientColor");
+    GLint matSpecularLocation = glGetUniformLocation(shaders[current_program].Program, "specularColor");
+    GLint kaLocation = glGetUniformLocation(shaders[current_program].Program, "Ka");
+    GLint kdLocation = glGetUniformLocation(shaders[current_program].Program, "Kd");
+    GLint ksLocation = glGetUniformLocation(shaders[current_program].Program, "Ks");
+    GLint shineLocation = glGetUniformLocation(shaders[current_program].Program, "shininess");
+    GLint alphaLocation = glGetUniformLocation(shaders[current_program].Program, "alpha");
+    GLint f0Location = glGetUniformLocation(shaders[current_program].Program, "F0");
+
+    // we assign the value to the uniform variables
+    glUniform3fv(matAmbientLocation, 1, ambientColor);
+    glUniform3fv(matSpecularLocation, 1, specularColor);
+    glUniform1f(shineLocation, shininess);
+    glUniform1f(alphaLocation, alpha);
+    glUniform1f(f0Location, F0);
+
+    glUniform3fv(matDiffuseLocation, 1, diffuseColor);
+
+    glUniform1f(ksLocation, Ka);
+    glUniform1f(ksLocation, Kd);
+    glUniform1f(ksLocation, Ks);
+}
+
 //-------------------------------------------------------------------------------------
 // we create and compile shaders (code of Shader class is in include/utils/shader.h), and we add them to the list of available shaders
 void SetupShaders()
@@ -331,7 +394,7 @@ void SetupShaders()
     shaders.push_back(shader3);
     Shader shader4("04_wave.vert", "04_wave.frag");
     shaders.push_back(shader4);
-    Shader shader5("05_uv2color.vert", "05_uv2color.frag");
+    Shader shader5("06_blinphong.vert", "06_blinphong.frag");
     shaders.push_back(shader5);
 }
 
