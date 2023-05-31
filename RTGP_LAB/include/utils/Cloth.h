@@ -389,7 +389,15 @@ public:
 			del = false;
 		}
 
-		pToDelete->renderable = false;
+		//pToDelete->renderable = false;
+
+		for(size_t x = 0; x < particles.size(); x++){
+			for(size_t y = 0; y < particles.size(); y++){
+				if(getParticle(x, y, particles.size()) == pToDelete)
+					particles.erase(particles.begin() + (x*particles.size()+y));
+			}
+		}
+
 
 		std::cout << "Del: " << del << std::endl;
 	}
