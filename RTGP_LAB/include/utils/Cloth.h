@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <random>
 #include <ctime>
+#include <iostream>
 
 class Cloth
 {
@@ -375,7 +376,7 @@ public:
 
 	}
 
-	void DestroyConstraintsOfParticle(Particle* pToDelete){
+	void DeleteAllConstraintOfParticle(Particle* pToDelete){
 		bool del = false;
 		for(size_t i = 0;  i < constraints.size(); i++){
 			if(constraints[i].p1->pos.x == pToDelete->pos.x && constraints[i].p1->pos.y == pToDelete->pos.y)
@@ -389,22 +390,38 @@ public:
 			del = false;
 		}
 
-		//pToDelete->renderable = false;
+		pToDelete->renderable = false;
 
-		for(size_t x = 0; x < particles.size(); x++){
-			for(size_t y = 0; y < particles.size(); y++){
-				if(getParticle(x, y, particles.size()) == pToDelete)
-					particles.erase(particles.begin() + (x*particles.size()+y));
-			}
-		}
+		// for(size_t x = 0; x < particles.size(); x++){
+		// 	for(size_t y = 0; y < particles.size(); y++){
+		// 		if(getParticle(x, y, particles.size()) == pToDelete)
+		// 			particles.erase(particles.begin() + (x*particles.size()+y));
+		// 	}
+		// }
 
 
 		std::cout << "Del: " << del << std::endl;
 	}
-	void DestroyConstraintsOfParticle(unsigned int x, unsigned int y){
-		Particle* pToDelete = getParticle(x, y, dim);
+	void CutAHole(unsigned int x, unsigned int y){
+		Particle* pToDelete0 = getParticle(x, y, dim);
+		Particle* pToDelete1 = getParticle(x, y-1, dim);
+		Particle* pToDelete2 = getParticle(x, y+1, dim);
+		Particle* pToDelete3 = getParticle(x+1, y, dim);
+		Particle* pToDelete4 = getParticle(x+1, y+1, dim);
+		Particle* pToDelete5 = getParticle(x+1, y-1, dim);
+		Particle* pToDelete6 = getParticle(x-1, y, dim);
+		Particle* pToDelete7 = getParticle(x-1, y+1, dim);
+		Particle* pToDelete8 = getParticle(x-1, y-1, dim);
 
-		DestroyConstraintsOfParticle(pToDelete);
+		DeleteAllConstraintOfParticle(pToDelete0);
+		DeleteAllConstraintOfParticle(pToDelete1);
+		DeleteAllConstraintOfParticle(pToDelete2);
+		DeleteAllConstraintOfParticle(pToDelete3);
+		DeleteAllConstraintOfParticle(pToDelete4);
+		DeleteAllConstraintOfParticle(pToDelete5);
+		DeleteAllConstraintOfParticle(pToDelete6);
+		DeleteAllConstraintOfParticle(pToDelete7);
+		DeleteAllConstraintOfParticle(pToDelete8);
 	}
 
 };

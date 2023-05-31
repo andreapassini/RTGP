@@ -273,7 +273,7 @@ int main()
             once = false;
             // std::cout << "Framerate: " << (int)performanceCalculator.framerate << std::endl;
 
-            cloth.DestroyConstraintsOfParticle(4 + iter, 4 + iter);
+            cloth.CutAHole(4 + iter, 4 + iter);
             iter++;
 
         } else if(spinning && !once){
