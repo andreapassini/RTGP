@@ -33,12 +33,6 @@ uniform float F0; // fresnel reflectance at normal incidence
 
 ////////////////////////////////////////////////////////////////////
 
-// the "type" of the Subroutine
-subroutine vec3 ill_model();
-
-// Subroutine Uniform (it is conceptually similar to a C pointer function)
-subroutine uniform ill_model Illumination_Model_ML;
-
 vec3 BlinnPhong_ML() // this name is the one which is detected by the SetupShaders() function in the main application, and the one used to swap subroutines
 {
     // ambient component can be calculated at the beginning

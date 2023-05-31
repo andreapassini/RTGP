@@ -49,6 +49,9 @@ positive Z axis points "outside" the screen
 #include <utils/Transform.h>
 #include <utils/cloth.h>
 
+// we include the library for images loading
+#define STB_IMAGE_IMPLEMENTATION
+#include "../include/stb_image/stb_image.h"
 
 #define NR_LIGHTS 3
 
@@ -64,7 +67,8 @@ void PrintCurrentShader(int shader);
 
 void SetupBlinPhong();
 
-// callback functions for keyboard events
+GLint LoadTexture(const char* path);
+
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void apply_camera_movements();
@@ -117,6 +121,9 @@ GLfloat alpha = 0.2f;
 // Fresnel reflectance at 0 degree (Schlik's approximation)
 GLfloat F0 = 0.9f;
 
+vector<GLint> textureID;
+GLfloat repeat = 1.0f;  // UV repetitions
+
 
 GLfloat myColor[] = {1.0f,0.0f,0.0f};
 GLfloat clothColor[] = {0.0f, 31.0f, 0.0f};
@@ -129,13 +136,15 @@ GLfloat speed = 5.0f;
 glm::vec3 startingPosition(0.0f, 0.0f, 0.0f);
 
 bool once = true;
+unsigned int iter = 0;
+
 bool clothExist = true;
 unsigned int prints = 0;
 bool pinned = true;
-bool usePhysicConstraints = false;
-float gravity = -9.8f;
+bool usePhysicConstraints = true;
+float gravity = -0.5f;
 float k = 0.5f;
-unsigned int contraintIterations = 15;
+unsigned int constraintIterations = 5;
 unsigned int collisionIterations = 15;
 
 unsigned int windowSize = 10;
@@ -157,6 +166,9 @@ int main()
     Model planeModel("../../models/plane.obj");
     Model cubeModel("../../models/cube.obj");
 
+    textureID.push_back(LoadTexture("../../textures/UV_Grid_Sm.png"));
+    textureID.push_back(LoadTexture("../../textures/SoilCracked.png"));
+
     // Model and Normal transformation matrices for the objects in the scene: we set to identity
     glm::vec3 spherePosition(3.0f, -4.5f, -2.5f);
     Transform sphereTransform(view);
@@ -167,7 +179,7 @@ int main()
     Transform cubeTransform(view);
 
     Transform clothTransform(view);
-    Cloth cloth(30, 0.15f, startingPosition, &clothTransform, pinned, usePhysicConstraints, k, contraintIterations, gravity, collisionIterations);
+    Cloth cloth(30, 0.15f, startingPosition, &clothTransform, pinned, usePhysicConstraints, k, constraintIterations, gravity, collisionIterations);
 
     PerformanceCalculator performanceCalculator(windowSize, overlap);
     // DELTA TIME using std::chrono
@@ -218,16 +230,21 @@ int main()
             glUniform1f(timerLocation, currentFrame*speed);
         } else if (current_program == BLINPHONG) {
             SetupBlinPhong();
+            
+            for (GLuint i = 0; i < NR_LIGHTS; i++)
+            {
+                string number = to_string(i);
+                glUniform3fv(glGetUniformLocation(shaders[current_program].Program, ("lights[" + number + "]").c_str()), 1, glm::value_ptr(lightPositions[i]));
+            }
+
         }
+
+        GLint textureLocation = glGetUniformLocation(shaders[current_program].Program, "tex");
+        GLint repeatLocation = glGetUniformLocation(shaders[current_program].Program, "repeat");
+
 
         glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
-
-        for (GLuint i = 0; i < NR_LIGHTS; i++)
-        {
-            string number = to_string(i);
-            glUniform3fv(glGetUniformLocation(shaders[current_program].Program, ("lights[" + number + "]").c_str()), 1, glm::value_ptr(lightPositions[i]));
-        }
 
         // CLOTH
         if (current_program == FULLCOLOR || current_program == FLATTEN)
@@ -250,15 +267,22 @@ int main()
         
         if(!spinning && once)
         {
-            cloth.~Cloth();
-            pinned = !pinned;
-            new(&cloth) Cloth(30, 0.15f, startingPosition, &clothTransform, pinned, usePhysicConstraints, k, contraintIterations, gravity, collisionIterations);
+            // cloth.~Cloth();
+            // pinned = !pinned;
+            // new(&cloth) Cloth(30, 0.15f, startingPosition, &clothTransform, pinned, usePhysicConstraints, k, constraintIterations, gravity, collisionIterations);
             once = false;
-            std::cout << "Framerate: " << (int)performanceCalculator.framerate << std::endl;
+            // std::cout << "Framerate: " << (int)performanceCalculator.framerate << std::endl;
+
+            cloth.DestroyConstraintsOfParticle(4 + iter, 4 + iter);
+            iter++;
+
         } else if(spinning && !once){
             once = true; 
         }
 
+        // Objects with texture
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, textureID[0]);
 
         //SPHERE
         if (current_program == FULLCOLOR || current_program == FLATTEN)
@@ -276,6 +300,13 @@ int main()
         glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.normalMatrix));
         sphereModel.Draw();
         
+        // we activate the texture with id 1, and we bind the id to the loaded texture data
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, textureID[1]);
+
+        // we pass the id of the texture (= to number X in GL_TEXTUREX at line 327) and the number of repetitions for the plane
+        glUniform1i(textureLocation, 1);
+        glUniform1f(repeatLocation, 80.0f);
         
         // PLANE
         if (current_program == FULLCOLOR || current_program == FLATTEN)
@@ -413,6 +444,43 @@ void PrintCurrentShader(int shader)
     std::cout << "Current shader:" << print_available_ShaderPrograms[shader]  << std::endl;
 
 }
+
+//////////////////////////////////////////
+// we load the image from disk and we create an OpenGL texture
+GLint LoadTexture(const char* path)
+{
+    GLuint textureImage;
+    int w, h, channels;
+    unsigned char* image;
+    image = stbi_load(path, &w, &h, &channels, STBI_rgb);
+
+    if (image == nullptr)
+        std::cout << "Failed to load texture!" << std::endl;
+
+    glGenTextures(1, &textureImage);
+    glBindTexture(GL_TEXTURE_2D, textureImage);
+    // 3 channels = RGB ; 4 channel = RGBA
+    if (channels==3)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+    else if (channels==4)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    // we set how to consider UVs outside [0,1] range
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // we set the filtering for minification and magnification
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+
+    // we free the memory once we have created an OpenGL texture
+    stbi_image_free(image);
+
+    // we set the binding to 0 once we have finished
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    return textureImage;
+}
+
 
 //---------------------------------------------------------------------------------
 // callback for keyboard events

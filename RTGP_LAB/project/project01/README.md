@@ -148,3 +148,17 @@ https://sketchfab.com/3d-models/free-cubemap-sphere-45d9cf7df0ad481eab7ca199d458
 - cloth
 - sphere (texture)
 - plane (texture)
+
+## **Scenes**
+
+
+### **Scene 1**
+Single static sphere and a plane
+
+
+### **Scene 2**
+Multiple spheres and a plane
+
+
+### **Scene 3**
+Shooting spheres and cutting the cloth

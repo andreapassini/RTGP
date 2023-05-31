@@ -123,17 +123,28 @@ private:
         glBindVertexArray(0); 
 	}
 	void MakeTriangleFromGrid(){
+		indices.clear();
 		for(int x = 0; x < dim-1; x++)
 		{
 			for(int y=0; y < dim-1; y++)
 			{
-				indices.push_back((x)*dim +y);
-				indices.push_back((x)*dim +(y+1));
-				indices.push_back((x+1)*dim +(y));
+				if(getParticle(x, y, dim)->renderable && 
+					getParticle(x, y+1, dim)->renderable &&
+					getParticle(x+1, y, dim)->renderable)
+				{
+					indices.push_back((x)*dim +y);
+					indices.push_back((x)*dim +(y+1));
+					indices.push_back((x+1)*dim +(y));
+				}
 
-				indices.push_back((x+1)*dim +(y));
-				indices.push_back((x)*dim +(y+1));
-				indices.push_back((x+1)*dim +(y+1));
+				if(getParticle(x+1, y, dim)->renderable && 
+					getParticle(x, y+1, dim)->renderable &&
+					getParticle(x+1, y+1, dim)->renderable)
+				{
+					indices.push_back((x+1)*dim +(y));
+					indices.push_back((x)*dim +(y+1));
+					indices.push_back((x+1)*dim +(y+1));
+				}
 			}
 		}
 	}
@@ -337,6 +348,7 @@ public:
 
 	void Draw()
 	{
+		SetUp();
 		UpdateNormals();
 		UpdateBuffers();
 
@@ -362,4 +374,29 @@ public:
 		}
 
 	}
+
+	void DestroyConstraintsOfParticle(Particle* pToDelete){
+		bool del = false;
+		for(size_t i = 0;  i < constraints.size(); i++){
+			if(constraints[i].p1->pos.x == pToDelete->pos.x && constraints[i].p1->pos.y == pToDelete->pos.y)
+				del = true;
+			if(constraints[i].p2->pos.x == pToDelete->pos.x && constraints[i].p2->pos.y == pToDelete->pos.y)
+				del = true;
+
+			if(del)
+				constraints.erase(constraints.begin() + i);
+			
+			del = false;
+		}
+
+		pToDelete->renderable = false;
+
+		std::cout << "Del: " << del << std::endl;
+	}
+	void DestroyConstraintsOfParticle(unsigned int x, unsigned int y){
+		Particle* pToDelete = getParticle(x, y, dim);
+
+		DestroyConstraintsOfParticle(pToDelete);
+	}
+
 };

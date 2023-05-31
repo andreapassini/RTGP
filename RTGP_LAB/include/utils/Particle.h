@@ -19,9 +19,11 @@ public:
 	glm::vec3 force; // a vector representing the current force of the particle
 	bool movable; // can the particle move or not ? used to pin parts of the cloth
 	float mass; // the mass of the particle (is always 1 in this example)
+
+	bool renderable;
 	
 	Particle(glm::vec3 pos) : pos(pos), normal(glm::vec3(1.0f)),  old_pos(pos),force(glm::vec3(0.0f)), mass(1.0f), movable(true){
-		
+		renderable = true;
 	}
 	Particle(){}
 
@@ -79,4 +81,13 @@ public:
 			this->pos = glm::vec3(this->pos.x, yLimit, this->pos.z); // project the particle to the surface of the ball
 		}
 	}
+
+	bool operator== (Particle &p){
+		bool equal = false;
+
+		if(this->pos == p.pos && this->normal == p.normal)
+			equal = true;
+
+		return equal;
+	};
 };
