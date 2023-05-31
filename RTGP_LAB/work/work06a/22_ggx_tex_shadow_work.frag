@@ -33,11 +33,14 @@ in vec3 vViewPosition;
 // interpolated texture coordinates
 in vec2 interp_UV;
 
+in vec4 posLightSpace;
+
 // texture repetitions
 uniform float repeat;
 
 // texture sampler
 uniform sampler2D tex;
+uniform sampler2D shadowMap;
 
 uniform float alpha; // rugosity - 0 : smooth, 1: rough
 uniform float F0; // fresnel reflectance at normal incidence
@@ -53,6 +56,37 @@ uniform float Kd; // weight of diffuse reflection
 
 ////////////////////////////////////////////////////////////////////
 
+float Shadow(){
+    // Sampling of the shadow map
+    vec3 projCoords = posLightSpace.xyz / posLightSpace.w;
+    projCoords = projCoords * 0.5 + 0.5;
+    float closestDepth = texture(shadowMap, projCoords.xy).r; // grey image, se we need just the first channel
+    // Check the depth buffer
+    float currentDepth = projCoords.z;
+
+    float shadow = 0.0;
+    vec3 normal = normalize(vNormal);
+    float bias = max(0.05 * (1.0-dot(normal, lightDir)), 0.005);
+    
+    vec2 texelSize = 1.0 / textureSize(shadowMap,  0);
+
+    for(int x = -1; x <= 1; x++){
+        for(int y = -1; y <= 1; y++){
+            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
+            shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
+        }
+    }
+
+    shadow /= 9.0; // average of the 9 samples
+
+    if(projCoords.z > 1.0){
+        shadow = 0.0;
+    }
+
+
+
+    return shadow;
+}
 
 //////////////////////////////////////////
 // Schlick-GGX method for geometry obstruction (used by GGX model)
@@ -90,6 +124,9 @@ void main()
     // we initialize the specular component
     vec3 specular = vec3(0.0);
 
+    float shadow = 0.0;
+
+
     // if the cosine of the angle between direction of light and normal is positive, then I can calculate the specular component
     if(NdotL > 0.0)
     {
@@ -123,14 +160,14 @@ void main()
 
         // we put everything together for the specular component
         specular = (F * G2 * D) / (4.0 * NdotV * NdotL);
-
+        shadow = Shadow();
     }
 
     // the rendering equation is:
     //integral of: BRDF * Li * (cosine angle between N and L)
     // BRDF in our case is: the sum of Lambert and GGX
     // Li is considered as equal to 1: light is white, and we have not applied attenuation. With colored lights, and with attenuation, the code must be modified and the Li factor must be multiplied to finalColor
-    vec3 finalColor = (lambert + specular)*NdotL;
+    vec3 finalColor = (1.0-shadow)*(lambert + specular)*NdotL;
 
 
     colorFrag = vec4(finalColor, 1.0);

@@ -37,6 +37,7 @@ Universita' degli Studi di Milano
 #include <utils/shader.h>
 #include <utils/model.h>
 #include <utils/camera.h>
+#include <utils/physics.h>
 
 // we load the GLM classes used in the application
 #include <glm/glm.hpp>
@@ -98,6 +99,9 @@ GLfloat diffuseColor[] = {1.0f,0.0f,0.0f};
 GLfloat planeMaterial[] = {0.0f,0.5f,0.0f};
 // color of the bullets
 GLfloat shootColor[] = {1.0f,1.0f,0.0f};
+glm::vec3 sphere_size = glm::vec3(0.2f, 0.2f, 0.2f);
+
+Physics bulletSimulation;
 
 ////////////////// MAIN function ///////////////////////
 int main()
@@ -165,6 +169,11 @@ int main()
     glm::vec3 plane_size = glm::vec3(200.0f, 0.1f, 200.0f);
     glm::vec3 plane_rot = glm::vec3(0.0f, 0.0f, 0.0f);
 
+    // Setup RigidBody for the plane
+    btRigidBody* plane = bulletSimulation.createRigidBody(BOX, plane_pos, plane_size, plane_rot, 0.0f, 0.3f, 0.3f);
+
+
+
     // we create 25 rigid bodies for the cubes of the scene. In this case, we use BoxShape, with the same dimensions of the cubes, as collision shape of Bullet. For more complex cases, a Bounding Box of the model may have to be calculated, and its dimensions to be passed to the physics library
     GLint num_side = 5;
     // total number of the cubes
@@ -177,129 +186,158 @@ int main()
     // we set a small initial rotation for the cubes
     glm::vec3 cube_rot = glm::vec3(0.1f, 0.0f, 0.1f);
 
-    vector<glm::vec3> positions;
+    btRigidBody* cube;
+
+    //vector<glm::vec3> positions;
 
     // we create a 5x5 grid of rigid bodies
     for(i = 0; i < num_side; i++ )
     {
         for(j = 0; j < num_side; j++ )
         {
-            positions.push_back(glm::vec3((i - num_side)+3.0f, 1.0f, (num_side - j)));
+            cube_pos = (glm::vec3((i - num_side)+3.0f, 1.0f, (num_side - j)));
+            cube = bulletSimulation.createRigidBody(BOX, cube_pos, cube_size, cube_rot, 2.0f, 0.3f, 0.3f);
         }
     }
 
-  // Projection matrix: FOV angle, aspect ratio, near and far planes
-  projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);
+    GLfloat maxSecPerFrame = 1.0f / 60.0f;
 
-  // Model and Normal transformation matrices for the objects in the scene: we set to identity
-  glm::mat4 objModelMatrix = glm::mat4(1.0f);
-  glm::mat3 objNormalMatrix = glm::mat3(1.0f);
-  glm::mat4 planeModelMatrix = glm::mat4(1.0f);
-  glm::mat3 planeNormalMatrix = glm::mat3(1.0f);
+    // Projection matrix: FOV angle, aspect ratio, near and far planes
+    projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);
 
-  // Rendering loop: this code is executed at each frame
-  while(!glfwWindowShouldClose(window))
-  {
-      // we determine the time passed from the beginning
-      // and we calculate time difference between current frame rendering and the previous one
-      GLfloat currentFrame = glfwGetTime();
-      deltaTime = currentFrame - lastFrame;
-      lastFrame = currentFrame;
+    // Model and Normal transformation matrices for the objects in the scene: we set to identity
+    glm::mat4 objModelMatrix = glm::mat4(1.0f);
+    glm::mat3 objNormalMatrix = glm::mat3(1.0f);
+    glm::mat4 planeModelMatrix = glm::mat4(1.0f);
+    glm::mat3 planeNormalMatrix = glm::mat3(1.0f);
 
-      // Check is an I/O event is happening
-      glfwPollEvents();
-      // we apply FPS camera movements
-      apply_camera_movements();
-      // View matrix (=camera): position, view direction, camera "up" vector
-      // in this example, it has been defined as a global variable (we need it in the keyboard callback function)
-      view = camera.GetViewMatrix();
+    // Rendering loop: this code is executed at each frame
+    while(!glfwWindowShouldClose(window))
+    {
+        // we determine the time passed from the beginning
+        // and we calculate time difference between current frame rendering and the previous one
+        GLfloat currentFrame = glfwGetTime();
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
 
-      // we "clear" the frame and z buffer
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        // Check is an I/O event is happening
+        glfwPollEvents();
+        // we apply FPS camera movements
+        apply_camera_movements();
+        // View matrix (=camera): position, view direction, camera "up" vector
+        // in this example, it has been defined as a global variable (we need it in the keyboard callback function)
+        view = camera.GetViewMatrix();
 
-      // we set the rendering mode
-      if (wireframe)
-          // Draw in wireframe
-          glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-      else
-          glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        // we "clear" the frame and z buffer
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-      /////////////////// OBJECTS ////////////////////////////////////////////////
-      // We "install" the selected Shader Program as part of the current rendering process
-      object_shader.Use();
-      // We search inside the Shader Program the name of a subroutine, and we get the numerical index
-      GLuint index = glGetSubroutineIndex(object_shader.Program, GL_FRAGMENT_SHADER, "GGX");
-      // we activate the subroutine using the index
-      glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &index);
+        // we set the rendering mode
+        if (wireframe)
+            // Draw in wireframe
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        else
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-      // we pass projection and view matrices to the Shader Program
-      glUniformMatrix4fv(glGetUniformLocation(object_shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
-      glUniformMatrix4fv(glGetUniformLocation(object_shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
+        bulletSimulation.dynamicsWorld->stepSimulation((deltaTime < maxSecPerFrame ? deltaTime : maxSecPerFrame), 10);
 
-      // we determine the position in the Shader Program of the uniform variables
-      GLint objDiffuseLocation = glGetUniformLocation(object_shader.Program, "diffuseColor");
-      GLint pointLightLocation = glGetUniformLocation(object_shader.Program, "pointLightPosition");
-      GLint kdLocation = glGetUniformLocation(object_shader.Program, "Kd");
-      GLint alphaLocation = glGetUniformLocation(object_shader.Program, "alpha");
-      GLint f0Location = glGetUniformLocation(object_shader.Program, "F0");
+        /////////////////// OBJECTS ////////////////////////////////////////////////
+        // We "install" the selected Shader Program as part of the current rendering process
+        object_shader.Use();
+        // We search inside the Shader Program the name of a subroutine, and we get the numerical index
+        GLuint index = glGetSubroutineIndex(object_shader.Program, GL_FRAGMENT_SHADER, "GGX");
+        // we activate the subroutine using the index
+        glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &index);
 
-      // we assign the value to the uniform variable
-      glUniform3fv(pointLightLocation, 1, glm::value_ptr(lightPos0));
-      glUniform1f(kdLocation, Kd);
-      glUniform1f(alphaLocation, alpha);
-      glUniform1f(f0Location, F0);
+        // we pass projection and view matrices to the Shader Program
+        glUniformMatrix4fv(glGetUniformLocation(object_shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
+        glUniformMatrix4fv(glGetUniformLocation(object_shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
 
-      /////
-      // STATIC PLANE
-      // we use a specific color for the plane
-      glUniform3fv(objDiffuseLocation, 1, planeMaterial);
+        // we determine the position in the Shader Program of the uniform variables
+        GLint objDiffuseLocation = glGetUniformLocation(object_shader.Program, "diffuseColor");
+        GLint pointLightLocation = glGetUniformLocation(object_shader.Program, "pointLightPosition");
+        GLint kdLocation = glGetUniformLocation(object_shader.Program, "Kd");
+        GLint alphaLocation = glGetUniformLocation(object_shader.Program, "alpha");
+        GLint f0Location = glGetUniformLocation(object_shader.Program, "F0");
 
-      planeModelMatrix = glm::mat4(1.0f);
-      planeNormalMatrix = glm::mat3(1.0f);
-      planeModelMatrix = glm::translate(planeModelMatrix, plane_pos);
-      planeModelMatrix = glm::scale(planeModelMatrix, plane_size);
-      planeNormalMatrix = glm::inverseTranspose(glm::mat3(view*planeModelMatrix));
-      glUniformMatrix4fv(glGetUniformLocation(object_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(planeModelMatrix));
-      glUniformMatrix3fv(glGetUniformLocation(object_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(planeNormalMatrix));
+        // we assign the value to the uniform variable
+        glUniform3fv(pointLightLocation, 1, glm::value_ptr(lightPos0));
+        glUniform1f(kdLocation, Kd);
+        glUniform1f(alphaLocation, alpha);
+        glUniform1f(f0Location, F0);
 
-      // we render the plane
-      cubeModel.Draw();
-      planeModelMatrix = glm::mat4(1.0f);
+        /////
+        // STATIC PLANE
+        // we use a specific color for the plane
+        glUniform3fv(objDiffuseLocation, 1, planeMaterial);
 
-      /////
-      // DYNAMIC OBJECTS (FALLING CUBES + BULLETS)
-      /////
+        planeModelMatrix = glm::mat4(1.0f);
+        planeNormalMatrix = glm::mat3(1.0f);
+        planeModelMatrix = glm::translate(planeModelMatrix, plane_pos);
+        planeModelMatrix = glm::scale(planeModelMatrix, plane_size);
+        planeNormalMatrix = glm::inverseTranspose(glm::mat3(view*planeModelMatrix));
+        glUniformMatrix4fv(glGetUniformLocation(object_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(planeModelMatrix));
+        glUniformMatrix3fv(glGetUniformLocation(object_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(planeNormalMatrix));
 
-      glUniform3fv(objDiffuseLocation, 1, diffuseColor);
+        // we render the plane
+        cubeModel.Draw();
+        planeModelMatrix = glm::mat4(1.0f);
 
-      // model and normal matrices
-      glm::mat4 objModelMatrix;
-      glm::mat3 objNormalMatrix;
+        /////
+        // DYNAMIC OBJECTS (FALLING CUBES + BULLETS)
+        /////
 
-      for(i = 0; i < num_side*num_side; i++ )
-      {
-          objModelMatrix = glm::translate(objModelMatrix, positions[i]);
-          objModelMatrix = glm::scale(objModelMatrix, cube_size);
-          objNormalMatrix = glm::inverseTranspose(glm::mat3(view*objModelMatrix));
-          glUniformMatrix4fv(glGetUniformLocation(object_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(objModelMatrix));
-          glUniformMatrix3fv(glGetUniformLocation(object_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(objNormalMatrix));
+        glUniform3fv(objDiffuseLocation, 1, diffuseColor);
 
-          // renderizza il modello
-          cubeModel.Draw();
-          objModelMatrix = glm::mat4(1.0f);
-      }
 
-      // Faccio lo swap tra back e front buffer
-      glfwSwapBuffers(window);
-  }
+        GLfloat matrix[16];
+        btTransform transform;
+        glm::vec3 obj_size;
+        Model* objectModel;
 
-  // when I exit from the graphics loop, it is because the application is closing
-  // we delete the Shader Programs
-  object_shader.Delete();
+        int num_cobjs = bulletSimulation.dynamicsWorld->getNumCollisionObjects();
 
-  // we close and delete the created context
-  glfwTerminate();
-  return 0;
+        for(i = 1; i < num_cobjs; i++ ) // 1 since plane is already done
+        {
+            if(i <= total_cubes) {
+                objectModel = &cubeModel;
+                obj_size = cube_size;
+                glUniform3fv(objDiffuseLocation, 1, diffuseColor);
+            } else {
+                objectModel = &sphereModel;
+                obj_size = sphere_size;
+                glUniform3fv(objDiffuseLocation, 1, shootColor);
+            }
+
+            btCollisionObject* obj = bulletSimulation.dynamicsWorld->getCollisionObjectArray()[i];
+            btRigidBody* body = btRigidBody::upcast(obj);
+            body->getMotionState()->getWorldTransform(transform);
+            transform.getOpenGLMatrix(matrix);
+
+            // model and normal matrices
+            objModelMatrix = glm::mat4(1.0f);
+            objNormalMatrix = glm::mat3(1.0f);
+
+            objModelMatrix = glm::make_mat4(matrix) * glm::scale(objModelMatrix, obj_size);
+            objNormalMatrix = glm::inverseTranspose(glm::mat3(view*objModelMatrix));
+            glUniformMatrix4fv(glGetUniformLocation(object_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(objModelMatrix));
+            glUniformMatrix3fv(glGetUniformLocation(object_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(objNormalMatrix));
+
+            // renderizza il modello
+            objectModel->Draw();
+            objModelMatrix = glm::mat4(1.0f);
+        }
+
+        // Faccio lo swap tra back e front buffer
+        glfwSwapBuffers(window);
+    }
+
+    // when I exit from the graphics loop, it is because the application is closing
+    // we delete the Shader Programs
+    object_shader.Delete();
+    bulletSimulation.Clear();
+    // we close and delete the created context
+    glfwTerminate();
+    return 0;
 }
 
 //////////////////////////////////////////
@@ -335,6 +373,28 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     // if L is pressed, we activate/deactivate wireframe rendering of models
     if(key == GLFW_KEY_L && action == GLFW_PRESS)
         wireframe=!wireframe;
+
+    btVector3 impulse;
+    glm::vec3 rot = glm::vec3(0.0f);
+    glm::vec4 shoot;
+    
+    GLfloat shootInitialSpeed = 15.0f;
+    btRigidBody* sphere;
+
+    glm::mat4 unproject;
+
+    if(key == GLFW_KEY_SPACE && action == GLFW_PRESS){
+        sphere = bulletSimulation.createRigidBody(SPHERE, camera.Position, sphere_size, rot, 1.0f, 0.3f, 0.3f);
+        shoot.x = (cursorX / screenWidth) * 2.0f - 1.0f;
+        shoot.y = (-cursorY / screenHeight) * 2.0f + 1.0f;
+        shoot.z = 1.0f;
+        shoot.w = 1.0f;
+
+        unproject = glm::inverse(projection * view);
+        shoot = glm::normalize(unproject * shoot) * shootInitialSpeed;
+        impulse = btVector3(shoot.x, shoot.y, shoot.z);
+        sphere->applyCentralImpulse(impulse);
+    }
 
     // we keep trace of the pressed keys
     // with this method, we can manage 2 keys pressed at the same time:

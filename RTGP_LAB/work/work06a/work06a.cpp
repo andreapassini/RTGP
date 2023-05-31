@@ -104,7 +104,7 @@ GLboolean spinning = GL_TRUE;
 // boolean to activate/deactivate wireframe rendering
 GLboolean wireframe = GL_FALSE;
 
-// View matrix: the camera moves, so we just set to indentity now
+// View matrix: the camera moves, so we just set to identity now
 glm::mat4 view = glm::mat4(1.0f);
 
 // Model and Normal transformation matrices for the objects in the scene: we set to identity
@@ -117,7 +117,7 @@ glm::mat3 bunnyNormalMatrix = glm::mat3(1.0f);
 glm::mat4 planeModelMatrix = glm::mat4(1.0f);
 glm::mat3 planeNormalMatrix = glm::mat3(1.0f);
 
-// we create a camera. We pass the initial position as a paramenter to the constructor. The last boolean tells if we want a camera "anchored" to the ground
+// we create a camera. We pass the initial position as a parameter to the constructor. The last boolean tells if we want a camera "anchored" to the ground
 Camera camera(glm::vec3(0.0f, 0.0f, 7.0f), GL_TRUE);
 
 // in this example, we consider a directional light. We pass the direction of incoming light as an uniform to the shaders
@@ -188,7 +188,7 @@ int main()
     glClearColor(0.26f, 0.46f, 0.98f, 1.0f);
 
     // we create the Shader Program used for objects
-    //Shader shadow_shader = Shader("shadowmap.vert", "shadowmap.frag");
+    Shader shadow_shader = Shader("shadowmap.vert", "shadowmap.frag");
     Shader illumination_shader = Shader("21_ggx_tex_shadow_work.vert", "22_ggx_tex_shadow_work.frag");
 
     // we load the images and store them in a vector
@@ -219,6 +219,9 @@ int main()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
+    GLfloat borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+
     // we bind the depth map FBO
     glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
@@ -245,6 +248,28 @@ int main()
         // we apply FPS camera movements
         apply_camera_movements();
 
+
+        // ------ FIRST RENDERING STEP ------- //
+        glm::mat4 lightProjection, lightView;
+        glm::mat4 lightSpaceMatrix;
+
+        GLfloat near_plane = -10.0f, far_plane = 10.0f;
+        GLfloat frustumSize = 5.0f;
+
+        lightProjection = glm::ortho(-frustumSize, frustumSize, -frustumSize, frustumSize, near_plane, far_plane);
+        lightView = glm::lookAt(lightDir0, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        lightSpaceMatrix = lightProjection * lightView;
+
+        shadow_shader.Use();
+        glUniformMatrix4fv(glGetUniformLocation(shadow_shader.Program, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
+        glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+        glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+        glClear(GL_DEPTH_BUFFER_BIT); // already setup as the state of the openGL state machine
+        RenderObjects(shadow_shader, planeModel, cubeModel, sphereModel, bunnyModel, SHADOWMAP, depthMap);
+
+
+
+        // ------ SECOND RENDERING STEP ------- //
         // we get the view matrix from the Camera class
         view = camera.GetViewMatrix();
 
@@ -274,6 +299,7 @@ int main()
         // we pass projection and view matrices to the Shader Program
         glUniformMatrix4fv(glGetUniformLocation(illumination_shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(glGetUniformLocation(illumination_shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(glGetUniformLocation(illumination_shader.Program, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
 
         // we determine the position in the Shader Program of the uniform variables
         GLint lightDirLocation = glGetUniformLocation(illumination_shader.Program, "lightVector");
@@ -297,7 +323,7 @@ int main()
     // when I exit from the graphics loop, it is because the application is closing
     // we delete the Shader Programs
     illumination_shader.Delete();
-    //shadow_shader.Delete();
+    shadow_shader.Delete();
 
     // chiudo e cancello il contesto creato
     glfwTerminate();
@@ -309,6 +335,14 @@ int main()
 // we render the objects. We pass also the current rendering step, and the depth map generated in the first step, which is used by the shaders of the second step
 void RenderObjects(Shader &shader, Model &planeModel, Model &cubeModel, Model &sphereModel, Model &bunnyModel, GLint render_pass, GLuint depthMap)
 {
+    if(render_pass == RENDER){
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, depthMap);
+        GLint shadowLocation = glGetUniformLocation(shader.Program, "shadowMap");
+        glUniform1i(shadowLocation, 2);
+    }
+    
+    
     // we pass the needed uniforms
     GLint textureLocation = glGetUniformLocation(shader.Program, "tex");
     GLint repeatLocation = glGetUniformLocation(shader.Program, "repeat");
