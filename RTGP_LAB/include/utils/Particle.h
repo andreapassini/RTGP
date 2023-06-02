@@ -67,8 +67,8 @@ public:
 
 	void resetNormal() {this->normal = glm::vec3(0.0f);}
 
-	void BallCollision(glm::mat4 matrixToWorld, const glm::vec3 centerWorld,const float radius){
-		glm::vec3 v = glm::vec3(glm::vec4(this->getPos(), 1.0f) * matrixToWorld) - centerWorld;
+	void BallCollision(glm::mat4 clothModelMatrix, const glm::vec3 centerWorld,const float radius){
+		glm::vec3 v = glm::vec3(glm::vec4(this->getPos(), 1.0f) * clothModelMatrix) - centerWorld;
 		float l = glm::length(v);
 		if (glm::length(v) < radius) // if the particle is inside the ball
 		{
@@ -81,7 +81,46 @@ public:
 			this->pos = glm::vec3(this->pos.x, yLimit, this->pos.z); // project the particle to the surface of the ball
 		}
 	}
+	void CubeCollision(glm::vec4 clothModelMatrix, const glm::vec3 cubeCenterInWorldSpace, const float edge){
+		float halfEdge = edge * 0.5f;
+		glm::vec3 distanceVector = glm::vec3(glm::vec4(this->getPos(), 1.0f) * clothModelMatrix) - cubeCenterInWorldSpace;
 
+		/*
+		                      Y
+                              |
+                              |
+                              |________X
+                             /
+                            /
+                           /
+                          Z
+		*/
+
+		// DETECTION
+		// Do the Test on the 3 different coordinates
+		if(this->getPos().x < (cubeCenterInWorldSpace.x - halfEdge))
+			return;
+		if(this->getPos().x > (cubeCenterInWorldSpace.x + halfEdge))
+			return;
+
+		if(this->getPos().y < (cubeCenterInWorldSpace.y - halfEdge))
+			return;
+		if(this->getPos().y > (cubeCenterInWorldSpace.y + halfEdge))
+			return;
+
+		if(this->getPos().z < (cubeCenterInWorldSpace.z - halfEdge))
+			return;
+		if(this->getPos().z > (cubeCenterInWorldSpace.z + halfEdge))
+			return;
+
+		// I'm inside the cube
+		// REACTION
+		// Check the max diff between pos and cubeCenter and displace
+		if(abs(distanceVector.x) > abs(distanceVector.y) && abs(distanceVector.x) > abs(distanceVector.z)){
+			// Displace on X
+			
+		}
+	};
 	bool operator== (Particle &p){
 		bool equal = false;
 
