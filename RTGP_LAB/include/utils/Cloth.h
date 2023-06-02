@@ -307,6 +307,7 @@ public:
 			for(particle = particles.begin(); particle != particles.end(); particle++)
 			{
 				particle->BallCollision(transform->modelMatrix, ballCenterWorld, ballRadius); // calculate the position of each particle at the next time step.
+				//particle->CubeCollision(transform->modelMatrix, ballCenterWorld, ballRadius);
 				particle->PlaneCollision(planeLimit);
 			}
 		}

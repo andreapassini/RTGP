@@ -81,10 +81,10 @@ public:
 			this->pos = glm::vec3(this->pos.x, yLimit, this->pos.z); // project the particle to the surface of the ball
 		}
 	}
-	void CubeCollision(glm::vec4 clothModelMatrix, const glm::vec3 cubeCenterInWorldSpace, const float edge){
+	void CubeCollision(glm::mat4 clothModelMatrix, const glm::vec3 cubeCenterInWorldSpace, const float edge){
 		float halfEdge = edge * 0.5f;
-		glm::vec3 distanceVector = glm::vec3(glm::vec4(this->getPos(), 1.0f) * clothModelMatrix) - cubeCenterInWorldSpace;
-
+		glm::vec3 myPosWorld = glm::vec3(glm::vec4(this->getPos(), 1.0f) * clothModelMatrix);
+		glm::vec3 distanceVector = myPosWorld - cubeCenterInWorldSpace;
 		/*
 		                      Y
                               |
@@ -98,27 +98,28 @@ public:
 
 		// DETECTION
 		// Do the Test on the 3 different coordinates
-		if(this->getPos().x < (cubeCenterInWorldSpace.x - halfEdge))
-			return;
-		if(this->getPos().x > (cubeCenterInWorldSpace.x + halfEdge))
-			return;
-
-		if(this->getPos().y < (cubeCenterInWorldSpace.y - halfEdge))
-			return;
-		if(this->getPos().y > (cubeCenterInWorldSpace.y + halfEdge))
-			return;
-
-		if(this->getPos().z < (cubeCenterInWorldSpace.z - halfEdge))
-			return;
-		if(this->getPos().z > (cubeCenterInWorldSpace.z + halfEdge))
-			return;
-
-		// I'm inside the cube
-		// REACTION
-		// Check the max diff between pos and cubeCenter and displace
-		if(abs(distanceVector.x) > abs(distanceVector.y) && abs(distanceVector.x) > abs(distanceVector.z)){
-			// Displace on X
-			
+		if((myPosWorld.x > (cubeCenterInWorldSpace.x - halfEdge) && myPosWorld.x < (cubeCenterInWorldSpace.x + halfEdge)) &&
+			(myPosWorld.y > (cubeCenterInWorldSpace.y - halfEdge) && myPosWorld.y < (cubeCenterInWorldSpace.y + halfEdge)) &&
+			(myPosWorld.z > (cubeCenterInWorldSpace.z - halfEdge) && myPosWorld.z < (cubeCenterInWorldSpace.z + halfEdge)))
+		{
+			// I'm inside the cube
+			// REACTION
+			// Check the max diff between pos and cubeCenter and displace
+			if(abs(distanceVector.x) > abs(distanceVector.y) && abs(distanceVector.x) > abs(distanceVector.z)){
+				// Displace on X
+				float displacement = glm::dot(distanceVector, glm::vec3(1.0f, 0.0f, 0.0f));
+				this->pos = glm::vec3(this->pos.x + displacement, this->pos.y, this->pos.z);
+			}
+			else if(abs(distanceVector.y) > abs(distanceVector.x) && abs(distanceVector.y) > abs(distanceVector.z)){
+				// Displace on Y
+				float displacement = glm::dot(distanceVector, glm::vec3(0.0f, 1.0f, 0.0f));
+				this->pos = glm::vec3(this->pos.x, this->pos.y + displacement, this->pos.z);
+			} 
+			else{
+				// Displace on Z
+				float displacement = glm::dot(distanceVector, glm::vec3(0.0f, 1.0f, 0.0f));
+				this->pos = glm::vec3(this->pos.x, this->pos.y, this->pos.z + displacement);
+			}
 		}
 	};
 	bool operator== (Particle &p){

@@ -145,7 +145,7 @@ bool usePhysicConstraints = false;
 float gravity = -9.8f;
 float k = 0.5f;
 unsigned int constraintIterations = 15;
-unsigned int collisionIterations = 5;
+unsigned int collisionIterations = 15;
 
 unsigned int windowSize = 10;
 unsigned int overlap = 3;
@@ -176,6 +176,8 @@ int main()
     GLint directionZ = 1;
 
     Transform planeTransform(view);
+
+    glm::vec3 cubePosition(3.0f, -4.5f, -2.5f);
     Transform cubeTransform(view);
 
     Transform clothTransform(view);
@@ -268,13 +270,13 @@ int main()
         
         if(!spinning && once)
         {
-            // cloth.~Cloth();
-            // pinned = !pinned;
-            // new(&cloth) Cloth(30, 0.15f, startingPosition, &clothTransform, pinned, usePhysicConstraints, k, constraintIterations, gravity, collisionIterations);
+            cloth.~Cloth();
+            pinned = !pinned;
+            new(&cloth) Cloth(30, 0.15f, startingPosition, &clothTransform, pinned, usePhysicConstraints, k, constraintIterations, gravity, collisionIterations);
             once = false;
-            // std::cout << "Framerate: " << (int)performanceCalculator.framerate << std::endl;
+            std::cout << "Framerate: " << (int)performanceCalculator.framerate << std::endl;
 
-            cloth.CutAHole(4 + iter, 4 + iter);
+            //cloth.CutAHole(4 + iter, 4 + iter);
             iter++;
 
         } else if(spinning && !once){
@@ -300,6 +302,24 @@ int main()
         glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.modelMatrix));
         glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.normalMatrix));
         sphereModel.Draw();
+
+
+        //CUBE
+        if (current_program == FULLCOLOR || current_program == FLATTEN)
+        {
+            GLint fragColorLocation = glGetUniformLocation(shaders[current_program].Program, "colorIn");
+            glUniform3fv(fragColorLocation, 1, myColor);
+        }
+
+        cubeTransform.Transformation(
+            glm::vec3(1.0f, 1.0f, 1.0f),
+            0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
+            cubePosition,
+            view);
+        glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(cubeTransform.modelMatrix));
+        glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(cubeTransform.normalMatrix));
+        //cubeModel.Draw();
+
         
         // we activate the texture with id 1, and we bind the id to the loaded texture data
         glActiveTexture(GL_TEXTURE1);
