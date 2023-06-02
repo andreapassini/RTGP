@@ -206,6 +206,7 @@ private:
 
 public:
 	std::vector<Particle> particles; // all particles that are part of this cloth
+	float K;
 
 	Cloth(int dim, float particleDistance, glm::vec3 topLeftPosition, Transform *t, bool pinned, bool usePhysicConstraints, float k, unsigned int contraintIt, float gravity, unsigned int collisionIt){
 		this->dim = dim;
@@ -214,6 +215,7 @@ public:
 		this->constraintIterations = contraintIt;
 		this->collisionIterations = collisionIt;
 		this->gravityForce = gravity;
+		this->K = k;
 
 		particles.resize(dim*dim); //I am essentially using this vector as an array with room for num_particles_width*dim particles
 		
@@ -287,7 +289,7 @@ public:
 			{
 				for(constraint = constraints.begin(); constraint != constraints.end(); constraint++ )
 				{
-					constraint->satisfyConstraint_Physics(); // satisfy constraint.
+					constraint->satisfyConstraint_Physics(K); // satisfy constraint.
 				}
 			}
 		} else {
@@ -296,7 +298,7 @@ public:
 			{
 				for(constraint = constraints.begin(); constraint != constraints.end(); constraint++ )
 				{
-					constraint->satisfyConstraint(); // satisfy constraint.
+					constraint->satisfyConstraint(K); // satisfy constraint.
 				}
 			}
 		}
@@ -338,12 +340,20 @@ public:
 			particle->addForce(forceVector); // add the forces to each particle
 		}
 	}
-	void windForce(const glm::vec3 direction)
+	void windForce(glm::vec3 direction)
 	{
 		std::vector<Particle>::iterator particle;
+		bool change = false;
 		for(particle = particles.begin(); particle != particles.end(); particle++)
 		{
+			glm::vec3 forceToApply = direction;
+			if(change){
+				forceToApply *= 1.5f;
+			} else {
+				forceToApply *= 0.5f;
+			}
 			particle->addForce(direction); // add the forces to each particle
+			change = !change;
 		}
 	}
 

@@ -64,7 +64,13 @@ Project the particle on the surface of the sphere, with a displacement big enoug
 
 ## **Particle**
 
+This class represent the single particles that will form the grid of the cloth. Each particle is in charge of:
+- **Detecting** its **collision** with the sphere and the plane.
+- **Reacting** to the **collision**, by offsetting its position.
+- Apply **Physic** to the particle by calculating the results of the forces applied to it, using the Verlet integration method. 
+
 - **Position**
+- **Normal**
 
 
 For Verlet integration
@@ -77,19 +83,20 @@ For Verlet integration
 For rendering
 
 - **Accumulated Normal**
+- **Renderable**
 
 
-Methods
+### **Methods**
 
-- **Add Force()**
+- **``` void addForce(glm::vec3 f) ```**
+        
+        This method is used to add a fore vector to
 
-        Calculating the acceleration
+- **```	void PhysicStep(float deltaTime) ```**
 
-- **PhysicStep()**
+        This method is used to applying the forces accumulated to the particles, using Verlet Integration method.
 
-        Applying Verlet Integration to the particle
-
-- **Ball Collision()**
+- **``` void BallCollision(glm::mat4 matrixToWorld, const glm::vec3 centerWorld,const float radius) ```**
 
         Detect the possible collision with the ball
         Respond to the collision

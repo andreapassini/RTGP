@@ -144,8 +144,8 @@ bool pinned = true;
 bool usePhysicConstraints = false;
 float gravity = -9.8f;
 float k = 0.5f;
-unsigned int constraintIterations = 5;
-unsigned int collisionIterations = 15;
+unsigned int constraintIterations = 15;
+unsigned int collisionIterations = 5;
 
 unsigned int windowSize = 10;
 unsigned int overlap = 3;
@@ -254,6 +254,7 @@ int main()
         }
         
         cloth.AddGravityForce();
+        cloth.windForce(glm::vec3(0.0f, 0.0f, 1.0f)*3.5f);
         clothTransform.Transformation(
             glm::vec3(1.0f, 1.0f, 1.0f),
             0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
