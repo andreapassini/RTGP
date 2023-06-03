@@ -31,8 +31,6 @@ uniform mat4 projectionMatrix;
 // normals transformation matrix (= transpose of the inverse of the model-view matrix)
 uniform mat3 normalMatrix;
 
-uniform mat4 lightSpaceMatrix;
-
 // direction of incoming light is passed as an uniform
 uniform vec3 lightVector;
 
@@ -71,5 +69,5 @@ void main(){
 
   // I assign the values to a variable with "out" qualifier so to use the per-fragment interpolated values in the Fragment shader
   interp_UV = UV;
-  posLightSpace = lightSpaceMatrix * mPosition;
+  posLightSpace = mPosition;
 }

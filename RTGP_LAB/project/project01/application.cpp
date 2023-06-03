@@ -62,10 +62,8 @@ GLuint screenWidth = 1200, screenHeight = 900;
 int SetupOpenGL();
 
 void SetupShaders();
-void DeleteShaders();
-void PrintCurrentShader(int shader);
 
-void SetupBlinPhong();
+void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transform &planeTransform, Model &planeModel, Transform &sphereTransform, Model &sphereModel);
 
 GLint LoadTexture(const char* path);
 
@@ -92,30 +90,10 @@ GLboolean wireframe = GL_FALSE;
 
 Camera camera(glm::vec3(0.0f, -2.0f, 7.0f), GL_FALSE);
 
-enum available_ShaderPrograms{ FULLCOLOR, FLATTEN, NORMAL2COLOR, WAVE, BLINPHONG };
-const char * print_available_ShaderPrograms[] = { "FULLCOLOR", "FLATTEN", "NORMAL2COLOR", "WAVE", "BLINPHONG" };
-GLuint current_program = FULLCOLOR;
-vector<Shader> shaders;
+glm::vec3 lightPosition = glm::vec3(1.0f, 1.0f, 1.0f);
 
-// Uniforms to pass to shaders
-// pointlights positions
-glm::vec3 lightPositions[] = {
-    glm::vec3(5.0f, 10.0f, 10.0f),
-    glm::vec3(-5.0f, 10.0f, 10.0f),
-    glm::vec3(5.0f, 10.0f, -10.0f),
-};
-
-// diffusive, specular and ambient components
-GLfloat diffuseColor[] = {1.0f,0.0f,0.0f};
-GLfloat specularColor[] = {1.0f,1.0f,1.0f};
-GLfloat ambientColor[] = {0.1f,0.1f,0.1f};
 // weights for the diffusive, specular and ambient components
-GLfloat Kd = 0.5f;
-GLfloat Ks = 0.4f;
-GLfloat Ka = 0.1f;
-// shininess coefficient for Blinn-Phong shader
-GLfloat shininess = 25.0f;
-
+GLfloat Kd = 3.0f;
 // roughness index for GGX shader
 GLfloat alpha = 0.2f;
 // Fresnel reflectance at 0 degree (Schlik's approximation)
@@ -150,13 +128,16 @@ unsigned int collisionIterations = 15;
 unsigned int windowSize = 10;
 unsigned int overlap = 3;
 
+glm::vec3 spherePosition(3.0f, -4.5f, -2.5f);
+glm::vec3 cubePosition(3.0f, -4.5f, -2.5f);
+
 int main()
 {
     if(SetupOpenGL() == -1)
         return -1;
 
     Shader illumination_shader = Shader("06_illumination.vert", "06_illumination.frag");
-    Shader force_shader("07_force.vert", "07_force.frag");
+    Shader force_shader = Shader("07_force.vert", "07_force.frag");
 
     glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);
     // View matrix (=camera): position, view direction, camera "up" vector
@@ -170,14 +151,12 @@ int main()
     textureID.push_back(LoadTexture("../../textures/SoilCracked.png"));
 
     // Model and Normal transformation matrices for the objects in the scene: we set to identity
-    glm::vec3 spherePosition(3.0f, -4.5f, -2.5f);
     Transform sphereTransform(view);
     positionZ = 0.8f;
     GLint directionZ = 1;
 
     Transform planeTransform(view);
 
-    glm::vec3 cubePosition(3.0f, -4.5f, -2.5f);
     Transform cubeTransform(view);
 
     Transform clothTransform(view);
@@ -217,62 +196,6 @@ int main()
         else
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-        illumination_shader.Use();
-
-        string number = to_string(0);
-        glUniform3fv(glGetUniformLocation(illumination_shader.Program, ("lights[" + number + "]").c_str()), 1, glm::value_ptr(lightPositions[0]));
-        SetupBlinPhong();
-
-        GLint textureLocation = glGetUniformLocation(illumination_shader.Program, "tex");
-        GLint repeatLocation = glGetUniformLocation(illumination_shader.Program, "repeat");
-
-
-        glUniformMatrix4fv(glGetUniformLocation(illumination_shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
-        glUniformMatrix4fv(glGetUniformLocation(illumination_shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
-
-        // Objects with texture
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, textureID[0]);
-
-        sphereTransform.Transformation(
-            glm::vec3(1.0f, 1.0f, 1.0f),
-            0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
-            spherePosition,
-            view);
-        glUniformMatrix4fv(glGetUniformLocation(illumination_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.modelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(illumination_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.normalMatrix));
-        sphereModel.Draw();
-
-
-        //CUBE
-        cubeTransform.Transformation(
-            glm::vec3(1.0f, 1.0f, 1.0f),
-            0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
-            cubePosition,
-            view);
-        glUniformMatrix4fv(glGetUniformLocation(illumination_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(cubeTransform.modelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(illumination_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(cubeTransform.normalMatrix));
-        //cubeModel.Draw();
-
-        
-        // we activate the texture with id 1, and we bind the id to the loaded texture data
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, textureID[1]);
-
-        // we pass the id of the texture (= to number X in GL_TEXTUREX at line 327) and the number of repetitions for the plane
-        glUniform1i(textureLocation, 1);
-        glUniform1f(repeatLocation, 80.0f);
-        
-        // PLANE
-        planeTransform.Transformation(
-            glm::vec3(2.5f, 1.0f, 2.5f),
-            0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
-            glm::vec3(0.0f, -10.0f, 0.0f),
-            view);
-        glUniformMatrix4fv(glGetUniformLocation(illumination_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(planeTransform.modelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(illumination_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(planeTransform.normalMatrix));
-        planeModel.Draw();
-
 
 
         // CLOTH        
@@ -285,8 +208,8 @@ int main()
             view
         );
         cloth.PhysicsSteps(deltaTime.count(), (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, -9.9f);
-        glUniformMatrix4fv(glGetUniformLocation(shaders[current_program].Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.modelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(shaders[current_program].Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.normalMatrix));
+        glUniformMatrix4fv(glGetUniformLocation(force_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.modelMatrix));
+        glUniformMatrix3fv(glGetUniformLocation(force_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.normalMatrix));
         cloth.Draw();
         
         if(!spinning && once)
@@ -299,16 +222,18 @@ int main()
 
             //cloth.CutAHole(4 + iter, 4 + iter);
             iter++;
-
         } else if(spinning && !once){
             once = true; 
         }
 
 
+        // OBJECTS
+        RenderScene1(illumination_shader, projection, view, planeTransform, planeModel, sphereTransform, sphereModel);
+
+
         glfwSwapBuffers(window);
     }
 
-    DeleteShaders();
     glfwTerminate();
     return 0;
 }
@@ -362,67 +287,9 @@ int SetupOpenGL(){
     glEnable(GL_DEPTH_TEST);
 
     //the "clear" color for the frame buffer
-    glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+    glClearColor(0.26f, 0.46f, 0.98f, 1.0f);
 
     return 1;
-}
-
-void SetupBlinPhong(){
-    // we determine the position in the Shader Program of the uniform variables
-    GLint matDiffuseLocation = glGetUniformLocation(shaders[current_program].Program, "diffuseColor");
-    GLint matAmbientLocation = glGetUniformLocation(shaders[current_program].Program, "ambientColor");
-    GLint matSpecularLocation = glGetUniformLocation(shaders[current_program].Program, "specularColor");
-    GLint kaLocation = glGetUniformLocation(shaders[current_program].Program, "Ka");
-    GLint kdLocation = glGetUniformLocation(shaders[current_program].Program, "Kd");
-    GLint ksLocation = glGetUniformLocation(shaders[current_program].Program, "Ks");
-    GLint shineLocation = glGetUniformLocation(shaders[current_program].Program, "shininess");
-    GLint alphaLocation = glGetUniformLocation(shaders[current_program].Program, "alpha");
-    GLint f0Location = glGetUniformLocation(shaders[current_program].Program, "F0");
-
-    // we assign the value to the uniform variables
-    glUniform3fv(matAmbientLocation, 1, ambientColor);
-    glUniform3fv(matSpecularLocation, 1, specularColor);
-    glUniform1f(shineLocation, shininess);
-    glUniform1f(alphaLocation, alpha);
-    glUniform1f(f0Location, F0);
-
-    glUniform3fv(matDiffuseLocation, 1, diffuseColor);
-
-    glUniform1f(ksLocation, Ka);
-    glUniform1f(ksLocation, Kd);
-    glUniform1f(ksLocation, Ks);
-}
-
-//-------------------------------------------------------------------------------------
-// we create and compile shaders (code of Shader class is in include/utils/shader.h), and we add them to the list of available shaders
-void SetupShaders()
-{
-    Shader shader1("00_basic.vert", "01_fullcolor.frag");
-    shaders.push_back(shader1);
-    Shader shader2("02_flatten.vert", "02_flatten.frag");
-    shaders.push_back(shader2);
-    Shader shader3("03_normal2color.vert", "03_normal2color.frag");
-    shaders.push_back(shader3);
-    Shader shader4("04_wave.vert", "04_wave.frag");
-    shaders.push_back(shader4);
-    Shader shader5("06_blinphong.vert", "06_blinphong.frag");
-    shaders.push_back(shader5);
-}
-
-//---------------------------------------------------------------------------------
-// we delete all the Shaders Programs
-void DeleteShaders()
-{
-    for(GLuint i = 0; i < shaders.size(); i++)
-        shaders[i].Delete();
-}
-
-//---------------------------------------------------------------------------------
-// we print on console the name of the currently used shader
-void PrintCurrentShader(int shader)
-{
-    std::cout << "Current shader:" << print_available_ShaderPrograms[shader]  << std::endl;
-
 }
 
 //////////////////////////////////////////
@@ -485,16 +352,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     // if L is pressed, we activate/deactivate wireframe rendering of models
     if(key == GLFW_KEY_L && action == GLFW_PRESS)
         wireframe=!wireframe;
-
-    // pressing a key between 1 and 5, we change the shader applied to the models
-    if((key >= GLFW_KEY_1 && key <= GLFW_KEY_5) && action == GLFW_PRESS)
-    {
-        // "1" to "5" -> ASCII codes from 49 to 57
-        // we subtract 48 (= ASCII CODE of "0") to have integers from 1 to 5
-        // we subtract 1 to have indices from 0 to 4 in the shaders list
-        current_program = (key-'0'-1);
-        PrintCurrentShader(current_program);
-    }
 
     // we keep trace of the pressed keys
     // with this method, we can manage 2 keys pressed at the same time:
@@ -561,4 +418,62 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
       // we pass the offset to the Camera class instance in order to update the rendering
       camera.ProcessMouseMovement(xoffset, yoffset);
 
+}
+
+void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transform &planeTransform, Model &planeModel, Transform &sphereTransform, Model &sphereModel){
+
+    shader.Use();
+
+    // we pass projection and view matrices to the Shader Program
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
+
+    // we determine the position in the Shader Program of the uniform variables
+    GLint lightDirLocation = glGetUniformLocation(shader.Program, "lightVector");
+    GLint kdLocation = glGetUniformLocation(shader.Program, "Kd");
+    GLint alphaLocation = glGetUniformLocation(shader.Program, "alpha");
+    GLint f0Location = glGetUniformLocation(shader.Program, "F0");
+
+    // we assign the value to the uniform variables
+    glUniform3fv(lightDirLocation, 1, glm::value_ptr(lightPosition));
+    glUniform1f(kdLocation, Kd);
+    glUniform1f(alphaLocation, alpha);
+    glUniform1f(f0Location, F0);
+
+    // we pass the needed uniforms
+    GLint textureLocation = glGetUniformLocation(shader.Program, "tex");
+    GLint repeatLocation = glGetUniformLocation(shader.Program, "repeat");
+
+    // OBJECTS
+    // Objects with texture
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, textureID[0]);
+    glUniform1i(textureLocation, 0);
+    glUniform1f(repeatLocation, repeat);
+
+
+    sphereTransform.Transformation(
+        glm::vec3(1.0f, 1.0f, 1.0f),
+        0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
+        spherePosition,
+        view);
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.modelMatrix));
+    glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.normalMatrix));
+    sphereModel.Draw();
+
+    
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, textureID[1]);
+    glUniform1i(textureLocation, 1);
+    glUniform1f(repeatLocation, 80.0);
+    
+    // PLANE
+    planeTransform.Transformation(
+        glm::vec3(10.0f, 1.0f, 10.0f),
+        0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
+        glm::vec3(0.0f, -10.0f, 0.0f),
+        view);
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(planeTransform.modelMatrix));
+    glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(planeTransform.normalMatrix));
+    planeModel.Draw();
 }
