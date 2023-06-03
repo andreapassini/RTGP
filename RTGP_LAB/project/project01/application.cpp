@@ -130,6 +130,7 @@ unsigned int overlap = 3;
 
 glm::vec3 spherePosition(3.0f, -4.5f, -2.5f);
 glm::vec3 cubePosition(3.0f, -4.5f, -2.5f);
+glm::vec3 planePosition(0.0f, -10.0f, 0.0f);
 
 int main()
 {
@@ -138,6 +139,7 @@ int main()
 
     Shader illumination_shader = Shader("06_illumination.vert", "06_illumination.frag");
     Shader force_shader = Shader("07_force.vert", "07_force.frag");
+    Shader fullColor_shader = Shader("00_basic.vert", "01_fullcolor.frag");
 
     glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);
     // View matrix (=camera): position, view direction, camera "up" vector
@@ -196,18 +198,22 @@ int main()
         else
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-
-
         // CLOTH        
+        force_shader.Use();
+        //fullColor_shader.Use();
+
+        glUniformMatrix4fv(glGetUniformLocation(force_shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
+        glUniformMatrix4fv(glGetUniformLocation(force_shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
+
         cloth.AddGravityForce();
-        cloth.windForce(glm::vec3(0.0f, 0.0f, 1.0f)*3.5f);
+        //cloth.windForce(glm::vec3(0.0f, 0.0f, 1.0f)*3.5f);
         clothTransform.Transformation(
             glm::vec3(1.0f, 1.0f, 1.0f),
             0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
             startingPosition,
             view
         );
-        cloth.PhysicsSteps(deltaTime.count(), (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, -9.9f);
+        cloth.PhysicsSteps(deltaTime.count(), (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y - 0.1);
         glUniformMatrix4fv(glGetUniformLocation(force_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.modelMatrix));
         glUniformMatrix3fv(glGetUniformLocation(force_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.normalMatrix));
         cloth.Draw();
@@ -471,7 +477,7 @@ void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transfor
     planeTransform.Transformation(
         glm::vec3(10.0f, 1.0f, 10.0f),
         0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
-        glm::vec3(0.0f, -10.0f, 0.0f),
+        planePosition,
         view);
     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(planeTransform.modelMatrix));
     glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(planeTransform.normalMatrix));
