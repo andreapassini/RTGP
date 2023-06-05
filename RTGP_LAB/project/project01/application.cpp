@@ -18,6 +18,7 @@ positive Z axis points "outside" the screen
 #include <string>
 #include <iostream>
 #include <chrono>
+#include <string>
 
 // Loader for OpenGL extensions
 // http://glad.dav1d.de/
@@ -118,14 +119,16 @@ glm::vec3 startingPosition(0.0f, 0.0f, 0.0f);
 bool once = true;
 unsigned int iter = 0;
 
+int clothDim = 30;
+float particleOffset = 0.15f;
 bool clothExist = true;
 unsigned int prints = 0;
 bool pinned = true;
 ConstraintType springType = POSITIONAL;
 float gravity = -9.8f;
 float K = 0.5f;
-unsigned int constraintIterations = 15;
-unsigned int collisionIterations = 15;
+int constraintIterations = 15;
+int collisionIterations = 15;
 
 unsigned int windowSize = 10;
 unsigned int overlap = 3;
@@ -166,7 +169,7 @@ int main()
     Transform cubeTransform(view);
 
     Transform clothTransform(view);
-    Cloth cloth(30, 0.15f, startingPosition, &clothTransform, pinned, springType, K, constraintIterations, gravity, collisionIterations);
+    Cloth cloth(clothDim, particleOffset, startingPosition, &clothTransform, pinned, springType, K, constraintIterations, gravity, collisionIterations);
 
     PerformanceCalculator performanceCalculator(windowSize, overlap);
     // DELTA TIME using std::chrono
@@ -174,6 +177,8 @@ int main()
     typedef std::chrono::high_resolution_clock Time;
     typedef std::chrono::duration<float> fsec;
     auto start_time = Time::now();   
+
+    int type = 0;   // Used in ImGui display
 
     // Rendering loop: this code is executed at each frame
     while(!glfwWindowShouldClose(window))
@@ -201,12 +206,57 @@ int main()
         ImGui::Begin("Controls");
 
         ImGui::Text("Cloth simulation:");
-        ImGui::SameLine();
-        bool render;
-        if (ImGui::Checkbox("Render cloth", &render))
+        ImGui::NewLine;
+        ImGui::Text("Framerate (ms): %d", (int)performanceCalculator.framerate);
+        ImGui::NewLine;
+        ImGui::Text("Press P to Update Cloth");
+        ImGui::NewLine;
+        ImGui::SliderInt("Grid dim", &clothDim, 10, 100);
+        ImGui::NewLine;
+        ImGui::SliderFloat("Particle offset", &particleOffset, 0.05f, 1.0f);
+
+        ImGui::NewLine;
+        ImGui::Text("Physic Simulation");
+        ImGui::NewLine;
+        ImGui::SliderFloat("Gravity", &gravity, -9.8f, -0.0f);
+
+        ImGui::NewLine;
+        ImGui::Text("Constraints");
+        ImGui::NewLine;
+        ImGui::SliderInt("Type", &type, 0, 3);
+        switch (type)
         {
-            std::cout<< "Render" << std::endl;
+        case 0:
+            springType = POSITIONAL;
+            ImGui::Text("POSITIONAL");
+            break;
+        case 1:
+            springType = PHYSICAL;
+            ImGui::Text("PHYSICAL");
+            break;
+        case 2:
+            springType = POSITIONAL_ADVANCED;
+            ImGui::Text("POSITIONAL_ADVANCED");
+            break;
+        case 3:
+            springType = PHYSICAL_ADVANCED;
+            ImGui::Text("PHYSICAL_ADVANCED");
+            break;
+        default:
+            break;
         }
+
+        // float K = 0.5f;
+        ImGui::NewLine;
+        ImGui::SliderFloat("K", &K, 0.01f, 5.0f);
+
+        ImGui::NewLine;
+        ImGui::SliderInt("Constraint Iterations", &constraintIterations, 0, 25);
+
+        ImGui::NewLine;
+        ImGui::Text("Collisions");
+        ImGui::NewLine;
+        ImGui::SliderInt("collisions Iterations", &collisionIterations, 0, 25);
 
         ImGui::End();
 
@@ -246,7 +296,7 @@ int main()
         {
             cloth.~Cloth();
             pinned = !pinned;
-            new(&cloth) Cloth(30, 0.15f, startingPosition, &clothTransform, pinned, springType, K, constraintIterations, gravity, collisionIterations);
+            new(&cloth) Cloth(clothDim, particleOffset, startingPosition, &clothTransform, pinned, springType, K, constraintIterations, gravity, collisionIterations);
             once = false;
             DebugLogStatus();
             //cloth.CutAHole(4 + iter, 4 + iter);
