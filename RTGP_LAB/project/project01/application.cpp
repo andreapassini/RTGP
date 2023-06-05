@@ -49,6 +49,11 @@ positive Z axis points "outside" the screen
 #include <utils/Transform.h>
 #include <utils/cloth.h>
 
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_glfw.h>
+#include <imgui/imgui_impl_opengl3.h>
+
+
 // we include the library for images loading
 #define STB_IMAGE_IMPLEMENTATION
 #include "../include/stb_image/stb_image.h"
@@ -68,6 +73,8 @@ GLint LoadTexture(const char* path);
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void apply_camera_movements();
+void imGuiSetup(GLFWwindow *window);
+
 bool keys[1024];
 bool R_KEY = false;
 GLfloat lastX, lastY;
@@ -185,6 +192,26 @@ int main()
 
         glfwPollEvents();
         apply_camera_movements();
+
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        // render your GUI
+        ImGui::Begin("Controls");
+
+        ImGui::Text("Cloth simulation:");
+        ImGui::SameLine();
+        bool render;
+        if (ImGui::Checkbox("Render cloth", &render))
+        {
+            std::cout<< "Render" << std::endl;
+        }
+
+        ImGui::End();
+
+
+
         // View matrix (=camera): position, view direction, camera "up" vector
         view = camera.GetViewMatrix();
 
@@ -232,9 +259,17 @@ int main()
         // OBJECTS
         RenderScene1(illumination_shader, projection, view, planeTransform, planeModel, sphereTransform, sphereModel);
 
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
 
         glfwSwapBuffers(window);
     }
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
 
     glfwTerminate();
     return 0;
@@ -271,7 +306,7 @@ int SetupOpenGL(){
     glfwSetCursorPosCallback(window, mouse_callback);
 
     // we disable the mouse cursor
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // GLAD tries to load the context set by GLFW
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
@@ -290,6 +325,8 @@ int SetupOpenGL(){
 
     //the "clear" color for the frame buffer
     glClearColor(0.26f, 0.46f, 0.98f, 1.0f);
+
+    imGuiSetup(window);
 
     return 1;
 }
@@ -487,6 +524,15 @@ void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transfor
     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(planeTransform.modelMatrix));
     glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(planeTransform.normalMatrix));
     planeModel.Draw();
+}
+
+void imGuiSetup(GLFWwindow *window)
+{
+    // ImGui SETUP
+    ImGui::CreateContext();
+    ImGui::StyleColorsDark();
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 410");
 }
 
 void DebugLogStatus(){
