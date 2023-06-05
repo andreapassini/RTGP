@@ -21,7 +21,7 @@ private:
 	// total number of particles is dim*dim
 
 	std::vector<Constraint> constraints; // alle constraints between particles as part of this cloth
-	bool springs;
+	ConstraintType springsType;
 	unsigned int constraintIterations;
 	unsigned int collisionIterations;
 	float gravityForce;
@@ -119,7 +119,11 @@ private:
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, normal));
 	
 		glEnableVertexAttribArray(2);
-		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, force));
+		if(springsType == PHYSICAL || springsType == PHYSICAL_ADVANCED){
+			glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, force));
+		} else {
+			glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, shader_force));
+		}
 
 		// Note that this is allowed, the call to glVertexAttribPointer registered VBO as the currently bound vertex buffer object so afterwards we can safely unbind
         glBindBuffer(GL_ARRAY_BUFFER, 0); 
@@ -191,7 +195,11 @@ private:
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, normal));
 
 		glEnableVertexAttribArray(2);
-		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, force));
+		if(springsType == PHYSICAL || springsType == PHYSICAL_ADVANCED){
+			glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, force));
+		} else {
+			glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, shader_force));
+		}
 
 		glBindVertexArray(0);
 	}
@@ -215,10 +223,10 @@ public:
 	std::vector<Particle> particles; // all particles that are part of this cloth
 	float K;
 
-	Cloth(int dim, float particleDistance, glm::vec3 topLeftPosition, Transform *t, bool pinned, bool usePhysicConstraints, float k, unsigned int contraintIt, float gravity, unsigned int collisionIt){
+	Cloth(int dim, float particleDistance, glm::vec3 topLeftPosition, Transform *t, bool pinned, ConstraintType usePhysicConstraints, float k, unsigned int contraintIt, float gravity, unsigned int collisionIt){
 		this->dim = dim;
 		this->transform = t;
-		this->springs = usePhysicConstraints;
+		this->springsType = usePhysicConstraints;
 		this->constraintIterations = contraintIt;
 		this->collisionIterations = collisionIt;
 		this->gravityForce = gravity;
@@ -290,25 +298,29 @@ public:
 			particle->PhysicStep(deltaTime); // calculate the position of each particle at the next time step.
 		}
 
-		if(springs){
-			std::vector<Constraint>::iterator constraint;
-			for(size_t i=0; i < this->constraintIterations; i++) // iterate over all constraints several times
-			{
-				for(constraint = constraints.begin(); constraint != constraints.end(); constraint++ )
-				{
-					constraint->satisfyConstraint_Physics(K); // satisfy constraint.
-				}
-			}
-		} else {
-			std::vector<Constraint>::iterator constraint;
-			for(size_t i=0; i < this->constraintIterations; i++) // iterate over all constraints several times
-			{
-				for(constraint = constraints.begin(); constraint != constraints.end(); constraint++ )
-				{
-					constraint->satisfyConstraint(K); // satisfy constraint.
+		std::vector<Constraint>::iterator constraint;
+		for(size_t i=0; i < this->constraintIterations; i++) // iterate over all constraints several times
+		{
+			for(constraint = constraints.begin(); constraint != constraints.end(); constraint++ )
+			{							
+				switch(springsType){
+					case POSITIONAL:
+						constraint->satisfyPositionalConstraint(K); // satisfy constraint.
+						break;
+					case PHYSICAL:
+						constraint->satisfyPhysicsConstraint(K); // satisfy constraint.
+						break;
+					case POSITIONAL_ADVANCED:
+						constraint->satisfyAdvancedPositionalConstraint(K, deltaTime);
+						break;
+					case PHYSICAL_ADVANCED:
+						constraint->satisfyAdvancedPhysicalConstraint(K, deltaTime);
+						break;
 				}
 			}
 		}
+
+		float maxForce = glm::length(particles[0].force);
 
 		for(size_t i = 0; i < this->collisionIterations; i++){
 			for(particle = particles.begin(); particle != particles.end(); particle++)
@@ -316,8 +328,22 @@ public:
 				particle->BallCollision(transform->modelMatrix, ballCenterWorld, ballRadius); // calculate the position of each particle at the next time step.
 				//particle->CubeCollision(transform->modelMatrix, ballCenterWorld, ballRadius);
 				particle->PlaneCollision(planeLimit);
+
+				float forceMagnitude = glm::length(particle->force);
+				if(maxForce < forceMagnitude)
+					maxForce = forceMagnitude;
 			}
 		}
+
+		for(particle = particles.begin(); particle != particles.end(); particle++)
+		{
+			if(springsType == PHYSICAL || springsType == PHYSICAL_ADVANCED){
+				particle->force / maxForce;
+			} else {
+				particle->shader_force / maxForce;
+			}
+		}
+		
 
 		UpdateNormals();
 		UpdateBuffers();
@@ -367,7 +393,7 @@ public:
 
 	void Draw()
 	{
-		SetUp();
+		//SetUp();
 		UpdateNormals();
 		UpdateBuffers();
 

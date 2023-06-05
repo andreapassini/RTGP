@@ -17,6 +17,7 @@ public:
 	glm::vec3 normal; // an accumulated normal (i.e. non normalized), used for OpenGL soft shading
 	glm::vec3 old_pos; // the position of the particle in the previous time step, used as part of the verlet numerical integration scheme
 	glm::vec3 force; // a vector representing the current force of the particle
+	glm::vec3 shader_force;
 	bool movable; // can the particle move or not ? used to pin parts of the cloth
 	float mass; // the mass of the particle (is always 1 in this example)
 
@@ -44,6 +45,7 @@ public:
 		pos = now_pos + ((now_pos-old_pos) * (1.0f-DAMPING) + accel) * deltaTime * TIME_STEPSIZE2;	// newPos = now_pos + speed * deltaTime
 		old_pos = now_pos;
 		this->force = glm::vec3(0.0f);
+		this->shader_force = glm::vec3(0.0f);
 	}
 
 	glm::vec3& getPos() {return pos;}
@@ -52,8 +54,10 @@ public:
 
 	void offsetPos(glm::vec3 v) 
 	{
-		if(movable) 
+		if(movable) {
 		 	pos += v;
+			shader_force += v;
+		}
 	}
 
 	void makeUnmovable() {movable = false;}
@@ -76,9 +80,10 @@ public:
 		}
 	}
 	void PlaneCollision(const float yLimit){
-		if (this->pos.y < yLimit) // if the particle is inside the ball
+		if (this->pos.y < yLimit)
 		{
-			this->pos = glm::vec3(this->pos.x, yLimit, this->pos.z); // project the particle to the surface of the ball
+			float l = yLimit - this->pos.y;
+			this->offsetPos(glm::vec3(0.0f, l, 0.0f));
 		}
 	}
 	void CubeCollision(glm::mat4 clothModelMatrix, const glm::vec3 cubeCenterInWorldSpace, const float edge){

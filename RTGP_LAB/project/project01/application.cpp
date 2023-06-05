@@ -53,8 +53,6 @@ positive Z axis points "outside" the screen
 #define STB_IMAGE_IMPLEMENTATION
 #include "../include/stb_image/stb_image.h"
 
-#define NR_LIGHTS 3
-
 
 GLFWwindow* window;
 GLuint screenWidth = 1200, screenHeight = 900;
@@ -108,9 +106,6 @@ GLfloat clothColor[] = {0.0f, 31.0f, 0.0f};
 GLfloat coral[] = {1.0f, 0.5f, 0.31f};
 GLfloat planeColor[] = {0.13f, 0.07f, 0.34f};
 
-GLfloat weight = 0.2f;
-GLfloat speed = 5.0f;
-
 glm::vec3 startingPosition(0.0f, 0.0f, 0.0f);
 
 bool once = true;
@@ -119,7 +114,7 @@ unsigned int iter = 0;
 bool clothExist = true;
 unsigned int prints = 0;
 bool pinned = true;
-bool usePhysicConstraints = false;
+ConstraintType usePhysicConstraints = POSITIONAL;
 float gravity = -9.8f;
 float k = 0.5f;
 unsigned int constraintIterations = 15;
@@ -213,7 +208,7 @@ int main()
             startingPosition,
             view
         );
-        cloth.PhysicsSteps(deltaTime.count(), (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y - 0.1);
+        cloth.PhysicsSteps(deltaTime.count(), (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
         glUniformMatrix4fv(glGetUniformLocation(force_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.modelMatrix));
         glUniformMatrix3fv(glGetUniformLocation(force_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.normalMatrix));
         cloth.Draw();

@@ -16,7 +16,14 @@ public:
 		//rest_distance = glm::length(vec);
 	}
 
-	void satisfyConstraint_Physics(float K)
+	void satisfyPositionalConstraint(float K)
+	{
+		glm::vec3 correctionVector = CalculateCorrectionVector(K);
+
+		this->p1->offsetPos(correctionVector); // correctionVectorHalf is pointing from p1 to p2, so the length should move p1 half the length needed to satisfy the constraint.
+		this->p2->offsetPos(-correctionVector); // we must move p2 the negative direction of correctionVectorHalf since it points from p2 to p1, and not p1 to p2.	
+	}
+	void satisfyPhysicsConstraint(float K)
 	{
 		glm::vec3 correctionVector = CalculateCorrectionVector(K);
 
@@ -24,14 +31,20 @@ public:
 		this->p2->addForce(-correctionVector); // we must move p2 the negative direction of correctionVectorHalf since it points from p2 to p1, and not p1 to p2.	
 	}
 
-	void satisfyConstraint(float K)
-	{
-		glm::vec3 correctionVector = CalculateCorrectionVector(K);
+	void satisfyAdvancedPositionalConstraint(float K, float deltaTime){
+		glm::vec3 correctionVector = CalculateAdvancedCorrectionVector(K, deltaTime);
 
 		this->p1->offsetPos(correctionVector); // correctionVectorHalf is pointing from p1 to p2, so the length should move p1 half the length needed to satisfy the constraint.
 		this->p2->offsetPos(-correctionVector); // we must move p2 the negative direction of correctionVectorHalf since it points from p2 to p1, and not p1 to p2.	
 	}
+	void satisfyAdvancedPhysicalConstraint(float K, float deltaTime){
+		glm::vec3 correctionVector = CalculateAdvancedCorrectionVector(K, deltaTime);
 
+		this->p1->addForce(correctionVector); // correctionVectorHalf is pointing from p1 to p2, so the length should move p1 half the length needed to satisfy the constraint.
+		this->p2->addForce(-correctionVector); // we must move p2 the negative direction of correctionVectorHalf since it points from p2 to p1, and not p1 to p2.	
+	}
+
+private:
 	glm::vec3 CalculateCorrectionVector(float K){
 		glm::vec3 p1_to_p2 = this->p2->getPos() - this->p1->getPos(); // vector from p1 to p2
 		float current_distance = glm::length(p1_to_p2); // current distance between p1 and p2
@@ -42,7 +55,33 @@ public:
 		glm::vec3 correctionVector = p1_to_p2 * delta * K; // The offset vector that could moves p1 into a distance of rest_distance to p2
 		return correctionVector;
 	}
-	glm::vec3 CalculateAdvancedCorrectionVector(float K){
+	glm::vec3 CalculateAdvancedCorrectionVector(float K, float deltaTime){
 		// (k * ((mag - l)/l) + u (v2 -v1) * n
+		// u friction coeff
+		float u = 0.05f;
+
+		glm::vec3 p1_to_p2 = this->p2->getPos() - this->p1->getPos(); // vector from p1 to p2
+		float current_distance = glm::length(p1_to_p2); // current distance between p1 and p2
+		p1_to_p2 /= current_distance;	// Normalize
+
+		// scalar "a"
+		//k[(current_distance -l)/l]
+		float a = K * ((current_distance-rest_distance)/rest_distance);
+
+		// vector "B"
+		// u * (v_p2 - v_p1) * p1_to_p2
+		glm::vec3 v_1 = (this->p1->old_pos - this->p1->pos) / deltaTime; // Speed as the delta pos in time
+		glm::vec3 v_2 = (this->p2->old_pos - this->p2->pos) / deltaTime; // Speed as the delta pos in time
+		glm::vec3 b = u * (v_1 - v_2) * p1_to_p2;
+
+		glm::vec3 correctionVector = (a + b) * p1_to_p2;
+		return correctionVector;
 	}
+};
+
+enum ConstraintType {
+	POSITIONAL,
+	PHYSICAL,
+	POSITIONAL_ADVANCED,
+	PHYSICAL_ADVANCED
 };
