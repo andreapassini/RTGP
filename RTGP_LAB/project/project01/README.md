@@ -10,15 +10,6 @@ Prof req. => Add some sort of color modification based on the force or displacem
 
 (markdown to pdf: https://md2pdf.netlify.app/)
 
-## FIX
-
-## AddForce
-
-Add Force is used for both adding a force, like the wind and adding gravity
-BUT 
-The AddForce used for gravity, iterates on every cloth particle, but the name of the method is the same,
-better to change the nam in something like, **addGravityToAllParticles**
-
 # **Components**
 
 ## **Mesh**
@@ -28,6 +19,63 @@ Can we render a mesh? (Could be simply a large plane)
 ## **Cloth**
 
 The cloth is simulated by a matrix of particles, between each particle, distance 1 and distance 2, there will be a spring
+
+### **SPRING**
+
+
+![Spring](D:\ANDREA\UNI\MAGISTRALE\ANNO_2\II_Semestre\REAL-TIME_GP\RTGP\RTGP_LAB\project\project01\Presentation\SpringMassDamp.png)
+
+
+
+$\ 1+2 $
+
+
+```cpp 
+glm::vec3 CalculateCorrectionVector(float K){
+        glm::vec3 p1_to_p2 = this->p2->getPos() - this->p1->getPos(); 
+        // current distance between p1 and p2
+        float current_distance = glm::length(p1_to_p2); 
+        p1_to_p2 /= current_distance;
+
+        float delta = current_distance - rest_distance;
+
+        glm::vec3 correctionVector = p1_to_p2 * delta * K; 
+        return correctionVector;
+}
+
+```
+
+
+### **SPRING-MASS-DAMP**
+
+
+
+```cpp 
+glm::vec3 CalculateAdvancedCorrectionVector(float K, float deltaTime){
+        
+        // (k * ((mag - l)/l) + u (v2 -v1) * n
+        // u friction coeff
+        float u = 0.05f;
+
+        // vector from p1 to p2
+        glm::vec3 p1_to_p2 = this->p2->getPos() - this->p1->getPos(); 
+        float current_distance = glm::length(p1_to_p2);
+        p1_to_p2 /= current_distance;	// Normalize
+
+        // scalar "a"
+        //k[(current_distance -l)/l]
+        float a = K * ((current_distance-rest_distance)/rest_distance);
+
+        // vector "B"
+        // u * (v_p2 - v_p1) * p1_to_p2
+        glm::vec3 v_1 = (this->p1->old_pos - this->p1->pos) / deltaTime; 
+        glm::vec3 v_2 = (this->p2->old_pos - this->p2->pos) / deltaTime;
+        glm::vec3 b = u * (v_1 - v_2) * p1_to_p2;
+
+        glm::vec3 correctionVector = (a + b) * p1_to_p2;
+        return correctionVector;
+}
+```
 
 ## **Physic System - Verlet Integration**
 
@@ -39,6 +87,8 @@ To calculate the forces that will be added the particles we use the Verlet Integ
 - **Wind**
 
 ## **Collisions**
+
+COLLISIONS_ITERATIONS:  Number of times that the collision calculation is repeated
 
 ### **Detection**
 Since the only other object in the scene is a sphere, the collision with the sphere can be trivially found by comparing the distance of the particle with the centre of the sphere and the radius. (if its magnitude is less => COLLISION FOUND)
@@ -106,6 +156,8 @@ For rendering
 
 
 ## **Constraints**
+
+CONSTRAINTS_ITERATIONS:  Number of times that the constraints calculation is repeated
 
 - **Particle 1**
 - **Particle 2**

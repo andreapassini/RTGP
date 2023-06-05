@@ -58,8 +58,8 @@ GLFWwindow* window;
 GLuint screenWidth = 1200, screenHeight = 900;
 
 int SetupOpenGL();
-
 void SetupShaders();
+void DebugLogStatus();
 
 void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transform &planeTransform, Model &planeModel, Transform &sphereTransform, Model &sphereModel);
 
@@ -114,9 +114,9 @@ unsigned int iter = 0;
 bool clothExist = true;
 unsigned int prints = 0;
 bool pinned = true;
-ConstraintType usePhysicConstraints = POSITIONAL;
+ConstraintType springType = POSITIONAL;
 float gravity = -9.8f;
-float k = 0.5f;
+float K = 0.5f;
 unsigned int constraintIterations = 15;
 unsigned int collisionIterations = 15;
 
@@ -126,6 +126,8 @@ unsigned int overlap = 3;
 glm::vec3 spherePosition(3.0f, -4.5f, -2.5f);
 glm::vec3 cubePosition(3.0f, -4.5f, -2.5f);
 glm::vec3 planePosition(0.0f, -10.0f, 0.0f);
+
+PerformanceCalculator performanceCalculator(windowSize, overlap);
 
 int main()
 {
@@ -157,7 +159,7 @@ int main()
     Transform cubeTransform(view);
 
     Transform clothTransform(view);
-    Cloth cloth(30, 0.15f, startingPosition, &clothTransform, pinned, usePhysicConstraints, k, constraintIterations, gravity, collisionIterations);
+    Cloth cloth(30, 0.15f, startingPosition, &clothTransform, pinned, springType, K, constraintIterations, gravity, collisionIterations);
 
     PerformanceCalculator performanceCalculator(windowSize, overlap);
     // DELTA TIME using std::chrono
@@ -217,10 +219,9 @@ int main()
         {
             cloth.~Cloth();
             pinned = !pinned;
-            new(&cloth) Cloth(30, 0.15f, startingPosition, &clothTransform, pinned, usePhysicConstraints, k, constraintIterations, gravity, collisionIterations);
+            new(&cloth) Cloth(30, 0.15f, startingPosition, &clothTransform, pinned, springType, K, constraintIterations, gravity, collisionIterations);
             once = false;
-            std::cout << "Framerate: " << (int)performanceCalculator.framerate << std::endl;
-
+            DebugLogStatus();
             //cloth.CutAHole(4 + iter, 4 + iter);
             iter++;
         } else if(spinning && !once){
@@ -343,6 +344,15 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         spinning=!spinning;
         movingOnX = !movingOnX;
         instantiate = !instantiate;
+    }
+
+    // pressing a key between 1 and 5, we change the shader applied to the models
+    if((key >= GLFW_KEY_1 && key <= GLFW_KEY_5) && action == GLFW_PRESS)
+    {
+        // "1" to "5" -> ASCII codes from 49 to 57
+        // we subtract 48 (= ASCII CODE of "0") to have integers from 1 to 5
+        // we subtract 1 to have indices from 0 to 4 in the shaders list
+        unsigned int pressedInt = (key-'0'-1);
     }
 
     // if P is pressed, we start/stop the animated rotation of models
@@ -477,4 +487,13 @@ void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transfor
     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(planeTransform.modelMatrix));
     glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(planeTransform.normalMatrix));
     planeModel.Draw();
+}
+
+void DebugLogStatus(){
+    std::cout << "Framerate: " << (int)performanceCalculator.framerate << std::endl;
+    std::cout << std::endl;
+    std::cout << "Cloth: " << std::endl;
+    std::cout << "  - Spring Type: " << springType << std::endl;
+    std::cout << "  - K: " << K << std::endl;
+    std::cout << "  - Constraint Iterations: " << constraintIterations << std::endl;
 }

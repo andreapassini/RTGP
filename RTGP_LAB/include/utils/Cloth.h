@@ -31,6 +31,8 @@ private:
 	GLuint VBO;
     std::vector<GLuint> indices;
 
+	float maxForce;
+
 	Particle* getParticle(int x, int y, int rowDim) {return &particles[x*rowDim + y];}
 	void makeConstraint(Particle *p1, Particle *p2, float rest_distance) {
 		constraints.push_back(Constraint(p1,p2, rest_distance));
@@ -232,6 +234,7 @@ public:
 		this->gravityForce = gravity;
 		this->K = k;
 
+		maxForce = 0.0f;
 		particles.resize(dim*dim); //I am essentially using this vector as an array with room for num_particles_width*dim particles
 		
 		// creating particles in a grid of particles from (0,0,0) to (width,-height,0)
@@ -320,7 +323,6 @@ public:
 			}
 		}
 
-		float maxForce = glm::length(particles[0].force);
 
 		for(size_t i = 0; i < this->collisionIterations; i++){
 			for(particle = particles.begin(); particle != particles.end(); particle++)
