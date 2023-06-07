@@ -8,7 +8,8 @@
                 "D:\\ANDREA\\UNI\\MAGISTRALE\\ANNO_2\\II_Semestre\\REAL-TIME_GP\\RTGP\\RTGP_LAB\\include",
                 "D:\\ANDREA\\UNI\\MAGISTRALE\\ANNO_2\\II_Semestre\\REAL-TIME_GP\\RTGP\\RTGP_LAB\\include\\glm",
                 "D:\\ANDREA\\UNI\\MAGISTRALE\\ANNO_2\\II_Semestre\\REAL-TIME_GP\\RTGP\\RTGP_LAB\\include\\bullet",
-                "${workspaceFolder}",
+                "D:\\ANDREA\\UNI\\MAGISTRALE\\ANNO_2\\II_Semestre\\REAL-TIME_GP\\RTGP\\RTGP_LAB\\include\\glfw",
+                "D:\\ANDREA\\UNI\\MAGISTRALE\\ANNO_2\\II_Semestre\\REAL-TIME_GP\\RTGP\\RTGP_LAB\\include\\imgui",
                 "${workspaceFolder}"
             ],
             "defines": [

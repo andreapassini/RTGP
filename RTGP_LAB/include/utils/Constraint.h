@@ -80,7 +80,7 @@ private:
 };
 
 enum ConstraintType {
-	POSITIONAL,
+	POSITIONAL = 0,
 	PHYSICAL,
 	POSITIONAL_ADVANCED,
 	PHYSICAL_ADVANCED

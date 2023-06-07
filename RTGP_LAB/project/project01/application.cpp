@@ -58,7 +58,7 @@ positive Z axis points "outside" the screen
 // we include the library for images loading
 #define STB_IMAGE_IMPLEMENTATION
 #include "../include/stb_image/stb_image.h"
-
+#define stringify( name ) #name
 
 GLFWwindow* window;
 GLuint screenWidth = 1200, screenHeight = 900;
@@ -223,7 +223,38 @@ int main()
         ImGui::NewLine;
         ImGui::Text("Constraints");
         ImGui::NewLine;
-        ImGui::SliderInt("Type", &type, 0, 3);
+        if(ImGui::SliderInt("type", &type, 0, 3)){
+        switch(type)
+        {
+            case 0:
+                //springType = POSITIONAL;
+                K = 0.5f;
+                gravity = -9.8f;
+                constraintIterations = 15;
+                break;
+            case 1:
+                // springType = PHYSICAL;
+                K = 2.5f;
+                gravity = -0.8f;
+                constraintIterations = 1;
+                break;
+            case 2:
+                // springType = POSITIONAL_ADVANCED;
+                K = 0.5f;
+                gravity = -9.8f;
+                constraintIterations = 15;
+                break;
+            case 3:
+                // springType = PHYSICAL_ADVANCED;
+                K = 3.5f;
+                gravity = -0.8f;
+                constraintIterations = 1;
+                break;
+            default:
+                break;
+            }
+        }
+        ImGui::SameLine();
         switch (type)
         {
         case 0:
