@@ -224,8 +224,9 @@ private:
 public:
 	std::vector<Particle> particles; // all particles that are part of this cloth
 	float K;
+	float U;
 
-	Cloth(int dim, float particleDistance, glm::vec3 topLeftPosition, Transform *t, bool pinned, ConstraintType usePhysicConstraints, float k, unsigned int contraintIt, float gravity, unsigned int collisionIt){
+	Cloth(int dim, float particleDistance, glm::vec3 topLeftPosition, Transform *t, bool pinned, ConstraintType usePhysicConstraints, float k, float u, unsigned int contraintIt, float gravity, float m, unsigned int collisionIt){
 		this->dim = dim;
 		this->transform = t;
 		this->springsType = usePhysicConstraints;
@@ -233,6 +234,7 @@ public:
 		this->collisionIterations = collisionIt;
 		this->gravityForce = gravity;
 		this->K = k;
+		this->U = u;
 
 		maxForce = 0.0f;
 		particles.resize(dim*dim); //I am essentially using this vector as an array with room for num_particles_width*dim particles
@@ -254,7 +256,7 @@ public:
 								topLeftPosition.y + (y * particleDistance),
 								topLeftPosition.x - (x * particleDistance),
 								topLeftPosition.x - (x * particleDistance));
-				particles[(x*dim) + y] = Particle(pos); // Linearization of the index, row = X, col = Y and row dimension = dim
+				particles[(x*dim) + y] = Particle(pos, m); // Linearization of the index, row = X, col = Y and row dimension = dim
 			}
 		}
 
@@ -295,12 +297,13 @@ public:
 
 	void PhysicsSteps(float deltaTime, glm::vec3 ballCenterWorld, float ballRadius, float planeLimit)
 	{
+
 		std::vector<Particle>::iterator particle;
 		for(particle = particles.begin(); particle != particles.end(); particle++)
 		{
 			particle->PhysicStep(deltaTime); // calculate the position of each particle at the next time step.
 		}
-
+		
 		std::vector<Constraint>::iterator constraint;
 		for(size_t i=0; i < this->constraintIterations; i++) // iterate over all constraints several times
 		{
@@ -314,10 +317,10 @@ public:
 						constraint->satisfyPhysicsConstraint(K); // satisfy constraint.
 						break;
 					case POSITIONAL_ADVANCED:
-						constraint->satisfyAdvancedPositionalConstraint(K, deltaTime);
+						constraint->satisfyAdvancedPositionalConstraint(K, U, deltaTime);
 						break;
 					case PHYSICAL_ADVANCED:
-						constraint->satisfyAdvancedPhysicalConstraint(K, deltaTime);
+						constraint->satisfyAdvancedPhysicalConstraint(K, U, deltaTime);
 						break;
 				}
 			}
@@ -331,20 +334,20 @@ public:
 				//particle->CubeCollision(transform->modelMatrix, ballCenterWorld, ballRadius);
 				particle->PlaneCollision(planeLimit);
 
-				float forceMagnitude = glm::length(particle->force);
-				if(maxForce < forceMagnitude)
-					maxForce = forceMagnitude;
+				// float forceMagnitude = glm::length(particle->force);
+				// if(maxForce < forceMagnitude)
+				// 	maxForce = forceMagnitude;
 			}
 		}
 
-		for(particle = particles.begin(); particle != particles.end(); particle++)
-		{
-			if(springsType == PHYSICAL || springsType == PHYSICAL_ADVANCED){
-				particle->force / maxForce;
-			} else {
-				particle->shader_force / maxForce;
-			}
-		}
+		// for(particle = particles.begin(); particle != particles.end(); particle++)
+		// {
+		// 	if(springsType == PHYSICAL || springsType == PHYSICAL_ADVANCED){
+		// 		particle->force / maxForce;
+		// 	} else {
+		// 		particle->shader_force / maxForce;
+		// 	}
+		// }
 		
 
 		UpdateNormals();

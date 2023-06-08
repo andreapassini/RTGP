@@ -23,7 +23,7 @@ public:
 
 	bool renderable;
 	
-	Particle(glm::vec3 pos) : pos(pos), normal(glm::vec3(1.0f)),  old_pos(pos),force(glm::vec3(0.0f)), mass(1.0f), movable(true){
+	Particle(glm::vec3 pos, float m) : pos(pos), normal(glm::vec3(1.0f)),  old_pos(pos),force(glm::vec3(0.0f)), mass(m), movable(true){
 		renderable = true;
 	}
 	Particle(){}
@@ -42,10 +42,13 @@ public:
 
 		glm::vec3 now_pos = pos;
 		glm::vec3 accel = force/mass;
-		pos = now_pos + ((now_pos-old_pos) * (1.0f-DAMPING) + accel) * deltaTime * TIME_STEPSIZE2;	// newPos = now_pos + speed * deltaTime
+		//pos = (((2.0f * now_pos) - old_pos) * (1.0f-DAMPING) + accel * (deltaTime * deltaTime));
+		pos = now_pos + ((now_pos-old_pos) * (1.0f-DAMPING) + accel) * (deltaTime) * TIME_STEPSIZE2;	// newPos = now_pos + speed * deltaTime
+		//pos = now_pos + (now_pos-old_pos) * (1.0f-DAMPING) + accel * deltaTime * TIME_STEPSIZE2;	// newPos = now_pos + speed * deltaTime
+		//pos = (((2.0f * now_pos) - old_pos) * (1.0f-DAMPING)) + accel * TIME_STEPSIZE2;	// newPos = now_pos + speed * deltaTime
 		old_pos = now_pos;
 		this->force = glm::vec3(0.0f);
-		this->shader_force = glm::vec3(0.0f);
+		this->shader_force = force;
 	}
 
 	glm::vec3& getPos() {return pos;}

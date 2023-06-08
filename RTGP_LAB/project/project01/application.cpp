@@ -78,7 +78,7 @@ void imGuiSetup(GLFWwindow *window);
 
 bool keys[1024];
 bool R_KEY = false;
-GLfloat lastX, lastY;
+    GLfloat lastX, lastY;
 bool firstMouse = true;
 
 GLfloat deltaTime = 0.0f;
@@ -86,7 +86,7 @@ GLfloat lastFrame = 0.0f;
 
 GLfloat orientationY = 0.0f;
 GLfloat spin_speed = 30.0f;
-GLboolean spinning = GL_TRUE;
+GLboolean pKeyPressed = GL_TRUE;
 GLfloat positionZ = 0.0f;
 GLfloat movement_speed = 5.0f;
 GLboolean movingOnX = GL_TRUE;
@@ -126,7 +126,9 @@ unsigned int prints = 0;
 bool pinned = true;
 ConstraintType springType = POSITIONAL;
 float gravity = -9.8f;
+float mass = 1.0f;
 float K = 0.5f;
+float U = 0.1f;
 int constraintIterations = 15;
 int collisionIterations = 15;
 
@@ -169,7 +171,7 @@ int main()
     Transform cubeTransform(view);
 
     Transform clothTransform(view);
-    Cloth cloth(clothDim, particleOffset, startingPosition, &clothTransform, pinned, springType, K, constraintIterations, gravity, collisionIterations);
+    Cloth cloth(clothDim, particleOffset, startingPosition, &clothTransform, pinned, springType, K, U, constraintIterations, gravity, mass, collisionIterations);
 
     PerformanceCalculator performanceCalculator(windowSize, overlap);
     // DELTA TIME using std::chrono
@@ -218,7 +220,9 @@ int main()
         ImGui::NewLine;
         ImGui::Text("Physic Simulation");
         ImGui::NewLine;
-        ImGui::SliderFloat("Gravity", &gravity, -9.8f, -0.0f);
+        ImGui::SliderFloat("Gravity", &gravity, -0.0f, -9.8f);
+        ImGui::NewLine;
+        ImGui::SliderFloat("Mass", &mass, 0.0f, 2.0f);
 
         ImGui::NewLine;
         ImGui::Text("Constraints");
@@ -268,10 +272,18 @@ int main()
         case 2:
             springType = POSITIONAL_ADVANCED;
             ImGui::Text("POSITIONAL_ADVANCED");
+
+            ImGui::NewLine;
+            ImGui::SliderFloat("U", &U, 0.00f, 2.0f);
+
             break;
         case 3:
             springType = PHYSICAL_ADVANCED;
             ImGui::Text("PHYSICAL_ADVANCED");
+
+            ImGui::NewLine;
+            ImGui::SliderFloat("U", &U, 0.00f, 2.0f);
+
             break;
         default:
             break;
@@ -323,16 +335,16 @@ int main()
         glUniformMatrix3fv(glGetUniformLocation(force_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.normalMatrix));
         cloth.Draw();
         
-        if(!spinning && once)
+        if(!pKeyPressed && once)
         {
             cloth.~Cloth();
             pinned = !pinned;
-            new(&cloth) Cloth(clothDim, particleOffset, startingPosition, &clothTransform, pinned, springType, K, constraintIterations, gravity, collisionIterations);
+            new(&cloth) Cloth(clothDim, particleOffset, startingPosition, &clothTransform, pinned, springType, K, U, constraintIterations, gravity, mass, collisionIterations);
             once = false;
             DebugLogStatus();
             //cloth.CutAHole(4 + iter, 4 + iter);
             iter++;
-        } else if(spinning && !once){
+        } else if(pKeyPressed && !once){
             once = true; 
         }
 
@@ -459,7 +471,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
     // if P is pressed, we start/stop the animated rotation of models
     if(key == GLFW_KEY_P && action == GLFW_PRESS){
-        spinning=!spinning;
+        pKeyPressed=!pKeyPressed;
         movingOnX = !movingOnX;
         instantiate = !instantiate;
     }
@@ -473,7 +485,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         unsigned int pressedInt = (key-'0'-1);
     }
 
-    // if P is pressed, we start/stop the animated rotation of models
+    // if R is pressed, we start/stop the animated rotation of models
     if(key == GLFW_KEY_R && action == GLFW_PRESS){
         R_KEY = true;
     }
@@ -579,7 +591,6 @@ void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transfor
     glBindTexture(GL_TEXTURE_2D, textureID[0]);
     glUniform1i(textureLocation, 0);
     glUniform1f(repeatLocation, repeat);
-
 
     sphereTransform.Transformation(
         glm::vec3(1.0f, 1.0f, 1.0f),
