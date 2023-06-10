@@ -47,11 +47,11 @@ public:
         virtualTime = timeToSync;
     }
 
-    void TimeStep(Cloth* cloth, std::vector<Sphere> spheres){
+    void TimeStep(Cloth* cloth, std::vector<Sphere> spheres, float yLimit){
         if(isPaused) 
             return;
 
-        //cloth->PhysicsSteps();
+        cloth->PhysicsSteps(spheres, yLimit);
         
         virtualTime += FIXED_TIME_STEP;
     }
