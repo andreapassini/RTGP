@@ -47,7 +47,7 @@ positive Z axis points "outside" the screen
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <utils/Transform.h>
+#include <utils/transform.h>
 #include <utils/cloth.h>
 
 #include <imgui/imgui.h>
