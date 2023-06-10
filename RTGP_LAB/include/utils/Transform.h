@@ -37,15 +37,39 @@ public:
 
     void Transformation(glm::vec3 &scaleVector,
                         glm::f32 angleInGrades, glm::vec3 &axis,
-                        glm::vec3 &translationVector
-                        );
+                        glm::vec3 &translationVector);
                         
     void Transformation(glm::vec3 &scaleVector,
                         glm::f32 angleInGrades, glm::vec3 &axis,
                         glm::vec3 &translationVector,
-                        glm::mat4 &viewMatrix
-                        );
+                        glm::mat4 &viewMatrix);
+
+    glm::vec3 GetTranslationVector(){
+        glm::vec3 translationVec = glm::vec3(
+            modelMatrix[3].x,
+            modelMatrix[3].y,
+            modelMatrix[3].z
+        );
+
+        glm::vec3 outVec = glm::vec3(glm::vec4(translationVec, 1.0f) * modelMatrix);
+
+        return outVec;
+    }
+
+    glm::vec3 GetTranslationVectorWorld(glm::mat4 CumulatedModelMatrixToWorld){
+        glm::vec3 translationVec = glm::vec3(
+            modelMatrix[3].x,
+            modelMatrix[3].y,
+            modelMatrix[3].z
+        );
+
+        glm::vec3 outVec = glm::vec3(glm::vec4(translationVec, 1.0f) * CumulatedModelMatrixToWorld);
+
+        return outVec;
+    }
 };
+
+// IMPLEMENTATIONS
 
 Transform::Transform(glm::mat4 &model, glm::mat3 &normal, glm::mat4 &viewMatrix)
 {
@@ -65,8 +89,7 @@ Transform::~Transform()
 
 void Transform::Transformation(glm::vec3 &scaleVector,
                         glm::f32 angleInGrades, glm::vec3 &axis,
-                        glm::vec3 &translationVector
-                        )
+                        glm::vec3 &translationVector)
 {
     ResetToIdentity();
 
@@ -80,8 +103,7 @@ void Transform::Transformation(glm::vec3 &scaleVector,
 void Transform::Transformation(glm::vec3 &scaleVector,
                         glm::f32 angleInGrades, glm::vec3 &axis,
                         glm::vec3 &translationVector,
-                        glm::mat4 &viewMatrix
-                        )
+                        glm::mat4 &viewMatrix)
 {
     ResetToIdentity();
 

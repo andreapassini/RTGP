@@ -51,7 +51,7 @@ public:
         if(isPaused) 
             return;
 
-        cloth->PhysicsSteps(spheres, yLimit);
+        //cloth->PhysicsSteps(spheres, yLimit);
         
         virtualTime += FIXED_TIME_STEP;
     }

@@ -10,6 +10,6 @@ private:
 public:
     Collider(Transform* t)  : transform(t){};
     ~Collider();
-
-    virtual glm::vec3 Collision(glm::vec3 posWorldSpace, float radius) = 0;
+    glm::vec3 GetPositionWorld(){
+    }
 };
