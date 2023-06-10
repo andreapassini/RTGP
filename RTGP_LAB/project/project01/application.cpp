@@ -75,6 +75,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void apply_camera_movements();
 void imGuiSetup(GLFWwindow *window);
+void PrintVec3(glm::vec3* vec);
 
 bool keys[1024];
 bool R_KEY = false;
@@ -344,6 +345,14 @@ int main()
             DebugLogStatus();
             //cloth.CutAHole(4 + iter, 4 + iter);
             iter++;
+
+            // Test translation vector
+            std::cout << "Sphere Original Pos" << std::endl;
+            PrintVec3(&spherePosition);
+
+            std::cout << "Get Translation 1" << std::endl;
+            PrintVec3(&sphereTransform.GetTranslationVector());
+
         } else if(pKeyPressed && !once){
             once = true; 
         }
@@ -634,4 +643,8 @@ void DebugLogStatus(){
     std::cout << "  - Spring Type: " << springType << std::endl;
     std::cout << "  - K: " << K << std::endl;
     std::cout << "  - Constraint Iterations: " << constraintIterations << std::endl;
+}
+
+void PrintVec3(glm::vec3* vec){
+    std::cout << vec->x << ", " << vec->y << ", " << vec->z << std::endl;
 }
