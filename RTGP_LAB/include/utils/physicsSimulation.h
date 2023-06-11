@@ -3,7 +3,8 @@
 #define FIXED_TIME_STEP (1.0f / 30.0f)
 #define FIXED_TIME_STEP2 (FIXED_TIME_STEP * FIXED_TIME_STEP)
 
-#include <utils/cloth.h>
+//#include <utils/cloth.h>
+#include "cloth.h"
 #include <vector>
 
 class Sphere{
