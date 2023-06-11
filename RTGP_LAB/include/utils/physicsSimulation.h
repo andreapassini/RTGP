@@ -7,29 +7,13 @@
 #include "cloth.h"
 #include <vector>
 
-class Sphere{
-public:
-    Transform t;
-    float radius;
-    glm::vec3 Position(){
-        glm::mat4 modelMat = t.modelMatrix; // column major
-        glm::vec3 origin = glm::vec3(
-            modelMat[3].x,
-            modelMat[3].y,
-            modelMat[3].z
-        );
-
-        return origin;
-    }
-};
-
 class PhysicsSimulation
 {
 private:
     double virtualTime = 0.0f;
-    bool isPaused;
 public:
-    PhysicsSimulation(/* args */)
+    bool isPaused;
+    PhysicsSimulation()
     {
     }
 
@@ -48,17 +32,15 @@ public:
         virtualTime = timeToSync;
     }
 
-    void TimeStep(Cloth* cloth, std::vector<Sphere> spheres, float yLimit){
+    void TimeStep(Cloth* cloth, std::vector<SphereCollider> spheres, float yLimit){
         if(isPaused) 
             return;
 
-        //cloth->PhysicsSteps(spheres, yLimit);
+        cloth->PhysicsSteps(spheres, yLimit);
         
         virtualTime += FIXED_TIME_STEP;
     }
 
-
-    bool const isPaused(){ return isPaused; }
-    double const getVirtualTIme(){ return virtualTime; }
+    double getVirtualTIme(){ return virtualTime; }
 };
 

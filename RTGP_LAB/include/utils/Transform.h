@@ -51,9 +51,7 @@ public:
             modelMatrix[3].z
         );
 
-        glm::vec3 outVec = glm::vec3(glm::vec4(translationVec, 1.0f) * modelMatrix);
-
-        return outVec;
+        return translationVec;
     }
 
     glm::vec3 GetTranslationVectorWorld(glm::mat4 CumulatedModelMatrixToWorld){

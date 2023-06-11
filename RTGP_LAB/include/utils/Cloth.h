@@ -82,20 +82,6 @@ private:
 
 		return glm::cross(diagonal2, diagonal1);
 	}
-	/* A private method used by drawShaded(), that draws a single triangle p1,p2,p3 with a color*/
-	void drawTriangle(Particle *p1, Particle *p2, Particle *p3, const glm::vec3 color)
-	{
-		glColor3fv( (GLfloat*) &color );
-
-		glNormal3fv((GLfloat *) &(glm::normalize(p1->getNormal())));
-		glVertex3fv((GLfloat *) &(p1->getPos() ));
-
-		glNormal3fv((GLfloat *) &(glm::normalize(p2->getNormal())));
-		glVertex3fv((GLfloat *) &(p2->getPos() ));
-
-		glNormal3fv((GLfloat *) &(glm::normalize(p3->getNormal())));
-		glVertex3fv((GLfloat *) &(p3->getPos() ));
-	}
 	void SetUp()
 	{
 		// we create the buffers
@@ -335,48 +321,49 @@ public:
 		}		
 	}
 
-	// void PhysicsSteps(std::vector<Spheres> spheres, float planeLimit)
-	// {
-	// 	std::vector<Particle>::iterator particle;
-	// 	for(particle = particles.begin(); particle != particles.end(); particle++)
-	// 	{
-	// 		particle->PhysicStep(deltaTime); // calculate the position of each particle at the next time step.
-	// 	}
+	void PhysicsSteps(std::vector<SphereCollider> spheres, float planeLimit)
+	{
+		std::vector<Particle>::iterator particle;
+		for(particle = particles.begin(); particle != particles.end(); particle++)
+		{
+			particle->PhysicStep(deltaTime); // calculate the position of each particle at the next time step.
+		}
 		
-	// 	std::vector<Constraint>::iterator constraint;
-	// 	for(size_t i=0; i < this->constraintIterations; i++) // iterate over all constraints several times
-	// 	{
-	// 		for(constraint = constraints.begin(); constraint != constraints.end(); constraint++ )
-	// 		{							
-	// 			switch(springsType){
-	// 				case POSITIONAL:
-	// 					constraint->satisfyPositionalConstraint(K); // satisfy constraint.
-	// 					break;
-	// 				case PHYSICAL:
-	// 					constraint->satisfyPhysicsConstraint(K); // satisfy constraint.
-	// 					break;
-	// 				case POSITIONAL_ADVANCED:
-	// 					constraint->satisfyAdvancedPositionalConstraint(K, U, deltaTime);
-	// 					break;
-	// 				case PHYSICAL_ADVANCED:
-	// 					constraint->satisfyAdvancedPhysicalConstraint(K, U, deltaTime);
-	// 					break;
-	// 			}
-	// 		}
-	// 	}
+		std::vector<Constraint>::iterator constraint;
+		for(size_t i=0; i < this->constraintIterations; i++) // iterate over all constraints several times
+		{
+			for(constraint = constraints.begin(); constraint != constraints.end(); constraint++ )
+			{							
+				switch(springsType){
+					case POSITIONAL:
+						constraint->satisfyPositionalConstraint(K); // satisfy constraint.
+						break;
+					case PHYSICAL:
+						constraint->satisfyPhysicsConstraint(K); // satisfy constraint.
+						break;
+					case POSITIONAL_ADVANCED:
+						constraint->satisfyAdvancedPositionalConstraint(K, U, deltaTime);
+						break;
+					case PHYSICAL_ADVANCED:
+						constraint->satisfyAdvancedPhysicalConstraint(K, U, deltaTime);
+						break;
+				}
+			}
+		}
 
-	// 	std::vector<Sphere>::iterator sphere;
-	// 	for(size_t i = 0; i < this->collisionIterations; i++){
-	// 		for(particle = particles.begin(); particle != particles.end(); particle++)
-	// 		{
-	// 			for(sphere = spheres.begin(); sphere != spheres.end(); sphere++){
-	// 				particle->BallCollision(sphere.transform->modelMatrix, sphere.Position(), sphere.radius); // calculate the position of each particle at the next time step.
-	// 			}
+		std::vector<Sphere>::iterator sphere;
+		for(size_t i = 0; i < this->collisionIterations; i++){
+			for(particle = particles.begin(); particle != particles.end(); particle++)
+			{
+				for(sphere = spheres.begin(); sphere != spheres.end(); sphere++){
+					//particle->BallCollision(sphere.transform->modelMatrix, sphere.Position(), sphere.radius); // calculate the position of each particle at the next time step.
+					particle->SphereCollision(sphere, transform->modelMatrix)
+				}
 				
-	// 			particle->PlaneCollision(planeLimit);
-	// 		}
-	// 	}		
-	// }
+				particle->PlaneCollision(planeLimit);
+			}
+		}		
+	}
 
 	void AddGravityForce(){
 		glm::vec3 gravityVec = glm::vec3(0.0f, 1.0f * (gravityForce), 0.0f);
