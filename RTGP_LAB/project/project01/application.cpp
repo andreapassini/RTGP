@@ -339,7 +339,7 @@ int main()
             physicsSimulation.TimeStep();
             cloth.PhysicsSteps(sphereCollider, planePosition.y + 0.1f);
             physIter++;
-            
+
             if(physIter > maxIter){
                 std::cout << "Physics Simulation lagging " << std::endl;
                 physicsSimulation.SynchVirtualTime(currentTime);
