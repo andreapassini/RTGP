@@ -1,7 +1,8 @@
 #pragma once
 
 #include <glm/glm.hpp>
-
+#include <colliders/collider.h>
+#include <colliders/sphereCollider.h>
 /* Some physics constants */
 #define DAMPING 0.01f // how much to damp the cloth simulation each frame
 #define TIME_STEPSIZE2 0.5f*0.5f // how large time step each particle takes each frame
@@ -82,6 +83,18 @@ public:
 			this->offsetPos(glm::normalize(v) * ((radius-l) * SPHERE_OFFSET_MULTIPLIER)); // project the particle to the surface of the ball
 		}
 	}
+
+	void SphereCollision(SphereCollider sphereCollider, glm::mat4 clothModelMatrix){
+		glm::vec3 sphereWorldPosition = sphereCollider.transform->GetTranslationVector();
+		glm::vec3 v = glm::vec3(glm::vec4(this->getPos(), 1.0f) * clothModelMatrix) - sphereWorldPosition;
+		float l = glm::length(v);
+		
+		if (glm::length(v) < sphereCollider.radius) // if the particle is inside the ball
+		{
+			this->offsetPos(glm::normalize(v) * ((sphereCollider.radius - l) * SPHERE_OFFSET_MULTIPLIER)); // project the particle to the surface of the ball
+		}
+	}
+
 	void PlaneCollision(const float yLimit){
 		if (this->pos.y < yLimit)
 		{

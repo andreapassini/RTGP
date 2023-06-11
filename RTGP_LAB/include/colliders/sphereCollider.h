@@ -1,9 +1,8 @@
 #include <colliders/collider.h>
 
-class sphereCollider: public Collider
+class SphereCollider: public Collider
 {
 private:
-    float radius;
 public:
-    
+    float radius;
 };
