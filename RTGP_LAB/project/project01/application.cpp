@@ -17,7 +17,6 @@ positive Z axis points "outside" the screen
 
 #include <string>
 #include <iostream>
-#include <chrono>
 #include <string>
 
 // Loader for OpenGL extensions
@@ -48,8 +47,8 @@ positive Z axis points "outside" the screen
 #include <glm/gtc/type_ptr.hpp>
 
 #include <utils/transform.h>
-#include <utils/cloth.h>
-
+#include <utils/physicsSimulation.h>
+#include <colliders/sphereCollider.h>
 #include <imgui/imgui.h>
 #include <imgui/imgui_impl_glfw.h>
 #include <imgui/imgui_impl_opengl3.h>
@@ -60,7 +59,6 @@ positive Z axis points "outside" the screen
 #include "../include/stb_image/stb_image.h"
 #define stringify( name ) #name
 
-#include <utils/physicsSimulation.h>
 
 GLFWwindow* window;
 GLuint screenWidth = 1200, screenHeight = 900;
@@ -168,7 +166,8 @@ int main()
     Transform sphereTransform(view);
     SphereCollider sphereCollider(&sphereTransform, 1.0f);
     std::vector<SphereCollider> sphereColliders;
-    sphereColliders[0] =sphereCollider;
+    sphereColliders.push_back(sphereCollider);
+    std::cout << "Line: " << __LINE__ << std::endl;
     positionZ = 0.8f;
     GLint directionZ = 1;
 
@@ -180,17 +179,12 @@ int main()
     Cloth cloth(clothDim, particleOffset, startingPosition, &clothTransform, pinned, springType, K, U, constraintIterations, gravity, mass, collisionIterations);
 
     PerformanceCalculator performanceCalculator(windowSize, overlap);
-    // DELTA TIME using std::chrono
-    // https://stackoverflow.com/questions/14391327/how-to-get-duration-as-int-millis-and-float-seconds-from-chrono
-    typedef std::chrono::high_resolution_clock Time;
-    typedef std::chrono::duration<float> fsec;
-    auto start_time = Time::now();   
 
     int type = 0;   // Used in ImGui display
     
     PhysicsSimulation physicsSimulation;
-    physicsSimulation.StartPhysicsSimulation(glfwGetTime());
     float currentTime = glfwGetTime();
+    physicsSimulation.StartPhysicsSimulation(currentTime);
 
     // Rendering loop: this code is executed at each frame
     while(!glfwWindowShouldClose(window))
@@ -200,12 +194,9 @@ int main()
         GLfloat currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
+        currentTime = currentFrame;
 
-        auto current_time = Time::now();
-        fsec deltaTime = (current_time - start_time);
-        start_time = Time::now();
-
-        performanceCalculator.Step(deltaTime.count());
+        performanceCalculator.Step(deltaTime);
 
         glfwPollEvents();
         apply_camera_movements();
@@ -314,9 +305,6 @@ int main()
         ImGui::End();
 
 
-        
-
-
 
         // View matrix (=camera): position, view direction, camera "up" vector
         view = camera.GetViewMatrix();
@@ -348,10 +336,17 @@ int main()
         unsigned int physIter = 0U;
 
         while(!physicsSimulation.isPaused &&  currentTime > physicsSimulation.getVirtualTIme()){
-            physicsSimulation.TimeStep(cloth, sphereCollider, planePosition.y + 0.1f);
+            physicsSimulation.TimeStep();
+            cloth.PhysicsSteps(sphereCollider, planePosition.y + 0.1f);
+            physIter++;
+            
+            if(physIter > maxIter){
+                std::cout << "Physics Simulation lagging " << std::endl;
+                physicsSimulation.SynchVirtualTime(currentTime);
+                break;
+            }
         }
 
-        //cloth.PhysicsSteps(deltaTime.count(), (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
         glUniformMatrix4fv(glGetUniformLocation(force_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.modelMatrix));
         glUniformMatrix3fv(glGetUniformLocation(force_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.normalMatrix));
         cloth.Draw();
@@ -481,7 +476,6 @@ GLint LoadTexture(const char* path)
     return textureImage;
 }
 
-
 //---------------------------------------------------------------------------------
 // callback for keyboard events
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
@@ -581,7 +575,6 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
       camera.ProcessMouseMovement(xoffset, yoffset);
 
 }
-
 void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transform &planeTransform, Model &planeModel, Transform &sphereTransform, Model &sphereModel){
 
     shader.Use();
@@ -638,7 +631,6 @@ void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transfor
     glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(planeTransform.normalMatrix));
     planeModel.Draw();
 }
-
 void imGuiSetup(GLFWwindow *window)
 {
     // ImGui SETUP
@@ -647,7 +639,6 @@ void imGuiSetup(GLFWwindow *window)
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 410");
 }
-
 void DebugLogStatus(){
     std::cout << "Framerate: " << (int)performanceCalculator.framerate << std::endl;
     std::cout << std::endl;
@@ -656,7 +647,6 @@ void DebugLogStatus(){
     std::cout << "  - K: " << K << std::endl;
     std::cout << "  - Constraint Iterations: " << constraintIterations << std::endl;
 }
-
 void PrintVec3(glm::vec3* vec){
     std::cout << vec->x << ", " << vec->y << ", " << vec->z << std::endl;
 }

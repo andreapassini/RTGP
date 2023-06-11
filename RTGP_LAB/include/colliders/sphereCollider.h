@@ -1,12 +1,11 @@
 #pragma once
 
-#include <colliders/collider.h>
-
-class SphereCollider: public Collider
+class SphereCollider
 {
 private:
 public:
-    explicit SphereCollider(Transform* t, float rad): Collider(t){
+    explicit SphereCollider(Transform* t, float rad) {
+        this->transform = transform;
         this->radius = rad;
     };
     float radius;

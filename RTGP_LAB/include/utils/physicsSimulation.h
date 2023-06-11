@@ -10,7 +10,7 @@
 class PhysicsSimulation
 {
 private:
-    double virtualTime = 0.0f;
+    double virtualTime;
 public:
     bool isPaused;
     PhysicsSimulation()
@@ -32,11 +32,18 @@ public:
         virtualTime = timeToSync;
     }
 
-    void TimeStep(Cloth cloth, SphereCollider sphere, float yLimit){
+    // void TimeStep(Cloth* cloth, SphereCollider sphere, float yLimit){
+    //     if(isPaused) 
+    //         return;
+
+    //     cloth->PhysicsSteps(sphere, yLimit);
+        
+    //     virtualTime += FIXED_TIME_STEP;
+    // }
+
+    void TimeStep(){
         if(isPaused) 
             return;
-
-        cloth.PhysicsSteps(sphere, yLimit);
         
         virtualTime += FIXED_TIME_STEP;
     }

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include <colliders/collider.h>
 #include <colliders/sphereCollider.h>
 #include <utils/physicsSimulation.h>
 
