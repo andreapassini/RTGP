@@ -321,12 +321,12 @@ public:
 		}		
 	}
 
-	void PhysicsSteps(std::vector<SphereCollider> spheres, float planeLimit)
+	void PhysicsSteps(SphereCollider sphere, float planeLimit)
 	{
 		std::vector<Particle>::iterator particle;
 		for(particle = particles.begin(); particle != particles.end(); particle++)
 		{
-			particle->PhysicStep(deltaTime); // calculate the position of each particle at the next time step.
+			particle->PhysicStep(); // calculate the position of each particle at the next time step.
 		}
 		
 		std::vector<Constraint>::iterator constraint;
@@ -336,30 +336,29 @@ public:
 			{							
 				switch(springsType){
 					case POSITIONAL:
-						constraint->satisfyPositionalConstraint(K); // satisfy constraint.
+						constraint->satisfyPositionalConstraint(K);
 						break;
 					case PHYSICAL:
-						constraint->satisfyPhysicsConstraint(K); // satisfy constraint.
+						constraint->satisfyPhysicsConstraint(K);
 						break;
 					case POSITIONAL_ADVANCED:
-						constraint->satisfyAdvancedPositionalConstraint(K, U, deltaTime);
+						constraint->satisfyAdvancedPositionalConstraint(K, U, FIXED_TIME_STEP);
 						break;
 					case PHYSICAL_ADVANCED:
-						constraint->satisfyAdvancedPhysicalConstraint(K, U, deltaTime);
+						constraint->satisfyAdvancedPhysicalConstraint(K, U, FIXED_TIME_STEP);
 						break;
 				}
 			}
 		}
 
-		std::vector<Sphere>::iterator sphere;
 		for(size_t i = 0; i < this->collisionIterations; i++){
 			for(particle = particles.begin(); particle != particles.end(); particle++)
 			{
-				for(sphere = spheres.begin(); sphere != spheres.end(); sphere++){
-					//particle->BallCollision(sphere.transform->modelMatrix, sphere.Position(), sphere.radius); // calculate the position of each particle at the next time step.
-					particle->SphereCollision(sphere, transform->modelMatrix)
-				}
+				// for(sphere = spheres.begin(); sphere != spheres.end(); sphere++){
+				// 	//particle->BallCollision(sphere.transform->modelMatrix, sphere.Position(), sphere.radius); // calculate the position of each particle at the next time step.
+				// }
 				
+				particle->SphereCollision(sphere, transform->modelMatrix);
 				particle->PlaneCollision(planeLimit);
 			}
 		}		

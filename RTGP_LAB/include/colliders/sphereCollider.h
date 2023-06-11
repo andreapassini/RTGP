@@ -6,6 +6,9 @@ class SphereCollider: public Collider
 {
 private:
 public:
-    SphereCollider(Transform* t, float rad)  : transform(t), radius(rad){};
+    explicit SphereCollider(Transform* t, float rad): Collider(t){
+        this->radius = rad;
+    };
     float radius;
+    Transform* transform;
 };

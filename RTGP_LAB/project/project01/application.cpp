@@ -166,7 +166,9 @@ int main()
 
     // Model and Normal transformation matrices for the objects in the scene: we set to identity
     Transform sphereTransform(view);
-    SphereCollider sphereCollider(sphereTransform);
+    SphereCollider sphereCollider(&sphereTransform, 1.0f);
+    std::vector<SphereCollider> sphereColliders;
+    sphereColliders[0] =sphereCollider;
     positionZ = 0.8f;
     GLint directionZ = 1;
 
@@ -343,10 +345,10 @@ int main()
         unsigned int physIter = 0U;
 
         while(!physicsSimulation.isPaused &&  currentTime > physicsSimulation.getVirtualTIme()){
-            physicsSimulation.TimeStep(&cloth, );
+            physicsSimulation.TimeStep(cloth, sphereCollider, planePosition.y + 0.1f);
         }
 
-        cloth.PhysicsSteps(deltaTime.count(), (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
+        //cloth.PhysicsSteps(deltaTime.count(), (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
         glUniformMatrix4fv(glGetUniformLocation(force_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.modelMatrix));
         glUniformMatrix3fv(glGetUniformLocation(force_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.normalMatrix));
         cloth.Draw();

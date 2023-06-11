@@ -4,7 +4,7 @@
 #define FIXED_TIME_STEP2 (FIXED_TIME_STEP * FIXED_TIME_STEP)
 
 //#include <utils/cloth.h>
-#include "cloth.h"
+#include <utils/Cloth.h>
 #include <vector>
 
 class PhysicsSimulation
@@ -32,11 +32,11 @@ public:
         virtualTime = timeToSync;
     }
 
-    void TimeStep(Cloth* cloth, std::vector<SphereCollider> spheres, float yLimit){
+    void TimeStep(Cloth cloth, SphereCollider sphere, float yLimit){
         if(isPaused) 
             return;
 
-        cloth->PhysicsSteps(spheres, yLimit);
+        cloth.PhysicsSteps(sphere, yLimit);
         
         virtualTime += FIXED_TIME_STEP;
     }

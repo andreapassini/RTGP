@@ -3,9 +3,10 @@
 #include <glm/glm.hpp>
 #include <colliders/collider.h>
 #include <colliders/sphereCollider.h>
+#include <utils/physicsSimulation.h>
+
 /* Some physics constants */
 #define DAMPING 0.01f // how much to damp the cloth simulation each frame
-#define TIME_STEPSIZE2 0.5f*0.5f // how large time step each particle takes each frame
 #define SPHERE_OFFSET_MULTIPLIER 1.25f
 
 /* The particle class represents a particle of mass that can move around in 3D space*/
@@ -44,8 +45,26 @@ public:
 		glm::vec3 now_pos = pos;
 		glm::vec3 accel = force/mass;
 		//pos = (((2.0f * now_pos) - old_pos) * (1.0f-DAMPING) + accel * (deltaTime * deltaTime));
-		pos = now_pos + ((now_pos-old_pos) * (1.0f-DAMPING) + accel) * (deltaTime) * TIME_STEPSIZE2;	// newPos = now_pos + speed * deltaTime
+		pos = now_pos + ((now_pos-old_pos) * (1.0f-DAMPING) + accel) * (deltaTime) * FIXED_TIME_STEP2;	// newPos = now_pos + speed * deltaTime
 		//pos = now_pos + (now_pos-old_pos) * (1.0f-DAMPING) + accel * deltaTime * TIME_STEPSIZE2;	// newPos = now_pos + speed * deltaTime
+		//pos = (((2.0f * now_pos) - old_pos) * (1.0f-DAMPING)) + accel * TIME_STEPSIZE2;	// newPos = now_pos + speed * deltaTime
+		old_pos = now_pos;
+		this->force = glm::vec3(0.0f);
+		this->shader_force = force;
+	}
+
+	void PhysicStep()
+	{
+		if(!movable){
+			this->force = glm::vec3(0.0f);
+			return;
+		}
+
+		glm::vec3 now_pos = pos;
+		glm::vec3 accel = force/mass;
+		//pos = (((2.0f * now_pos) - old_pos) * (1.0f-DAMPING) + accel * (deltaTime * deltaTime));
+		//pos = now_pos + ((now_pos-old_pos) * (1.0f-DAMPING) + accel) * (deltaTime) * TIME_STEPSIZE2;	// newPos = now_pos + speed * deltaTime
+		pos = now_pos + (now_pos-old_pos) * (1.0f-DAMPING) + accel * FIXED_TIME_STEP2;	// newPos = now_pos + speed * deltaTime
 		//pos = (((2.0f * now_pos) - old_pos) * (1.0f-DAMPING)) + accel * TIME_STEPSIZE2;	// newPos = now_pos + speed * deltaTime
 		old_pos = now_pos;
 		this->force = glm::vec3(0.0f);
