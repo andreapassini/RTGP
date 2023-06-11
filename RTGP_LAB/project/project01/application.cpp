@@ -60,6 +60,8 @@ positive Z axis points "outside" the screen
 #include "../include/stb_image/stb_image.h"
 #define stringify( name ) #name
 
+#include <utils/physicsSimulation.h>
+
 GLFWwindow* window;
 GLuint screenWidth = 1200, screenHeight = 900;
 
@@ -164,6 +166,7 @@ int main()
 
     // Model and Normal transformation matrices for the objects in the scene: we set to identity
     Transform sphereTransform(view);
+    SphereCollider sphereCollider(sphereTransform);
     positionZ = 0.8f;
     GLint directionZ = 1;
 
@@ -182,6 +185,10 @@ int main()
     auto start_time = Time::now();   
 
     int type = 0;   // Used in ImGui display
+    
+    PhysicsSimulation physicsSimulation;
+    physicsSimulation.StartPhysicsSimulation(glfwGetTime());
+    float currentTime = glfwGetTime();
 
     // Rendering loop: this code is executed at each frame
     while(!glfwWindowShouldClose(window))
@@ -331,6 +338,14 @@ int main()
             startingPosition,
             view
         );
+
+        unsigned int maxIter = 4U;
+        unsigned int physIter = 0U;
+
+        while(!physicsSimulation.isPaused &&  currentTime > physicsSimulation.getVirtualTIme()){
+            physicsSimulation.TimeStep(&cloth, );
+        }
+
         cloth.PhysicsSteps(deltaTime.count(), (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
         glUniformMatrix4fv(glGetUniformLocation(force_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.modelMatrix));
         glUniformMatrix3fv(glGetUniformLocation(force_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.normalMatrix));
@@ -345,14 +360,6 @@ int main()
             DebugLogStatus();
             //cloth.CutAHole(4 + iter, 4 + iter);
             iter++;
-
-            // Test translation vector
-            std::cout << "Sphere Original Pos" << std::endl;
-            PrintVec3(&spherePosition);
-
-            std::cout << "Get Translation 1" << std::endl;
-            PrintVec3(&sphereTransform.GetTranslationVector());
-
         } else if(pKeyPressed && !once){
             once = true; 
         }
