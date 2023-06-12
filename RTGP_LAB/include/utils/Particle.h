@@ -2,12 +2,16 @@
 
 #include <glm/glm.hpp>
 #include <colliders/sphereCollider.h>
-#include <utils/physicsSimulation.h>
+#include <physicsSimulation/physicsSimulation.h>
 
 /* Some physics constants */
 #define DAMPING 0.01f // how much to damp the cloth simulation each frame
 #define TIME_STEPSIZE2 (0.5f*0.5f)
 #define SPHERE_OFFSET_MULTIPLIER 1.25f
+
+#define FIXED_TIME_STEP (1.0f / 30.0f)
+#define FIXED_TIME_STEP2 (FIXED_TIME_STEP * FIXED_TIME_STEP)
+
 
 /* The particle class represents a particle of mass that can move around in 3D space*/
 class Particle

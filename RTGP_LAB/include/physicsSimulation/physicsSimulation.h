@@ -1,16 +1,19 @@
 #pragma once
 
+//#include <utils/cloth.h>
+#include "../utils/Cloth.h"
+#include "physicObject.h"
+#include <vector>
+
 #define FIXED_TIME_STEP (1.0f / 30.0f)
 #define FIXED_TIME_STEP2 (FIXED_TIME_STEP * FIXED_TIME_STEP)
 
-//#include <utils/cloth.h>
-#include <utils/Cloth.h>
-#include <vector>
 
 class PhysicsSimulation
 {
 private:
     double virtualTime;
+    std::vector<PhysicObject> physicWorld;
 public:
     bool isPaused;
     PhysicsSimulation()
@@ -41,13 +44,32 @@ public:
     //     virtualTime += FIXED_TIME_STEP;
     // }
 
-    void TimeStep(){
+    void FixedTimeStep(){
         if(isPaused) 
             return;
         
         virtualTime += FIXED_TIME_STEP;
+        std::vector<PhysicObject>::iterator physObject;
+		for(physObject = physicWorld.begin(); physObject != physicWorld.end(); physObject++)
+		{
+			physObject->FixedTimeStep(); // calculate the position of each particle at the next time step.
+		}
     }
 
     double getVirtualTIme(){ return virtualTime; }
+
+    void AddObjectToPhysicWorld(Transform* t, float mass, bool isStatic){
+        PhysicObject p(t, mass, isStatic);
+        this->physicWorld.push_back(p);
+    }
+
+    void AddForceToAll(glm::vec3 force){
+        std::vector<PhysicObject>::iterator physObject;
+		for(physObject = physicWorld.begin(); physObject != physicWorld.end(); physObject++)
+		{
+			physObject->AddForce(force); // calculate the position of each particle at the next time step.
+		}
+
+    }
 };
 

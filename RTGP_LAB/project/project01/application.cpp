@@ -47,7 +47,7 @@ positive Z axis points "outside" the screen
 #include <glm/gtc/type_ptr.hpp>
 
 #include <utils/transform.h>
-#include <utils/physicsSimulation.h>
+#include <physicsSimulation/physicsSimulation.h>
 #include <colliders/sphereCollider.h>
 #include <imgui/imgui.h>
 #include <imgui/imgui_impl_glfw.h>
@@ -186,6 +186,8 @@ int main()
     float currentTime = glfwGetTime();
     physicsSimulation.StartPhysicsSimulation(currentTime);
 
+    physicsSimulation.AddObjectToPhysicWorld(&sphereTransform, 1.0f, false);
+
     // Rendering loop: this code is executed at each frame
     while(!glfwWindowShouldClose(window))
     {
@@ -305,7 +307,6 @@ int main()
         ImGui::End();
 
 
-
         // View matrix (=camera): position, view direction, camera "up" vector
         view = camera.GetViewMatrix();
 
@@ -315,6 +316,8 @@ int main()
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         else
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+        physicsSimulation.AddForceToAll(glm::vec3(0.0f, gravity, 0.0f));
 
         // CLOTH        
         force_shader.Use();
@@ -336,10 +339,10 @@ int main()
         unsigned int physIter = 0U;
 
         while(!physicsSimulation.isPaused &&  currentTime > physicsSimulation.getVirtualTIme()){
-            physicsSimulation.TimeStep();
+            physicsSimulation.FixedTimeStep();
             //cloth.PhysicsSteps(sphereCollider, planePosition.y + 0.1f);
             //cloth.PhysicsSteps(deltaTime, (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
-            cloth.PhysicsSteps(deltaTime, (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
+            cloth.PhysicsSteps((glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
             physIter++;
 
             if(physIter > maxIter){

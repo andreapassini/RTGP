@@ -3,6 +3,7 @@
 #include <utils/constraint.h>
 #include <vector>
 #include <glad/glad.h>
+#include <physicsSimulation/physicsSimulation.h>
 
 // GLFW
 #include <glfw/glfw3.h>
@@ -12,6 +13,10 @@
 #include <random>
 #include <ctime>
 #include <iostream>
+
+#define FIXED_TIME_STEP (1.0f / 30.0f)
+#define FIXED_TIME_STEP2 (FIXED_TIME_STEP * FIXED_TIME_STEP)
+
 
 class Cloth
 {
