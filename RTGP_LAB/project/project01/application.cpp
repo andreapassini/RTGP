@@ -337,7 +337,9 @@ int main()
 
         while(!physicsSimulation.isPaused &&  currentTime > physicsSimulation.getVirtualTIme()){
             physicsSimulation.TimeStep();
-            cloth.PhysicsSteps(sphereCollider, planePosition.y + 0.1f);
+            //cloth.PhysicsSteps(sphereCollider, planePosition.y + 0.1f);
+            //cloth.PhysicsSteps(deltaTime, (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
+            cloth.PhysicsSteps(deltaTime, (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
             physIter++;
 
             if(physIter > maxIter){
@@ -346,7 +348,8 @@ int main()
                 break;
             }
         }
-
+        
+        //cloth.PhysicsSteps(deltaTime, (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
         glUniformMatrix4fv(glGetUniformLocation(force_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.modelMatrix));
         glUniformMatrix3fv(glGetUniformLocation(force_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.normalMatrix));
         cloth.Draw();

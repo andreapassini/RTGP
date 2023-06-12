@@ -250,17 +250,34 @@ public:
 		{
 			for(int y=0; y < dim; y++)
 			{
+				// this will create 2 times the constraints since every particles make constraints in all the directions
 				// Connecting immediate neighbor particles with constraints (distance 1)
-				if (y +1 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x, y+1, dim), particleDistance);	// RIGHT
-				if (y - 1 >= 0) makeConstraint(getParticle(x, y, dim), getParticle(x, y-1, dim), particleDistance);	// LEFT
-				if (x +1 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+1, y, dim), particleDistance);	// BOT
-				if (x - 1 >= 0) makeConstraint(getParticle(x, y, dim), getParticle(x-1, y, dim), particleDistance);	// TOP
+				// if (y +1 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x, y+1, dim), particleDistance);	// RIGHT
+				// if (y - 1 >= 0) makeConstraint(getParticle(x, y, dim), getParticle(x, y-1, dim), particleDistance);	// LEFT
+				// if (x +1 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+1, y, dim), particleDistance);	// BOT
+				// if (x - 1 >= 0) makeConstraint(getParticle(x, y, dim), getParticle(x-1, y, dim), particleDistance);	// TOP
 
-				// Constraints on the 4 diagonals
-				if (x +1 < dim && y + 1 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+1, y+1, dim), particleDistance*glm::sqrt(2.0f));
-				if (x + 1 < dim && y - 1 >= 0) makeConstraint(getParticle(x, y, dim), getParticle(x+1, y-1, dim), particleDistance*glm::sqrt(2.0f));
-				if (x -1 >= 0  && y + 1 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x-1, y+1, dim), particleDistance*glm::sqrt(2.0f));
-				if (x -1 >= 0 	&& y - 1 >= 0) makeConstraint(getParticle(x, y, dim), getParticle(x-1, y-1, dim), particleDistance*glm::sqrt(2.0f));			
+				// // Constraints on the 4 diagonals
+				// if (x +1 < dim && y + 1 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+1, y+1, dim), particleDistance*glm::sqrt(2.0f));
+				// if (x + 1 < dim && y - 1 >= 0) makeConstraint(getParticle(x, y, dim), getParticle(x+1, y-1, dim), particleDistance*glm::sqrt(2.0f));
+				// if (x -1 >= 0  && y + 1 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x-1, y+1, dim), particleDistance*glm::sqrt(2.0f));
+				// if (x -1 >= 0 	&& y - 1 >= 0) makeConstraint(getParticle(x, y, dim), getParticle(x-1, y-1, dim), particleDistance*glm::sqrt(2.0f));			
+
+				/*
+				// Constraints from top left
+				// * ---
+				// | \
+				// |  \
+				*/
+
+				if(y+1 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x, y+1, dim), particleDistance);
+				if(x+1 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+1, y, dim), particleDistance);
+				if(y+1 < dim && x+1 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+1, y+1, dim), particleDistance*glm::sqrt(2.0f));
+
+				// if(y+2 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x, y+2, dim), particleDistance);
+				// if(x+2 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+2, y, dim), particleDistance);
+				// if(y+2 < dim && x+2 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+2, y+2, dim), particleDistance*glm::sqrt(2.0f));
+
 			}
 		}
 
@@ -315,7 +332,47 @@ public:
 		for(size_t i = 0; i < this->collisionIterations; i++){
 			for(particle = particles.begin(); particle != particles.end(); particle++)
 			{
-				particle->BallCollision(transform->modelMatrix, ballCenterWorld, ballRadius); // calculate the position of each particle at the next time step.
+				particle->SphereCollision(transform->modelMatrix, ballCenterWorld, ballRadius); // calculate the position of each particle at the next time step.
+				particle->PlaneCollision(planeLimit);
+			}
+		}		
+	}
+
+	void PhysicsSteps(glm::vec3 ballCenterWorld, float ballRadius, float planeLimit)
+	{
+		std::vector<Particle>::iterator particle;
+		for(particle = particles.begin(); particle != particles.end(); particle++)
+		{
+			particle->PhysicStep(); // calculate the position of each particle at the next time step.
+		}
+		
+		std::vector<Constraint>::iterator constraint;
+		for(size_t i=0; i < this->constraintIterations; i++) // iterate over all constraints several times
+		{
+			for(constraint = constraints.begin(); constraint != constraints.end(); constraint++ )
+			{							
+				switch(springsType){
+					case POSITIONAL:
+						constraint->satisfyPositionalConstraint(K); // satisfy constraint.
+						break;
+					case PHYSICAL:
+						constraint->satisfyPhysicsConstraint(K); // satisfy constraint.
+						break;
+					case POSITIONAL_ADVANCED:
+						constraint->satisfyAdvancedPositionalConstraint(K, U, FIXED_TIME_STEP);
+						break;
+					case PHYSICAL_ADVANCED:
+						constraint->satisfyAdvancedPhysicalConstraint(K, U, FIXED_TIME_STEP);
+						break;
+				}
+			}
+		}
+
+
+		for(size_t i = 0; i < this->collisionIterations; i++){
+			for(particle = particles.begin(); particle != particles.end(); particle++)
+			{
+				particle->SphereCollision(transform->modelMatrix, ballCenterWorld, ballRadius); // calculate the position of each particle at the next time step.
 				particle->PlaneCollision(planeLimit);
 			}
 		}		
@@ -355,7 +412,7 @@ public:
 			for(particle = particles.begin(); particle != particles.end(); particle++)
 			{
 				// for(sphere = spheres.begin(); sphere != spheres.end(); sphere++){
-				// 	//particle->BallCollision(sphere.transform->modelMatrix, sphere.Position(), sphere.radius); // calculate the position of each particle at the next time step.
+				// 	//particle->SphereCollision(sphere.transform->modelMatrix, sphere.Position(), sphere.radius); // calculate the position of each particle at the next time step.
 				// }
 				
 				particle->SphereCollision(sphere, transform->modelMatrix);
@@ -433,7 +490,6 @@ public:
 				std::cout << "Position: " << getParticle(x, y, dim)->pos.x << ", " << getParticle(x, y, dim)->pos.y << ", " << getParticle(x, y, dim)->pos.z << std::endl;
 			}
 		}
-
 	}
 
 	void DeleteAllConstraintOfParticle(Particle* pToDelete){
