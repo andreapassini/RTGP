@@ -35,6 +35,8 @@ public:
     Transform(glm::mat4 &viewMatrix);
     ~Transform();
 
+    void Transformation(glm::mat4 &viewMatrix);
+
     void Transformation(glm::vec3 &scaleVector,
                         glm::f32 angleInGrades, glm::vec3 &axis,
                         glm::vec3 &translationVector);
@@ -84,6 +86,9 @@ Transform::~Transform()
 {
 }
 
+void Transform::Transformation(glm::mat4 &viewMatrix){
+    InverseTranspose(this->viewMatrix);
+}
 
 void Transform::Transformation(glm::vec3 &scaleVector,
                         glm::f32 angleInGrades, glm::vec3 &axis,

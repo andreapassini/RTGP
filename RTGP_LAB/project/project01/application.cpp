@@ -612,11 +612,12 @@ void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transfor
     glUniform1i(textureLocation, 0);
     glUniform1f(repeatLocation, repeat);
 
-    sphereTransform.Transformation(
-        glm::vec3(1.0f, 1.0f, 1.0f),
-        0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
-        spherePosition,
-        view);
+    // sphereTransform.Transformation(
+    //     glm::vec3(1.0f, 1.0f, 1.0f),
+    //     0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
+    //     spherePosition,
+    //     view);
+    sphereTransform.Transformation(view);
     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.modelMatrix));
     glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.normalMatrix));
     sphereModel.Draw();

@@ -41,6 +41,12 @@ public:
 		//pos = (((2.0f * now_pos) - old_pos) * (1.0f-DAMPING)) + accel * TIME_STEPSIZE2;	// newPos = now_pos + speed * deltaTime
 		old_pos = now_pos;
 		this->force = glm::vec3(0.0f);
+
+        this->transform->Transformation(
+            glm::vec3(1.0f, 1.0f, 1.0f),
+            0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
+            pos
+        );
     }
 
     void AddForce(glm::vec3 forceToAdd){
