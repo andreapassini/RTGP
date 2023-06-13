@@ -14,7 +14,7 @@
 #include <ctime>
 #include <iostream>
 
-#define FIXED_TIME_STEP (1.0f / 30.0f)
+#define FIXED_TIME_STEP (1.0f / 60.0f)
 #define FIXED_TIME_STEP2 (FIXED_TIME_STEP * FIXED_TIME_STEP)
 
 
@@ -350,7 +350,7 @@ public:
 		{
 			particle->PhysicStep(); // calculate the position of each particle at the next time step.
 		}
-		
+
 		std::vector<Constraint>::iterator constraint;
 		for(size_t i=0; i < this->constraintIterations; i++) // iterate over all constraints several times
 		{

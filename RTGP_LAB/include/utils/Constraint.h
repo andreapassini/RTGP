@@ -50,9 +50,9 @@ private:
 		float current_distance = glm::length(p1_to_p2); // current distance between p1 and p2
 		p1_to_p2 /= current_distance;
 
-		float delta = current_distance - rest_distance;
+		float deltaDistance = current_distance - rest_distance;
 
-		glm::vec3 correctionVector = p1_to_p2 * delta * K; // The offset vector that could moves p1 into a distance of rest_distance to p2
+		glm::vec3 correctionVector = K * deltaDistance * p1_to_p2; // The offset vector that could moves p1 into a distance of rest_distance to p2
 		return correctionVector;
 	}
 	glm::vec3 CalculateAdvancedCorrectionVector(float K, float U, float deltaTime){
@@ -68,8 +68,8 @@ private:
 
 		// vector "B"
 		// u * (v_p2 - v_p1) * p1_to_p2
-		glm::vec3 v_1 = (this->p1->old_pos - this->p1->pos) / deltaTime; // Speed as the delta pos in time
-		glm::vec3 v_2 = (this->p2->old_pos - this->p2->pos) / deltaTime; // Speed as the delta pos in time
+		glm::vec3 v_1 = (this->p1->old_pos - this->p1->pos) / deltaTime; // Speed as the deltaDistance pos in time
+		glm::vec3 v_2 = (this->p2->old_pos - this->p2->pos) / deltaTime; // Speed as the deltaDistance pos in time
 		glm::vec3 v1_to_v2 = v_2 - v_1; // vector from p1 to p2
 		glm::vec3 b = U * (v1_to_v2) * p1_to_p2;
 
