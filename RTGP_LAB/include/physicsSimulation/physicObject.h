@@ -36,8 +36,9 @@ public:
 		glm::vec3 now_pos = pos;
 		glm::vec3 accel = force/mass;
 		//pos = (((2.0f * now_pos) - old_pos) * (1.0f-DAMPING) + accel * (deltaTime * deltaTime));
+        pos = (((2.0f * now_pos) - old_pos) * (1.0f-DAMPING) + accel * FIXED_TIME_STEP2);
 		//pos = now_pos + ((now_pos-old_pos) * (1.0f-DAMPING) + accel) * (deltaTime) * TIME_STEPSIZE2;	// newPos = now_pos + speed * deltaTime
-		pos = now_pos + (now_pos-old_pos) * (1.0f-DAMPING) + accel * FIXED_TIME_STEP2;	// newPos = now_pos + speed * deltaTime
+		//pos = now_pos + (now_pos-old_pos) * (1.0f-DAMPING) + accel * FIXED_TIME_STEP2;	// newPos = now_pos + speed * deltaTime
 		//pos = (((2.0f * now_pos) - old_pos) * (1.0f-DAMPING)) + accel * TIME_STEPSIZE2;	// newPos = now_pos + speed * deltaTime
 		old_pos = now_pos;
 		this->force = glm::vec3(0.0f);

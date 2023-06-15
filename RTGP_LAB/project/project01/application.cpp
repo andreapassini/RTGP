@@ -337,21 +337,21 @@ int main()
         unsigned int maxIter = 4U;
         unsigned int physIter = 0U;
 
-        while(!physicsSimulation.isPaused &&  currentTime > physicsSimulation.getVirtualTIme()){
-            physicsSimulation.FixedTimeStep();
-            //cloth.PhysicsSteps(sphereCollider, planePosition.y + 0.1f);
-            //cloth.PhysicsSteps(deltaTime, (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
-            cloth.PhysicsSteps((glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
-            physIter++;
+        // while(!physicsSimulation.isPaused &&  currentTime > physicsSimulation.getVirtualTIme()){
+        //     physicsSimulation.FixedTimeStep(currentTime);
+        //     //cloth.PhysicsSteps(sphereCollider, planePosition.y + 0.1f);
+        //     //cloth.PhysicsSteps(deltaTime, (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
+        //     cloth.PhysicsSteps((glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
+        //     physIter++;
 
-            if(physIter > maxIter){
-                std::cout << "Physics Simulation lagging " << std::endl;
-                physicsSimulation.SynchVirtualTime(currentTime);
-                break;
-            }
-        }
+        //     if(physIter > maxIter){
+        //         std::cout << "Physics Simulation lagging " << std::endl;
+        //         physicsSimulation.SynchVirtualTime(currentTime);
+        //         break;
+        //     }
+        // }
         
-        //cloth.PhysicsSteps(deltaTime, (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
+        cloth.PhysicsSteps(deltaTime, (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
         glUniformMatrix4fv(glGetUniformLocation(force_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.modelMatrix));
         glUniformMatrix3fv(glGetUniformLocation(force_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.normalMatrix));
         cloth.Draw();
@@ -362,7 +362,7 @@ int main()
             pinned = !pinned;
             new(&cloth) Cloth(clothDim, particleOffset, startingPosition, &clothTransform, pinned, springType, K, U, constraintIterations, gravity, mass, collisionIterations);
             once = false;
-            DebugLogStatus();
+            //DebugLogStatus();
             //cloth.CutAHole(4 + iter, 4 + iter);
             iter++;
         } else if(pKeyPressed && !once){

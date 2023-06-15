@@ -207,6 +207,14 @@ private:
             glDeleteBuffers(1, &this->EBO);
         }
     }
+
+	int FindIndexParticle(Particle p){
+		for(size_t i = 0; i <= particles.size(); i++ )
+		{							
+			if(particles[i] == p)
+				return i;
+		}
+	}
 	
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -294,6 +302,16 @@ public:
 				this->particles[0 + (dim - 1 -i)].makeUnmovable();
 			}
 		}
+
+		// std::vector<Constraint>::iterator constraint;
+		// int i = 0;
+		// for(constraint = constraints.begin(); constraint != constraints.end(); constraint++ )
+		// {							
+		// 	std::cout << "Constraint :" << i << ": P1: " << FindIndexParticle(*constraint->p1)  << " P2: " << FindIndexParticle(*constraint->p2) << std::endl;
+		// 	i++;
+		// }
+		
+
 
 		SetUp();
 	}

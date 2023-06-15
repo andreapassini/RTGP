@@ -26,6 +26,7 @@ public:
 
     void StartPhysicsSimulation(double startingTime){
         virtualTime = startingTime;
+    
         isPaused = false;
     }
     void Pause(){ 
@@ -44,11 +45,12 @@ public:
     //     virtualTime += FIXED_TIME_STEP;
     // }
 
-    void FixedTimeStep(){
+    void FixedTimeStep(float currTime){
         if(isPaused) 
             return;
         
         virtualTime += FIXED_TIME_STEP;
+        //std::cout << "Current time: " << currTime << " > Virtual time: " << virtualTime << std::endl;
         std::vector<PhysicObject>::iterator physObject;
 		for(physObject = physicWorld.begin(); physObject != physicWorld.end(); physObject++)
 		{
