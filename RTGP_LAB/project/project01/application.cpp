@@ -142,6 +142,8 @@ glm::vec3 planePosition(0.0f, -10.0f, 0.0f);
 
 PerformanceCalculator performanceCalculator(windowSize, overlap);
 
+bool pausePhysics;
+
 int main()
 {
     if(SetupOpenGL() == -1)
@@ -187,6 +189,8 @@ int main()
     physicsSimulation.StartPhysicsSimulation(currentTime);
 
     //physicsSimulation.AddObjectToPhysicWorld(&sphereTransform, 1.0f, false);
+
+    pausePhysics = false;
 
     // Rendering loop: this code is executed at each frame
     while(!glfwWindowShouldClose(window))
@@ -335,24 +339,26 @@ int main()
         unsigned int maxIter = 4U;
         unsigned int physIter = 0U;
 
-        while(!physicsSimulation.isPaused &&  currentTime > physicsSimulation.getVirtualTIme()){
-            cloth.ResetShaderForce();
-            physicsSimulation.AddForceToAll(glm::vec3(0.0f, gravity, 0.0f));
-            cloth.AddGravityForce();
-            physicsSimulation.FixedTimeStep(currentTime);
-            //cloth.PhysicsSteps(sphereCollider, planePosition.y + 0.1f);
-            //cloth.PhysicsSteps(deltaTime, (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
-            cloth.PhysicsSteps((glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
-            physIter++;
+        if(!pausePhysics){
+            while(!physicsSimulation.isPaused &&  currentTime > physicsSimulation.getVirtualTIme()){
+                cloth.ResetShaderForce();
+                physicsSimulation.AddForceToAll(glm::vec3(0.0f, gravity, 0.0f));
+                cloth.AddGravityForce();
+                physicsSimulation.FixedTimeStep(currentTime);
+                //cloth.PhysicsSteps(sphereCollider, planePosition.y + 0.1f);
+                //cloth.PhysicsSteps(deltaTime, (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
+                cloth.PhysicsSteps((glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
+                physIter++;
 
-            if(physIter > maxIter){
-                std::cout << "Physics Simulation lagging " << std::endl;
-                physicsSimulation.SynchVirtualTime(currentTime);
-                break;
+                if(physIter > maxIter){
+                    std::cout << "Physics Simulation lagging " << std::endl;
+                    physicsSimulation.SynchVirtualTime(currentTime);
+                    break;
+                }
             }
-        }
         
-        //cloth.PhysicsSteps(deltaTime, (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
+            //cloth.PhysicsSteps(deltaTime, (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
+        }
         glUniformMatrix4fv(glGetUniformLocation(force_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.modelMatrix));
         glUniformMatrix3fv(glGetUniformLocation(force_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.normalMatrix));
         cloth.Draw();
@@ -509,6 +515,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     // if R is pressed, we start/stop the animated rotation of models
     if(key == GLFW_KEY_R && action == GLFW_PRESS){
         R_KEY = true;
+        pausePhysics = !pausePhysics;
     }
 
     // if L is pressed, we activate/deactivate wireframe rendering of models
