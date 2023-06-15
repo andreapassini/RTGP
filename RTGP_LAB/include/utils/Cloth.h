@@ -363,11 +363,6 @@ public:
 
 	void PhysicsSteps(glm::vec3 ballCenterWorld, float ballRadius, float planeLimit)
 	{
-		std::vector<Particle>::iterator particle;
-		for(particle = particles.begin(); particle != particles.end(); particle++)
-		{
-			particle->PhysicStep(); // calculate the position of each particle at the next time step.
-		}
 
 		std::vector<Constraint>::iterator constraint;
 		for(size_t i=0; i < this->constraintIterations; i++) // iterate over all constraints several times
@@ -391,6 +386,11 @@ public:
 			}
 		}
 
+		std::vector<Particle>::iterator particle;
+		for(particle = particles.begin(); particle != particles.end(); particle++)
+		{
+			particle->PhysicStep(); // calculate the position of each particle at the next time step.
+		}
 
 		for(size_t i = 0; i < this->collisionIterations; i++){
 			for(particle = particles.begin(); particle != particles.end(); particle++)
@@ -496,6 +496,13 @@ public:
 		glBindVertexArray(this->VAO);
 		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
+	}
+
+	void ResetShaderForce(){
+		std::vector<Particle>::iterator particle;
+		for(particle = particles.begin(); particle != particles.end(); particle++){
+			particle->shader_force = glm::vec3(0.0f);
+		}
 	}
 
 	void PrintParticles(unsigned int times)

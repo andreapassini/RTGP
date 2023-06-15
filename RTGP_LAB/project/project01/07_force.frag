@@ -8,5 +8,5 @@ in vec3 colorForce;
 
 void main(){
 	// we use the normal as a color
-	colorFrag = vec4((colorForce),1.0);
+	colorFrag = vec4(normalize(colorForce),1.0);
 }

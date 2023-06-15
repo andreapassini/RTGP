@@ -51,8 +51,8 @@ public:
 		//pos = now_pos + ((now_pos-old_pos) * (1.0f-DAMPING) + accel) * (deltaTime) * TIME_STEPSIZE2;	// newPos = now_pos + speed * deltaTime
 		pos = now_pos + (now_pos-old_pos) * (1.0f-DAMPING) + accel * FIXED_TIME_STEP2;	// newPos = now_pos + speed * deltaTime
 		old_pos = now_pos;
+		this->shader_force += glm::vec3(force.x, force.y, force.z);
 		this->force = glm::vec3(0.0f);
-		this->shader_force = force;
 	}
 	void PhysicStep(float deltaTime)
 	{
@@ -66,8 +66,8 @@ public:
 		pos = now_pos + ((now_pos-old_pos) * (1.0f-DAMPING) + accel) * (deltaTime) * TIME_STEPSIZE2;	// newPos = now_pos + speed * deltaTime
 		//pos = now_pos + (now_pos-old_pos) * (1.0f-DAMPING) + accel * deltaTime * FIXED_TIME_STEP2;	// newPos = now_pos + speed * deltaTime
 		old_pos = now_pos;
+		this->shader_force += glm::vec3(force.x, force.y, force.z);
 		this->force = glm::vec3(0.0f);
-		this->shader_force = force;
 	}
 
 	glm::vec3& getPos() {return pos;}
