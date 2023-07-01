@@ -12,20 +12,14 @@ Universita' degli Studi di Milano
 
 #version 410 core
 
-// vertex position in world coordinates
 layout (location = 0) in vec3 position;
-// vertex normal in world coordinate
 layout (location = 1) in vec3 normal;
-// UV coordinates
 layout (location = 2) in vec2 UV;
 // the numbers used for the location in the layout qualifier are the positions of the vertex attribute
 // as defined in the Mesh class
 
-// model matrix
 uniform mat4 modelMatrix;
-// view matrix
 uniform mat4 viewMatrix;
-// Projection matrix
 uniform mat4 projectionMatrix;
 
 // normals transformation matrix (= transpose of the inverse of the model-view matrix)

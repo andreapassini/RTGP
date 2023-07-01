@@ -26,7 +26,7 @@ private:
 	// total number of particles is dim*dim
 
 	std::vector<Constraint> constraints; // alle constraints between particles as part of this cloth
-	ConstraintType springsType;
+	ConstraintType constraintType;
 	unsigned int constraintIterations;
 	unsigned int collisionIterations;
 	float gravityForce;
@@ -112,7 +112,7 @@ private:
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, normal));
 	
 		glEnableVertexAttribArray(2);
-		if(springsType == PHYSICAL || springsType == PHYSICAL_ADVANCED){
+		if(constraintType == PHYSICAL){
 			glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, force));
 		} else {
 			glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, shader_force));
@@ -188,7 +188,7 @@ private:
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, normal));
 
 		glEnableVertexAttribArray(2);
-		if(springsType == PHYSICAL || springsType == PHYSICAL_ADVANCED){
+		if(constraintType == PHYSICAL){
 			glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, force));
 		} else {
 			glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, shader_force));
@@ -215,7 +215,72 @@ private:
 				return i;
 		}
 	}
-	
+	void PhysicsSteps(float deltaTime, glm::vec3 ballCenterWorld, float ballRadius, float planeLimit)
+	{
+		std::vector<Particle>::iterator particle;
+		for(particle = particles.begin(); particle != particles.end(); particle++)
+		{
+			particle->PhysicStep(deltaTime); // calculate the position of each particle at the next time step.
+		}
+		
+		std::vector<Constraint>::iterator constraint;
+		for(size_t i=0; i < this->constraintIterations; i++) // iterate over all constraints several times
+		{
+			for(constraint = constraints.begin(); constraint != constraints.end(); constraint++ )
+			{							
+				switch(constraintType){
+					case POSITIONAL:
+						constraint->satisfyPositionalConstraint(K); // satisfy constraint.
+						break;
+					case PHYSICAL:
+						constraint->satisfyPhysicsConstraint(K); // satisfy constraint.
+						break;
+					// case POSITIONAL_ADVANCED:
+					// 	constraint->satisfyAdvancedPositionalConstraint(K, U, deltaTime);
+					// 	break;
+					// case PHYSICAL_ADVANCED:
+					// 	constraint->satisfyAdvancedPhysicalConstraint(K, U, deltaTime);
+					// 	break;
+				}
+			}
+		}
+
+
+		for(size_t i = 0; i < this->collisionIterations; i++){
+			for(particle = particles.begin(); particle != particles.end(); particle++)
+			{
+				particle->SphereCollision(transform->modelMatrix, ballCenterWorld, ballRadius); // calculate the position of each particle at the next time step.
+				particle->PlaneCollision(planeLimit);
+			}
+		}		
+	}
+
+	void PhysicsSteps(glm::vec3 ballCenterWorld, float ballRadius, float planeLimit)
+	{
+
+		std::vector<Constraint>::iterator constraint;
+		for(size_t i=0; i < this->constraintIterations; i++) // iterate over all constraints several times
+		{
+			for(constraint = constraints.begin(); constraint != constraints.end(); constraint++ )
+			{							
+				constraint->satisfyPositionalConstraint(K);
+			}
+		}
+
+		std::vector<Particle>::iterator particle;
+		for(particle = particles.begin(); particle != particles.end(); particle++)
+		{
+			particle->PhysicStep(); // calculate the position of each particle at the next time step.
+		}
+
+		for(size_t i = 0; i < this->collisionIterations; i++){
+			for(particle = particles.begin(); particle != particles.end(); particle++)
+			{
+				particle->SphereCollision(transform->modelMatrix, ballCenterWorld, ballRadius); // calculate the position of each particle at the next time step.
+				particle->PlaneCollision(planeLimit);
+			}
+		}		
+	}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -228,7 +293,7 @@ public:
 	Cloth(int dim, float particleDistance, glm::vec3 topLeftPosition, Transform *t, bool pinned, ConstraintType usePhysicConstraints, float k, float u, unsigned int contraintIt, float gravity, float m, unsigned int collisionIt){
 		this->dim = dim;
 		this->transform = t;
-		this->springsType = usePhysicConstraints;
+		this->constraintType = usePhysicConstraints;
 		this->constraintIterations = contraintIt;
 		this->collisionIterations = collisionIt;
 		this->gravityForce = gravity;
@@ -287,9 +352,9 @@ public:
 				if(x+1 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+1, y, dim), particleDistance);
 				if(y+1 < dim && x+1 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+1, y+1, dim), particleDistance*glm::sqrt(2.0f));
 
-				// if(y+2 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x, y+2, dim), particleDistance);
-				// if(x+2 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+2, y, dim), particleDistance);
-				// if(y+2 < dim && x+2 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+2, y+2, dim), particleDistance*glm::sqrt(2.0f));
+				// if(y+2 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x, y+2, dim), 2*particleDistance);
+				// if(x+2 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+2, y, dim), 2*particleDistance);
+				// if(y+2 < dim && x+2 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+2, y+2, dim), 2*particleDistance*glm::sqrt(2.0f));
 
 			}
 		}
@@ -321,128 +386,23 @@ public:
 		freeGPUresources();
 	}
 
-	void PhysicsSteps(float deltaTime, glm::vec3 ballCenterWorld, float ballRadius, float planeLimit)
-	{
-		std::vector<Particle>::iterator particle;
-		for(particle = particles.begin(); particle != particles.end(); particle++)
+	void Step(float deltaTime, glm::vec3 ballCenterWorld, float ballRadius, float planeLimit){
+		switch (constraintType)
 		{
-			particle->PhysicStep(deltaTime); // calculate the position of each particle at the next time step.
-		}
-		
-		std::vector<Constraint>::iterator constraint;
-		for(size_t i=0; i < this->constraintIterations; i++) // iterate over all constraints several times
-		{
-			for(constraint = constraints.begin(); constraint != constraints.end(); constraint++ )
-			{							
-				switch(springsType){
-					case POSITIONAL:
-						constraint->satisfyPositionalConstraint(K); // satisfy constraint.
-						break;
-					case PHYSICAL:
-						constraint->satisfyPhysicsConstraint(K); // satisfy constraint.
-						break;
-					case POSITIONAL_ADVANCED:
-						constraint->satisfyAdvancedPositionalConstraint(K, U, deltaTime);
-						break;
-					case PHYSICAL_ADVANCED:
-						constraint->satisfyAdvancedPhysicalConstraint(K, U, deltaTime);
-						break;
-				}
-			}
-		}
+		case POSITIONAL:
+			PhysicsSteps(deltaTime, ballCenterWorld, ballRadius, planeLimit);
+			break;
 
+		case PHYSICAL:
+			PhysicsSteps(ballCenterWorld, ballRadius, planeLimit);
+			break;
 
-		for(size_t i = 0; i < this->collisionIterations; i++){
-			for(particle = particles.begin(); particle != particles.end(); particle++)
-			{
-				particle->SphereCollision(transform->modelMatrix, ballCenterWorld, ballRadius); // calculate the position of each particle at the next time step.
-				particle->PlaneCollision(planeLimit);
-			}
-		}		
+		default:
+			break;
+		}
 	}
 
-	void PhysicsSteps(glm::vec3 ballCenterWorld, float ballRadius, float planeLimit)
-	{
-
-		std::vector<Constraint>::iterator constraint;
-		for(size_t i=0; i < this->constraintIterations; i++) // iterate over all constraints several times
-		{
-			for(constraint = constraints.begin(); constraint != constraints.end(); constraint++ )
-			{							
-				switch(springsType){
-					case POSITIONAL:
-						constraint->satisfyPositionalConstraint(K); // satisfy constraint.
-						break;
-					case PHYSICAL:
-						constraint->satisfyPhysicsConstraint(K); // satisfy constraint.
-						break;
-					case POSITIONAL_ADVANCED:
-						constraint->satisfyAdvancedPositionalConstraint(K, U, FIXED_TIME_STEP);
-						break;
-					case PHYSICAL_ADVANCED:
-						constraint->satisfyAdvancedPhysicalConstraint(K, U, FIXED_TIME_STEP);
-						break;
-				}
-			}
-		}
-
-		std::vector<Particle>::iterator particle;
-		for(particle = particles.begin(); particle != particles.end(); particle++)
-		{
-			particle->PhysicStep(); // calculate the position of each particle at the next time step.
-		}
-
-		for(size_t i = 0; i < this->collisionIterations; i++){
-			for(particle = particles.begin(); particle != particles.end(); particle++)
-			{
-				particle->SphereCollision(transform->modelMatrix, ballCenterWorld, ballRadius); // calculate the position of each particle at the next time step.
-				particle->PlaneCollision(planeLimit);
-			}
-		}		
-	}
-
-	void PhysicsSteps(SphereCollider sphere, float planeLimit)
-	{
-		std::vector<Particle>::iterator particle;
-		for(particle = particles.begin(); particle != particles.end(); particle++)
-		{
-			particle->PhysicStep(); // calculate the position of each particle at the next time step.
-		}
-		
-		std::vector<Constraint>::iterator constraint;
-		for(size_t i=0; i < this->constraintIterations; i++) // iterate over all constraints several times
-		{
-			for(constraint = constraints.begin(); constraint != constraints.end(); constraint++ )
-			{							
-				switch(springsType){
-					case POSITIONAL:
-						constraint->satisfyPositionalConstraint(K);
-						break;
-					case PHYSICAL:
-						constraint->satisfyPhysicsConstraint(K);
-						break;
-					case POSITIONAL_ADVANCED:
-						constraint->satisfyAdvancedPositionalConstraint(K, U, FIXED_TIME_STEP);
-						break;
-					case PHYSICAL_ADVANCED:
-						constraint->satisfyAdvancedPhysicalConstraint(K, U, FIXED_TIME_STEP);
-						break;
-				}
-			}
-		}
-
-		for(size_t i = 0; i < this->collisionIterations; i++){
-			for(particle = particles.begin(); particle != particles.end(); particle++)
-			{
-				// for(sphere = spheres.begin(); sphere != spheres.end(); sphere++){
-				// 	//particle->SphereCollision(sphere.transform->modelMatrix, sphere.Position(), sphere.radius); // calculate the position of each particle at the next time step.
-				// }
-				
-				particle->SphereCollision(sphere, transform->modelMatrix);
-				particle->PlaneCollision(planeLimit);
-			}
-		}		
-	}
+	
 
 	void AddGravityForce(){
 		glm::vec3 gravityVec = glm::vec3(0.0f, 1.0f * (gravityForce), 0.0f);
