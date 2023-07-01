@@ -10,8 +10,6 @@
                 "D:\\ANDREA\\UNI\\MAGISTRALE\\ANNO_2\\II_Semestre\\REAL-TIME_GP\\RTGP\\RTGP_LAB\\include\\bullet",
                 "D:\\ANDREA\\UNI\\MAGISTRALE\\ANNO_2\\II_Semestre\\REAL-TIME_GP\\RTGP\\RTGP_LAB\\include\\glfw",
                 "D:\\ANDREA\\UNI\\MAGISTRALE\\ANNO_2\\II_Semestre\\REAL-TIME_GP\\RTGP\\RTGP_LAB\\include\\imgui",
-                "${workspaceFolder}",
-                "${workspaceFolder}",
                 "${workspaceFolder}"
             ],
             "defines": [

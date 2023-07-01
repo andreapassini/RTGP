@@ -276,6 +276,22 @@ int main()
             springType = PHYSICAL;
             ImGui::Text("PHYSICAL");
             break;
+        case 2:
+            springType = POSITIONAL_ADVANCED;
+            ImGui::Text("POSITIONAL_ADVANCED");
+
+            ImGui::NewLine;
+            ImGui::SliderFloat("U", &U, 0.00f, 2.0f);
+
+            break;
+        case 3:
+            springType = PHYSICAL_ADVANCED;
+            ImGui::Text("PHYSICAL_ADVANCED");
+
+            ImGui::NewLine;
+            ImGui::SliderFloat("U", &U, 0.00f, 2.0f);
+
+            break;
         default:
             break;
         }
@@ -323,15 +339,15 @@ int main()
         unsigned int maxIter = 4U;
         unsigned int physIter = 0U;
 
-        cloth.ResetShaderForce();
-        physicsSimulation.AddForceToAll(glm::vec3(0.0f, gravity, 0.0f));
-        cloth.AddGravityForce();
-        physicsSimulation.FixedTimeStep(currentTime);
-        cloth.Step(deltaTime, (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
-        
         if(!pausePhysics){
             while(!physicsSimulation.isPaused &&  currentTime > physicsSimulation.getVirtualTIme()){
-                // cloth.PhysicsSteps((glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
+                cloth.ResetShaderForce();
+                physicsSimulation.AddForceToAll(glm::vec3(0.0f, gravity, 0.0f));
+                cloth.AddGravityForce();
+                physicsSimulation.FixedTimeStep(currentTime);
+                //cloth.PhysicsSteps(sphereCollider, planePosition.y + 0.1f);
+                //cloth.PhysicsSteps(deltaTime, (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
+                cloth.PhysicsSteps((glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
                 physIter++;
 
                 if(physIter > maxIter){
@@ -339,7 +355,9 @@ int main()
                     physicsSimulation.SynchVirtualTime(currentTime);
                     break;
                 }
-            }        
+            }
+        
+            //cloth.PhysicsSteps(deltaTime, (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
         }
         glUniformMatrix4fv(glGetUniformLocation(force_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.modelMatrix));
         glUniformMatrix3fv(glGetUniformLocation(force_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.normalMatrix));

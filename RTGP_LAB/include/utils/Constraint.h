@@ -80,5 +80,7 @@ private:
 
 enum ConstraintType {
 	POSITIONAL = 0,
-	PHYSICAL
+	PHYSICAL,
+	POSITIONAL_ADVANCED,
+	PHYSICAL_ADVANCED
 };

@@ -123,7 +123,6 @@ void main()
     // Li is considered as equal to 1: light is white, and we have not applied attenuation. With colored lights, and with attenuation, the code must be modified and the Li factor must be multiplied to finalColor
     vec3 finalColor = (lambert + specular)*NdotL;
 
-    
 
     colorFrag = vec4(finalColor, 1.0);
 }
