@@ -14,6 +14,7 @@
 class Transform
 {
 private:
+
     void ResetToIdentity();
     void InverseTranspose(glm::mat4 &viewMatrix);
 
@@ -25,7 +26,9 @@ private:
     void Translate(glm::vec3 &translationVector);
     void Translate(glm::f32 x, glm::f32 y, glm::f32 z);
 
-
+    glm::vec3 translation;
+    float scale;
+    
 public:
     glm::mat4 modelMatrix;
     glm::mat3 normalMatrix;
@@ -67,6 +70,7 @@ public:
 
         return outVec;
     }
+
 };
 
 // IMPLEMENTATIONS
