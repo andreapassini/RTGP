@@ -1,5 +1,7 @@
 #pragma once
 
+#define _USE_MATH_DEFINES
+
 #include <cmath>
 #include "../glm/glm.hpp"
 
@@ -10,23 +12,39 @@ public:
     glm::vec3 imaginary;
     float real;
     Quaternion(glm::vec3 axis, float angle){
-        this->imaginary = axis * sin(angle*0.5f);
-        this->real = cos(angle*0.5f);
+        float angleRad = angle*(M_PI)/180;
+        this->imaginary = axis * sin(angleRad*0.5f);
+        this->real = cos(angleRad*0.5f);
     };
     ~Quaternion();
 
-    void ComplexConjugate(){
-        this->imaginary = -this->imaginary;
+    void ComplexConjugate(){ this->imaginary = -this->imaginary; }
+    Quaternion ComplexConjugate() const { return Quaternion(-imaginary, +real); }
+    static const Quaternion ComplexConjugate(Quaternion q) { return Quaternion(-q.imaginary, +q.real); }
+
+    Quaternion operator-() const { return Quaternion( -imaginary, -real ); }
+    
+    // arithmetic operators "OUT OF PLACE"
+    Quaternion operator / (float d) const { return Quaternion(imaginary/d,real/d); }
+    Quaternion operator * (float d) const { return Quaternion(imaginary*d,real*d); }
+    Quaternion operator * (const Quaternion& q) const{
+        glm::vec3 imaginary = imaginary*q.real + q.imaginary*real + glm::cross(imaginary, q.imaginary);
+        float real = real*q.real - glm::dot(imaginary, q.imaginary);
+        return Quaternion(imaginary, real);
     }
-    Quaternion ComplexConjugate(Quaternion &q){
-        return Quaternion::ComplexConjugate(q);
-    }
-    static Quaternion ComplexConjugate(Quaternion &q){
-        glm::vec3 invAxis = -q.imaginary;
-        Quaternion q_conj = Quaternion(invAxis, q.real);
-        return q_conj;
+    Quaternion Multiply(const Quaternion& q) const{
+        glm::vec3 imaginary = imaginary*q.real + q.imaginary*real + glm::cross(imaginary, q.imaginary);
+        float real = real*q.real - glm::dot(imaginary, q.imaginary);
+        return Quaternion(imaginary, real);
     }
     
+    // arithmetic operators "IN PLACE"
+    void operator /= (float d){ imaginary/=d; real/=d; }
+    void operator *= (float d){ imaginary*=d; real*=d; }
+    void operator *= (const Quaternion& q){ (*this)=Multiply(q); }
+    void operator += (const Quaternion &q){ imaginary+=q.imaginary; real+=q.real; }
+    void operator -= (const Quaternion &q){ imaginary-=q.imaginary; real-=q.real; }
+
     void Apply(Quaternion &p){
         *this = Quaternion::Apply(*this, p);
     };
@@ -43,30 +61,7 @@ public:
         return rotated.imaginary;
     }
     
-    Quaternion operator*(const Quaternion& q) const{
-        glm::vec3 imaginary = imaginary*q.real + q.imaginary*real + glm::cross(imaginary, q.imaginary);
-        float real = real*q.real - glm::dot(imaginary, q.imaginary);
-        return Quaternion(imaginary, real);
-    }
-    Quaternion multiply(const Quaternion& q) const{
-        glm::vec3 imaginary = imaginary*q.real + q.imaginary*real + glm::cross(imaginary, q.imaginary);
-        float real = real*q.real - glm::dot(imaginary, q.imaginary);
-        return Quaternion(imaginary, real);
-    }
-    void operator*=(const Quaternion& q){
-        (*this)=multiply(q);
-    }
 
-    void operator*=(const float value){
-        imaginary*=value;
-        real*=value;
-    }
-    Quaternion operator*(const float value)const{
-        float scalar=real*value;
-        glm::vec3 imaginary=imaginary*value;
-
-        return Quaternion(imaginary, scalar);
-    }
 
     float magnitude(const Quaternion& q){
         float mag = 0.0f;
@@ -85,5 +80,8 @@ public:
         float magnitude = Quaternion::magnitude(q);
         q.imaginary = q.imaginary / magnitude;
         q.real /= magnitude;
+    }
+    inline float deg2rad(float k){
+        return k*(M_PI)/180;
     }
 };

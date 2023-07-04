@@ -10,13 +10,13 @@
 class PhysicObject
 {
 private:
+public:
     Transform* transform;
     glm::vec3 pos;
     glm::vec3 old_pos;
     glm::vec3 force;
     float mass;
     bool isStatic;
-public:
     PhysicObject(Transform* t, float objectMass, bool objectMovable){
         this->transform = t;
         this->pos = t->GetTranslationVector();

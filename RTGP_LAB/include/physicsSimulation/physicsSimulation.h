@@ -73,5 +73,13 @@ public:
 		}
 
     }
+
+    void AddGravityToAll(glm::vec3 force){
+        std::vector<PhysicObject>::iterator physObject;
+		for(physObject = physicWorld.begin(); physObject != physicWorld.end(); physObject++)
+		{
+			physObject->AddForce(force * physObject->mass); // calculate the position of each particle at the next time step.
+		}
+    }
 };
 

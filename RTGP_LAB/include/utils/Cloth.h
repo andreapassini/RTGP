@@ -446,8 +446,11 @@ public:
 
 	void AddGravityForce(){
 		glm::vec3 gravityVec = glm::vec3(0.0f, 1.0f * (gravityForce), 0.0f);
-
-		AddForceToAllParticles(gravityVec);
+		std::vector<Particle>::iterator particle;
+		for(particle = particles.begin(); particle != particles.end(); particle++)
+		{
+			particle->addForce(gravityVec * particle->mass); // add the forces to each particle
+		}
 	}
 	void AddRandomIntensityForce(glm::vec3 normalizedDirection, float min, float max)
 	{
