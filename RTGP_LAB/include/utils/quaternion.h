@@ -25,6 +25,7 @@ public:
     Quaternion operator-() const { return Quaternion( -imaginary, -real ); }
     
     // arithmetic operators "OUT OF PLACE"
+    Quaternion operator = (const Quaternion& q) const { return Quaternion(q.imaginary, q.real); }
     Quaternion operator / (float d) const { return Quaternion(imaginary/d,real/d); }
     Quaternion operator * (float d) const { return Quaternion(imaginary*d,real*d); }
     Quaternion operator * (const Quaternion& q) const{
@@ -61,27 +62,53 @@ public:
         return rotated.imaginary;
     }
     
+    void invert() {
+        ComplexConjugate();
+        operator /= ( squaredMagnitude() );
+    }
+    Quaternion inverse() const{
+        return ComplexConjugate() / squaredMagnitude();
+    }
 
-
-    float magnitude(const Quaternion& q){
-        float mag = 0.0f;
-        mag += glm::length(q.imaginary);
-        mag += q.real;
+    float squaredMagnitude() const {
+        float mag = (imaginary.x*imaginary.x) + (imaginary.y*imaginary.y) + (imaginary.z*imaginary.z) + (real*real);
         return mag;
     }
+    float squaredMagnitude(const Quaternion& q){
+        float mag = (q.imaginary.x*q.imaginary.x) + (q.imaginary.y*q.imaginary.y) + (q.imaginary.z*q.imaginary.z) + (q.real*q.real);
+        return mag;
+    }
+    float magnitude(const Quaternion& q){
+        float mag = sqrt(squaredMagnitude(q));
+        return mag;
+    }
+
     Quaternion normalize(const Quaternion& q){
-        float magnitude = Quaternion::magnitude(q);
-        Quaternion p = Quaternion(glm::vec3(0.0f), 0.0f);
-        p.imaginary = q.imaginary / magnitude;
-        p.real /= magnitude;
-        return p;
+        q = q / Quaternion::magnitude(q);;
+        return q;
     }
-    void normalize(Quaternion& q){
-        float magnitude = Quaternion::magnitude(q);
-        q.imaginary = q.imaginary / magnitude;
-        q.real /= magnitude;
+    void normalize(){
+        *this = Quaternion::normalize(*this);
     }
-    inline float deg2rad(float k){
+
+    static float deg2rad(float k) {
         return k*(M_PI)/180;
+    }
+
+    static Quaternion angleAxis(float angle, glm::vec3 axis){
+        float angleRad = deg2rad(angle);
+        return Quaternion(
+            std::sin( angleRad / 2 ) * axis,
+            std::cos( angleRad / 2 )
+        );
+    }
+
+    glm::mat3 toMatrix() const{
+        // TODO: optimize! axes, as vectors, have a lot of 0s
+        return glm::mat3(
+           apply( Versor3::right().asVector3()  ),
+           apply( Versor3::up().asVector3()  ),
+           apply( Versor3::forward().asVector3() )
+        );
     }
 };

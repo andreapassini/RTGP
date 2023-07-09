@@ -12,8 +12,6 @@ public:
 
 	Constraint(Particle *p1, Particle *p2, float rest) :  p1(p1),p2(p2),rest_distance(rest)
 	{
-		glm::vec3 vec = p1->getPos()-p2->getPos();
-		//rest_distance = glm::length(vec);
 	}
 
 	void satisfyPositionalConstraint(float K)
