@@ -11,11 +11,15 @@ private:
 public:
     glm::vec3 imaginary;
     float real;
+
     Quaternion(glm::vec3 axis, float angle){
         float angleRad = angle*(M_PI)/180;
         this->imaginary = axis * sin(angleRad*0.5f);
         this->real = cos(angleRad*0.5f);
     };
+    // empty construction: returns quaternion 1 + 0 * i
+    Quaternion():Quaternion(glm::vec3(0.0f), 1){}
+
     ~Quaternion();
 
     void ComplexConjugate(){ this->imaginary = -this->imaginary; }
@@ -46,20 +50,13 @@ public:
     void operator += (const Quaternion &q){ imaginary+=q.imaginary; real+=q.real; }
     void operator -= (const Quaternion &q){ imaginary-=q.imaginary; real-=q.real; }
 
-    void Apply(Quaternion &p){
-        *this = Quaternion::Apply(*this, p);
-    };
-    void Apply(glm::vec3 &postion){
-        this->imaginary = Quaternion::Apply(*this, postion);
-    };
-    Quaternion Apply(Quaternion &q, Quaternion &p){
-        Quaternion rotated = q*p*ComplexConjugate(q);
-        return rotated;
-    }
-    glm::vec3 Apply(Quaternion &q, glm::vec3 &postion){
+    glm::vec3 Apply(const Quaternion &q, const glm::vec3 &postion) const {
         Quaternion p = Quaternion(postion, 0.0f);
-        Quaternion rotated = Apply(q, p);
+        Quaternion rotated = ComplexConjugate(q) * p * q;
         return rotated.imaginary;
+    }
+    glm::vec3 Apply(const glm::vec3 &postion) const {
+        return Apply((*this), postion);
     }
     
     void invert() {
@@ -93,22 +90,5 @@ public:
 
     static float deg2rad(float k) {
         return k*(M_PI)/180;
-    }
-
-    static Quaternion angleAxis(float angle, glm::vec3 axis){
-        float angleRad = deg2rad(angle);
-        return Quaternion(
-            std::sin( angleRad / 2 ) * axis,
-            std::cos( angleRad / 2 )
-        );
-    }
-
-    glm::mat3 toMatrix() const{
-        // TODO: optimize! axes, as vectors, have a lot of 0s
-        return glm::mat3(
-           apply( Versor3::right().asVector3()  ),
-           apply( Versor3::up().asVector3()  ),
-           apply( Versor3::forward().asVector3() )
-        );
     }
 };
