@@ -15,18 +15,7 @@
 class Transform
 {
 private:
-
-    void ResetToIdentity();
-    void InverseTranspose(glm::mat4 &viewMatrix);
-
-    void Scale(glm::vec3 &scaleVector);
-    void Scale(glm::f32 x, glm::f32 y, glm::f32 z);
-
-    void Rotate(glm::f32 angleInGrades, glm::vec3 &axis);
-
-    void Translate(glm::vec3 &translationVector);
-    void Translate(glm::f32 x, glm::f32 y, glm::f32 z);
-    
+        
 public:
     glm::mat4 modelMatrix;
     glm::mat3 normalMatrix;
@@ -37,7 +26,7 @@ public:
     float scale;
 
     Transform::Transform(){
-
+        
     }
 
     Transform::Transform(glm::mat4 &model, glm::mat3 &normal, glm::mat4 &viewMatrix)
@@ -86,10 +75,6 @@ public:
         InverseTranspose(viewMatrix);
     }
 
-    void Transform::ResetToIdentity(){
-        this->modelMatrix = glm::mat4(1.0f);
-        this->normalMatrix = glm::mat3(1.0f);
-    }
 
     Transform operator * (const Transform &b) const {
         Transform c;
@@ -108,6 +93,11 @@ public:
         res.translation = res.rotation.Apply(-translation * res.scale);
         return res;
     }
+
+    void Transform::ResetToIdentity(){
+        this->modelMatrix = glm::mat4(1.0f);
+        this->normalMatrix = glm::mat3(1.0f);
+    }  
 
     void Transform::Scale(glm::vec3 &scaleVector){
         this->modelMatrix = glm::scale(this->modelMatrix, scaleVector);
@@ -151,6 +141,17 @@ public:
         glm::vec3 outVec = glm::vec3(glm::vec4(translationVec, 1.0f) * CumulatedModelMatrixToWorld);
 
         return outVec;
+    }
+
+    glm::mat4 GetModelMatrix(){
+        glm::mat4 modelMatrix = glm::mat4(1.0f);
+        modelMatrix = glm::translate(modelMatrix, translation);
+        modelMatrix = glm::rotate(modelMatrix, rotation.GetAngleRad(), rotation.GetAxis());
+        modelMatrix = glm::scale(modelMatrix, glm::vec3(scale));
+    }
+
+    glm::mat4 GetNormalMatrix(){
+        return glm::inverseTranspose(glm::mat3(viewMatrix * GetModelMatrix()));
     }
 
 };

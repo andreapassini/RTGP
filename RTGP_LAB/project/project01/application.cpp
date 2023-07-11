@@ -298,7 +298,7 @@ int main()
 
         // float K = 0.5f;
         ImGui::NewLine;
-        ImGui::SliderFloat("K", &K, 0.01f, 5.0f);
+        ImGui::SliderFloat("K", &K, 0.01f, 10.0f);
 
         ImGui::NewLine;
         ImGui::SliderInt("Constraint Iterations", &constraintIterations, 0, 25);

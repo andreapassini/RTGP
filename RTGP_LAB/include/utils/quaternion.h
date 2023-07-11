@@ -13,14 +13,15 @@ public:
     float real;
 
     Quaternion(glm::vec3 axis, float angle){
-        float angleRad = angle*(M_PI)/180;
+        float angleRad = glm::radians(angle);
         this->imaginary = axis * sin(angleRad*0.5f);
         this->real = cos(angleRad*0.5f);
     };
     // empty construction: returns quaternion 1 + 0 * i
     Quaternion():Quaternion(glm::vec3(0.0f), 1){}
 
-    ~Quaternion();
+    ~Quaternion(){
+    }
 
     void ComplexConjugate(){ this->imaginary = -this->imaginary; }
     Quaternion ComplexConjugate() const { return Quaternion(-imaginary, +real); }
@@ -88,7 +89,16 @@ public:
         *this = Quaternion::normalize(*this);
     }
 
-    static float deg2rad(float k) {
-        return k*(M_PI)/180;
+    float GetAngleRad(){
+        return 2 * acos(real);
+    }
+
+    float GetAngleDegree(){
+        return glm::degrees(2 * acos(real));
+    }
+
+    glm::vec3 GetAxis(){
+        float angle = GetAngleRad();
+        glm::vec3 axis = this->imaginary / sin(angle/2);
     }
 };
