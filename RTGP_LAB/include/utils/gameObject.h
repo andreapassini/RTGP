@@ -1,13 +1,19 @@
 #pragma once
 
 #include "Particle.h"
+#include "transform.h"
 
-class gameObject
+class GameObject
 {
 private:
 
 public:
     Particle* particle;
-    gameObject(/* args */);
-    ~gameObject();
+    Transform* transform;
+
+    GameObject* parent;
+    GameObject* child[];
+
+    GameObject(/* args */);
+    ~GameObject();
 };
