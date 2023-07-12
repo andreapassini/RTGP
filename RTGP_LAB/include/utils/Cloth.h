@@ -287,9 +287,10 @@ public:
 				if(x+1 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+1, y, dim), particleDistance);
 				if(y+1 < dim && x+1 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+1, y+1, dim), particleDistance*glm::sqrt(2.0f));
 
-				// if(y+2 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x, y+2, dim), particleDistance);
-				// if(x+2 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+2, y, dim), particleDistance);
-				// if(y+2 < dim && x+2 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+2, y+2, dim), particleDistance*glm::sqrt(2.0f));
+				// Make it an option
+				if(y+2 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x, y+2, dim), particleDistance * 2);
+				if(x+2 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+2, y, dim), particleDistance * 2);
+				if(y+2 < dim && x+2 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+2, y+2, dim), particleDistance*glm::sqrt(2.0f)*2);
 
 			}
 		}

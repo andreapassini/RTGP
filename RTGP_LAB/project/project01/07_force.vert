@@ -9,12 +9,36 @@ uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 uniform mat3 normalMatrix;
 
+uniform vec3 lightVector;
+out vec3 lightDir;
+
+out vec3 vNormal;
+
+out vec3 vViewPosition;
+
+out vec2 interp_UV;
+out vec4 posLightSpace;
+
 out vec3 colorForce;
 
 void main()
 {
-		// transformations are applied to each vertex
-    gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0f);
-		// transformations are applied to the normal
-    colorForce = normalize(force);
+  // vertex position in world coordinates
+  vec4 mPosition = modelMatrix * vec4( position, 1.0 );
+  // vertex position in camera coordinates
+  vec4 mvPosition = viewMatrix * mPosition;
+
+  // view direction, negated to have vector from the vertex to the camera
+  vViewPosition = -mvPosition.xyz;
+
+  // transformations are applied to the normal
+  vNormal = normalize( normalMatrix * normal );
+
+  // light incidence directions in view coordinate
+  lightDir = vec3(viewMatrix  * vec4(lightVector, 0.0));
+
+  // we apply the projection transformation
+  gl_Position = projectionMatrix * mvPosition;
+  
+  colorForce = force;
 }

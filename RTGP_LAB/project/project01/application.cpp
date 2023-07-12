@@ -244,9 +244,9 @@ int main()
                 break;
             case 1:
                 // springType = PHYSICAL;
-                K = 2.5f;
+                K = 15.0f;
                 gravity = -0.8f;
-                constraintIterations = 1;
+                constraintIterations = 5;
                 break;
             case 2:
                 // springType = POSITIONAL_ADVANCED;
@@ -297,7 +297,7 @@ int main()
 
         // float K = 0.5f;
         ImGui::NewLine;
-        ImGui::SliderFloat("K", &K, 0.01f, 10.0f);
+        ImGui::SliderFloat("K", &K, 0.01f, 25.0f);
 
         ImGui::NewLine;
         ImGui::SliderInt("Constraint Iterations", &constraintIterations, 0, 25);
@@ -360,6 +360,23 @@ int main()
         }
         glUniformMatrix4fv(glGetUniformLocation(force_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.modelMatrix));
         glUniformMatrix3fv(glGetUniformLocation(force_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.normalMatrix));
+        
+        // we pass projection and view matrices to the Shader Program
+        glUniformMatrix4fv(glGetUniformLocation(force_shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
+        glUniformMatrix4fv(glGetUniformLocation(force_shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
+
+        // we determine the position in the Shader Program of the uniform variables
+        GLint lightDirLocation = glGetUniformLocation(force_shader.Program, "lightVector");
+        GLint kdLocation = glGetUniformLocation(force_shader.Program, "Kd");
+        GLint alphaLocation = glGetUniformLocation(force_shader.Program, "alpha");
+        GLint f0Location = glGetUniformLocation(force_shader.Program, "F0");
+
+        // we assign the value to the uniform variables
+        glUniform3fv(lightDirLocation, 1, glm::value_ptr(lightPosition));
+        glUniform1f(kdLocation, Kd);
+        glUniform1f(alphaLocation, alpha);
+        glUniform1f(f0Location, F0);
+
         cloth.Draw();
         
         if(!pKeyPressed && once)
