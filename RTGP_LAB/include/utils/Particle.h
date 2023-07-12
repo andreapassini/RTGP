@@ -5,7 +5,7 @@
 #include <physicsSimulation/physicsSimulation.h>
 
 /* Some physics constants */
-#define DAMPING 0.01f // how much to damp the cloth simulation each frame
+#define DAMPING 0.02f // how much to damp the cloth simulation each frame
 #define TIME_STEPSIZE2 (0.5f*0.5f)
 #define SPHERE_OFFSET_MULTIPLIER 1.25f
 
@@ -47,11 +47,12 @@ public:
 		}
 
 		glm::vec3 now_pos = pos;
-		glm::vec3 accel = force/mass;
-		//pos = now_pos + ((now_pos-old_pos) * (1.0f-DAMPING) + accel) * (deltaTime) * TIME_STEPSIZE2;	// newPos = now_pos + speed * deltaTime
-		pos = now_pos + (now_pos-old_pos) * (1.0f-DAMPING) + accel * FIXED_TIME_STEP2;	// newPos = now_pos + speed * deltaTime
+		glm::vec3 accel = this->force/mass;
+		//pos = now_pos + (now_pos-old_pos) * (1.0f-DAMPING) + accel * FIXED_TIME_STEP2;	// newPos = now_pos + speed * deltaTime
+		//pos = ((2.0f) * now_pos) - ( old_pos) + (accel * FIXED_TIME_STEP2);
+		pos = ((2.0f - DAMPING) * now_pos) - ( (1.0f - DAMPING) * old_pos) + (accel * FIXED_TIME_STEP2);
 		old_pos = now_pos;
-		this->shader_force += glm::vec3(force.x, force.y, force.z);
+		this->shader_force = glm::vec3(force.x, force.y, force.z);
 		this->force = glm::vec3(0.0f);
 	}
 	void PhysicStep(float deltaTime)

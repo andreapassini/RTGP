@@ -321,7 +321,7 @@ public:
 		freeGPUresources();
 	}
 
-	void PhysicsSteps(float deltaTime, glm::vec3 ballCenterWorld, float ballRadius, float planeLimit)
+	void PhysicsSteps(float deltaTime, glm::vec3 sphereCenterWorld, float ballRadius, float planeLimit)
 	{
 		std::vector<Particle>::iterator particle;
 		for(particle = particles.begin(); particle != particles.end(); particle++)
@@ -355,13 +355,13 @@ public:
 		for(size_t i = 0; i < this->collisionIterations; i++){
 			for(particle = particles.begin(); particle != particles.end(); particle++)
 			{
-				particle->SphereCollision(transform->modelMatrix, ballCenterWorld, ballRadius); // calculate the position of each particle at the next time step.
+				particle->SphereCollision(transform->modelMatrix, sphereCenterWorld, ballRadius); // calculate the position of each particle at the next time step.
 				particle->PlaneCollision(planeLimit);
 			}
 		}		
 	}
 
-	void PhysicsSteps(glm::vec3 ballCenterWorld, float ballRadius, float planeLimit)
+	void PhysicsSteps(glm::vec3 sphereCenterWorld, float ballRadius, float planeLimit)
 	{
 
 		std::vector<Constraint>::iterator constraint;
@@ -395,7 +395,7 @@ public:
 		for(size_t i = 0; i < this->collisionIterations; i++){
 			for(particle = particles.begin(); particle != particles.end(); particle++)
 			{
-				particle->SphereCollision(transform->modelMatrix, ballCenterWorld, ballRadius); // calculate the position of each particle at the next time step.
+				particle->SphereCollision(transform->modelMatrix, sphereCenterWorld, ballRadius); // calculate the position of each particle at the next time step.
 				particle->PlaneCollision(planeLimit);
 			}
 		}		
