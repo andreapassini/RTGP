@@ -169,7 +169,6 @@ int main()
     SphereCollider sphereCollider(&sphereTransform, 1.0f);
     std::vector<SphereCollider> sphereColliders;
     sphereColliders.push_back(sphereCollider);
-    std::cout << "Line: " << __LINE__ << std::endl;
     positionZ = 0.8f;
     GLint directionZ = 1;
 
@@ -235,8 +234,8 @@ int main()
         ImGui::Text("Constraints");
         ImGui::NewLine;
         if(ImGui::SliderInt("type", &type, 0, 3)){
-        switch(type)
-        {
+            switch(type)
+            {
             case 0:
                 //springType = POSITIONAL;
                 K = 0.5f;
