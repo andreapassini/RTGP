@@ -7,7 +7,7 @@
 /* Some physics constants */
 #define DAMPING 0.02f // how much to damp the cloth simulation each frame
 #define TIME_STEPSIZE2 (0.5f*0.5f)
-#define SPHERE_OFFSET_MULTIPLIER 1.25f
+#define COLLISION_OFFSET_MULTIPLIER 1.25f
 
 #define FIXED_TIME_STEP (1.0f / 60.0f)
 #define FIXED_TIME_STEP2 (FIXED_TIME_STEP * FIXED_TIME_STEP)
@@ -99,7 +99,7 @@ public:
 		float l = glm::length(v);
 		if (glm::length(v) < radius) // if the particle is inside the ball
 		{
-			this->offsetPos(glm::normalize(v) * ((radius-l) * SPHERE_OFFSET_MULTIPLIER)); // project the particle to the surface of the ball
+			this->offsetPos(glm::normalize(v) * ((radius-l) * COLLISION_OFFSET_MULTIPLIER)); // project the particle to the surface of the ball
 		}
 	}
 
@@ -110,7 +110,7 @@ public:
 		
 		if (glm::length(v) < sphereCollider.radius) // if the particle is inside the ball
 		{
-			this->offsetPos(glm::normalize(v) * ((sphereCollider.radius - l) * SPHERE_OFFSET_MULTIPLIER)); // project the particle to the surface of the ball
+			this->offsetPos(glm::normalize(v) * ((sphereCollider.radius - l) * COLLISION_OFFSET_MULTIPLIER)); // project the particle to the surface of the ball
 		}
 	}
 
@@ -119,6 +119,16 @@ public:
 		{
 			float l = yLimit - this->pos.y;
 			this->offsetPos(glm::vec3(0.0f, l, 0.0f));
+		}
+	}
+	void PlaneCollision(const glm::vec3 normal, const glm::vec3 pointOnPlane){
+		glm::vec3 distance = normal - this->pos;
+		float dot = glm::dot(distance, normal);
+
+		if(dot < 0.0f){
+			// under the plane
+			glm::vec3 reposition = normal * (-1 * dot * COLLISION_OFFSET_MULTIPLIER);
+			this->offsetPos(reposition);
 		}
 	}
 	void CubeCollision(glm::mat4 clothModelMatrix, const glm::vec3 cubeCenterInWorldSpace, const float edge){

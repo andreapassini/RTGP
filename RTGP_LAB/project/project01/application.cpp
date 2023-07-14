@@ -131,6 +131,7 @@ float mass = 1.0f;
 float K = 0.5f;
 float U = 0.1f;
 int constraintIterations = 15;
+int constraintLevel = 1;
 int collisionIterations = 15;
 
 unsigned int windowSize = 10;
@@ -177,7 +178,7 @@ int main()
     Transform cubeTransform(view);
 
     Transform clothTransform(view);
-    Cloth cloth(clothDim, particleOffset, startingPosition, &clothTransform, pinned, springType, K, U, constraintIterations, gravity, mass, collisionIterations);
+    Cloth cloth(clothDim, particleOffset, startingPosition, &clothTransform, pinned, springType, K, U, constraintIterations, gravity, mass, collisionIterations, constraintLevel);
 
     PerformanceCalculator performanceCalculator(windowSize, overlap);
 
@@ -303,6 +304,9 @@ int main()
         ImGui::SliderInt("Constraint Iterations", &constraintIterations, 0, 25);
 
         ImGui::NewLine;
+        ImGui::SliderInt("Constraint Level", &constraintLevel, 1, 5);
+
+        ImGui::NewLine;
         ImGui::Text("Collisions");
         ImGui::NewLine;
         ImGui::SliderInt("collisions Iterations", &collisionIterations, 0, 25);
@@ -383,7 +387,7 @@ int main()
         {
             cloth.~Cloth();
             pinned = !pinned;
-            new(&cloth) Cloth(clothDim, particleOffset, startingPosition, &clothTransform, pinned, springType, K, U, constraintIterations, gravity, mass, collisionIterations);
+            new(&cloth) Cloth(clothDim, particleOffset, startingPosition, &clothTransform, pinned, springType, K, U, constraintIterations, gravity, mass, collisionIterations, constraintLevel);
             once = false;
             //DebugLogStatus();
             //cloth.CutAHole(4 + iter, 4 + iter);

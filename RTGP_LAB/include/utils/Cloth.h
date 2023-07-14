@@ -30,6 +30,7 @@ private:
 	unsigned int constraintIterations;
 	unsigned int collisionIterations;
 	float gravityForce;
+	unsigned int constraintLevel;
 
 	GLuint VAO;
 	GLuint EBO;
@@ -170,6 +171,7 @@ private:
 
 		for(particle = particles.begin(); particle != particles.end(); particle++)
 		{
+			// Prevent division by 0
 			if(particle->normal.x == 0.0f && particle->normal.y == 0.0f && particle->normal.z == 0.0f)
 				return;
 
@@ -225,7 +227,7 @@ public:
 	float K;
 	float U;
 
-	Cloth(int dim, float particleDistance, glm::vec3 topLeftPosition, Transform *t, bool pinned, ConstraintType usePhysicConstraints, float k, float u, unsigned int contraintIt, float gravity, float m, unsigned int collisionIt){
+	Cloth(int dim, float particleDistance, glm::vec3 topLeftPosition, Transform *t, bool pinned, ConstraintType usePhysicConstraints, float k, float u, unsigned int contraintIt, float gravity, float m, unsigned int collisionIt, unsigned int constraintLevel){
 		this->dim = dim;
 		this->transform = t;
 		this->springsType = usePhysicConstraints;
@@ -234,6 +236,7 @@ public:
 		this->gravityForce = gravity;
 		this->K = k;
 		this->U = u;
+		this->constraintLevel = constraintLevel;
 
 		maxForce = 0.0f;
 		particles.resize(dim*dim); //I am essentially using this vector as an array with room for num_particles_width*dim particles
@@ -263,34 +266,22 @@ public:
 		{
 			for(int y=0; y < dim; y++)
 			{
-				// this will create 2 times the constraints since every particles make constraints in all the directions
-				// Connecting immediate neighbor particles with constraints (distance 1)
-				// if (y +1 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x, y+1, dim), particleDistance);	// RIGHT
-				// if (y - 1 >= 0) makeConstraint(getParticle(x, y, dim), getParticle(x, y-1, dim), particleDistance);	// LEFT
-				// if (x +1 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+1, y, dim), particleDistance);	// BOT
-				// if (x - 1 >= 0) makeConstraint(getParticle(x, y, dim), getParticle(x-1, y, dim), particleDistance);	// TOP
-
-				// // Constraints on the 4 diagonals
-				// if (x +1 < dim && y + 1 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+1, y+1, dim), particleDistance*glm::sqrt(2.0f));
-				// if (x + 1 < dim && y - 1 >= 0) makeConstraint(getParticle(x, y, dim), getParticle(x+1, y-1, dim), particleDistance*glm::sqrt(2.0f));
-				// if (x -1 >= 0  && y + 1 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x-1, y+1, dim), particleDistance*glm::sqrt(2.0f));
-				// if (x -1 >= 0 	&& y - 1 >= 0) makeConstraint(getParticle(x, y, dim), getParticle(x-1, y-1, dim), particleDistance*glm::sqrt(2.0f));			
-
 				/*
 				// Constraints from top left
 				// * ---
 				// | \
 				// |  \
 				*/
+				for(int i = 1; i <= this->constraintLevel; i++){
+					if(y+i < dim) makeConstraint(getParticle(x, y, dim), getParticle(x, y+i, dim), particleDistance * i);
+					if(x+i < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+i, y, dim), particleDistance * i);
+					if(y+i < dim && x+i < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+i, y+i, dim), particleDistance*glm::sqrt(2.0f) * i);
+				}
 
-				if(y+1 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x, y+1, dim), particleDistance);
-				if(x+1 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+1, y, dim), particleDistance);
-				if(y+1 < dim && x+1 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+1, y+1, dim), particleDistance*glm::sqrt(2.0f));
-
-				// Make it an option
-				if(y+2 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x, y+2, dim), particleDistance * 2);
-				if(x+2 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+2, y, dim), particleDistance * 2);
-				if(y+2 < dim && x+2 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+2, y+2, dim), particleDistance*glm::sqrt(2.0f)*2);
+				// // Make it an option
+				// if(y+2 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x, y+2, dim), particleDistance * 2);
+				// if(x+2 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+2, y, dim), particleDistance * 2);
+				// if(y+2 < dim && x+2 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+2, y+2, dim), particleDistance*glm::sqrt(2.0f)*2);
 
 			}
 		}
@@ -303,17 +294,7 @@ public:
 				this->particles[0 + (dim - 1 -i)].makeUnmovable();
 			}
 		}
-
-		// std::vector<Constraint>::iterator constraint;
-		// int i = 0;
-		// for(constraint = constraints.begin(); constraint != constraints.end(); constraint++ )
-		// {							
-		// 	std::cout << "Constraint :" << i << ": P1: " << FindIndexParticle(*constraint->p1)  << " P2: " << FindIndexParticle(*constraint->p2) << std::endl;
-		// 	i++;
-		// }
 		
-
-
 		SetUp();
 	}
 	~Cloth()

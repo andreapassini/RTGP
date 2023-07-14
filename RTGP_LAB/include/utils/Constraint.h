@@ -68,6 +68,15 @@ private:
 		// u friction coeff
 		glm::vec3 p1_to_p2 = this->p2->getPos() - this->p1->getPos(); // vector from p1 to p2
 		float current_distance = glm::length(p1_to_p2); // current distance between p1 and p2
+		float abs_cur = abs(current_distance);
+
+		if(abs_cur <= 2 *FLT_EPSILON){
+			if(current_distance >= 0.0f)
+				current_distance += 2 * FLT_EPSILON;
+			else 
+				current_distance -= 2 * FLT_EPSILON;
+		}
+
 		p1_to_p2 /= current_distance;	// Normalize
 
 		// scalar "a"
