@@ -139,9 +139,9 @@ float gravity = -9.8f;
 float mass = 1.0f;
 float K = 0.5f;
 float U = 0.1f;
-int constraintIterations = 15;
+int constraintIterations = 10;
 int constraintLevel = 1;
-int collisionIterations = 15;
+int collisionIterations = 10;
 
 unsigned int windowSize = 10;
 unsigned int overlap = 3;
@@ -256,7 +256,7 @@ int main()
                 //springType = POSITIONAL;
                 K = 0.5f;
                 gravity = -9.8f;
-                constraintIterations = 15;
+                constraintIterations = 10;
                 break;
             case 1:
                 // springType = PHYSICAL;
@@ -558,20 +558,20 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         wireframe=!wireframe;
 
     if(key == GLFW_KEY_UP){
-        MoveSphere(glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
-    }
+        MoveSphere(-glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action); // - camera.Front cause forward = to the camera
+    } else
     if(key == GLFW_KEY_DOWN){
-        MoveSphere(-glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
-    }
+        MoveSphere(glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
+    } else
     if(key == GLFW_KEY_LEFT){
         MoveSphere(-camera.Right, action);
-    }
+    } else
     if(key == GLFW_KEY_RIGHT){
         MoveSphere(camera.Right, action);
-    }
+    } else
     if(key == GLFW_KEY_SPACE){
         MoveSphere(camera.WorldUp, action);
-    }
+    } else
     if(key == GLFW_KEY_LEFT_CONTROL){
         MoveSphere(-camera.WorldUp, action);
     }

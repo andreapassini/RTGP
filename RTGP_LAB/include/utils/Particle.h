@@ -7,7 +7,7 @@
 /* Some physics constants */
 #define DAMPING 0.02f // how much to damp the cloth simulation each frame
 #define TIME_STEPSIZE2 (0.5f*0.5f)
-#define COLLISION_OFFSET_MULTIPLIER 1.25f
+#define COLLISION_OFFSET_MULTIPLIER 1.75f
 
 #define FIXED_TIME_STEP (1.0f / 60.0f)
 #define FIXED_TIME_STEP2 (FIXED_TIME_STEP * FIXED_TIME_STEP)
