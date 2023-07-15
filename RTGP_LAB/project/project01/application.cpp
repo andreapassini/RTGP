@@ -59,6 +59,14 @@ positive Z axis points "outside" the screen
 #include "../include/stb_image/stb_image.h"
 #define stringify( name ) #name
 
+#define UP_DIRECTION glm::vec3(0.0f, 1.0f, 0.0f)
+#define DOWN_DIRECTION glm::vec3(0.0f, -1.0f, 0.0f)
+
+#define FORWARD_DIRECTION glm::vec3(0.0f, 0.0f, 1.0f)
+#define BACKWARD_DIRECTION glm::vec3(0.0f, 0.0f, -1.0f)
+
+#define RIGHT_DIRECTION glm::vec3(1.0f, 0.0f, 0.0f)
+#define LEFT_DIRECTION glm::vec3(-1.0f, 0.0f, 0.0f)
 
 GLFWwindow* window;
 GLuint screenWidth = 1200, screenHeight = 900;
@@ -145,6 +153,12 @@ PerformanceCalculator performanceCalculator(windowSize, overlap);
 
 bool pausePhysics;
 
+float sphereSpeed;
+float sphereBaseSpeed = 0.01f;
+float sphereAccel = 0.1f;
+
+Transform sphereTransform;
+
 int main()
 {
     if(SetupOpenGL() == -1)
@@ -166,7 +180,7 @@ int main()
     textureID.push_back(LoadTexture("../../textures/SoilCracked.png"));
 
     // Model and Normal transformation matrices for the objects in the scene: we set to identity
-    Transform sphereTransform(view);
+    sphereTransform = Transform(view);
     SphereCollider sphereCollider(&sphereTransform, 1.0f);
     std::vector<SphereCollider> sphereColliders;
     sphereColliders.push_back(sphereCollider);
@@ -523,14 +537,14 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         instantiate = !instantiate;
     }
 
-    // pressing a key between 1 and 5, we change the shader applied to the models
-    if((key >= GLFW_KEY_1 && key <= GLFW_KEY_5) && action == GLFW_PRESS)
-    {
-        // "1" to "5" -> ASCII codes from 49 to 57
-        // we subtract 48 (= ASCII CODE of "0") to have integers from 1 to 5
-        // we subtract 1 to have indices from 0 to 4 in the shaders list
-        unsigned int pressedInt = (key-'0'-1);
-    }
+    // // pressing a key between 1 and 5, we change the shader applied to the models
+    // if((key >= GLFW_KEY_1 && key <= GLFW_KEY_5) && action == GLFW_PRESS)
+    // {
+    //     // "1" to "5" -> ASCII codes from 49 to 57
+    //     // we subtract 48 (= ASCII CODE of "0") to have integers from 1 to 5
+    //     // we subtract 1 to have indices from 0 to 4 in the shaders list
+    //     unsigned int pressedInt = (key-'0'-1);
+    // }
 
     // if R is pressed, we start/stop the animated rotation of models
     if(key == GLFW_KEY_R && action == GLFW_PRESS){
@@ -541,6 +555,19 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     // if L is pressed, we activate/deactivate wireframe rendering of models
     if(key == GLFW_KEY_L && action == GLFW_PRESS)
         wireframe=!wireframe;
+
+    if(key == GLFW_KEY_UP){
+        MoveSphere(FORWARD_DIRECTION, action);
+    }
+    if(key == GLFW_KEY_DOWN){
+        MoveSphere(BACKWARD_DIRECTION, action);
+    }
+    if(key == GLFW_KEY_LEFT){
+        MoveSphere(LEFT_DIRECTION, action);
+    }
+    if(key == GLFW_KEY_RIGHT){
+        MoveSphere(RIGHT_DIRECTION, action);
+    }
 
     // we keep trace of the pressed keys
     // with this method, we can manage 2 keys pressed at the same time:
@@ -639,8 +666,9 @@ void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transfor
     glUniform1i(textureLocation, 0);
     glUniform1f(repeatLocation, repeat);
 
+    // Move the Sphere
     sphereTransform.Transformation(
-        glm::vec3(1.0f, 1.0f, 1.0f),
+        glm::vec3(1.0f),
         0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
         spherePosition,
         view);
@@ -681,5 +709,27 @@ void DebugLogStatus(){
     std::cout << "  - Constraint Iterations: " << constraintIterations << std::endl;
 }
 void PrintVec3(glm::vec3* vec){
+
     std::cout << vec->x << ", " << vec->y << ", " << vec->z << std::endl;
+}
+void MoveSphere(glm::vec3 direction, int action){
+    if(action == GLFW_PRESS){
+        sphereSpeed = sphereBaseSpeed;
+    }
+    if(action == GLFW_REPEAT){
+        sphereSpeed += sphereAccel * deltaTime;
+    }
+
+    direction *= sphereSpeed * deltaTime;
+
+    // I want the movement in camera space
+    // TL' = VL^-1 T VL TL
+
+    Transform T = Transform();
+    T.Translate(direction);
+
+    Transform VL = Transform();
+    VL.modelMatrix = sphereTransform.viewMatrix;
+
+    sphereTransform = VL.Inverse() * T * VL * sphereTransform;
 }

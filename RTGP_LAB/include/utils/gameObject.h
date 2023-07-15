@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Particle.h"
-#include "transform.h"
+#include <Particle.h>
+#include <transform.h>
 
 class GameObject
 {
