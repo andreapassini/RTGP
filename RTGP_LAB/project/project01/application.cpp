@@ -731,5 +731,8 @@ void MoveSphere(glm::vec3 direction, int action){
     Transform VL = Transform();
     VL.modelMatrix = sphereTransform.viewMatrix;
 
-    sphereTransform = VL.Inverse() * T * VL * sphereTransform;
+    Transform new_pos = Transform();
+    new_pos = VL.Inverse() * T * VL * sphereTransform;
+
+    spherePosition = new_pos.GetTranslationVector();
 }
