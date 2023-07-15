@@ -84,6 +84,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void apply_camera_movements();
 void imGuiSetup(GLFWwindow *window);
 void PrintVec3(glm::vec3* vec);
+void MoveSphere(glm::vec3 direction, int action);
 
 bool keys[1024];
 bool R_KEY = false;
@@ -153,9 +154,9 @@ PerformanceCalculator performanceCalculator(windowSize, overlap);
 
 bool pausePhysics;
 
-float sphereSpeed;
-float sphereBaseSpeed = 0.01f;
-float sphereAccel = 0.1f;
+float sphereBaseSpeed = 1.0f;
+float sphereSpeed = sphereBaseSpeed;
+float sphereAccel = 3.0f;
 
 Transform sphereTransform;
 
@@ -557,18 +558,23 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         wireframe=!wireframe;
 
     if(key == GLFW_KEY_UP){
-        MoveSphere(FORWARD_DIRECTION, action);
+        MoveSphere(glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
     }
     if(key == GLFW_KEY_DOWN){
-        MoveSphere(BACKWARD_DIRECTION, action);
+        MoveSphere(-glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
     }
     if(key == GLFW_KEY_LEFT){
-        MoveSphere(LEFT_DIRECTION, action);
+        MoveSphere(-camera.Right, action);
     }
     if(key == GLFW_KEY_RIGHT){
-        MoveSphere(RIGHT_DIRECTION, action);
+        MoveSphere(camera.Right, action);
     }
-
+    if(key == GLFW_KEY_SPACE){
+        MoveSphere(camera.WorldUp, action);
+    }
+    if(key == GLFW_KEY_LEFT_CONTROL){
+        MoveSphere(-camera.WorldUp, action);
+    }
     // we keep trace of the pressed keys
     // with this method, we can manage 2 keys pressed at the same time:
     // many I/O managers often consider only 1 key pressed at the time (the first pressed, until it is released)
@@ -717,22 +723,10 @@ void MoveSphere(glm::vec3 direction, int action){
         sphereSpeed = sphereBaseSpeed;
     }
     if(action == GLFW_REPEAT){
-        sphereSpeed += sphereAccel * deltaTime;
+        sphereSpeed += sphereSpeed * sphereAccel * deltaTime;
     }
 
     direction *= sphereSpeed * deltaTime;
 
-    // I want the movement in camera space
-    // TL' = VL^-1 T VL TL
-
-    Transform T = Transform();
-    T.Translate(direction);
-
-    Transform VL = Transform();
-    VL.modelMatrix = sphereTransform.viewMatrix;
-
-    Transform new_pos = Transform();
-    new_pos = VL.Inverse() * T * VL * sphereTransform;
-
-    spherePosition = new_pos.GetTranslationVector();
+    spherePosition += direction;
 }

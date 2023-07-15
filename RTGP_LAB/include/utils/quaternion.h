@@ -34,8 +34,8 @@ public:
     Quaternion operator / (float d) const { return Quaternion(imaginary/d,real/d); }
     Quaternion operator * (float d) const { return Quaternion(imaginary*d,real*d); }
     Quaternion operator * (const Quaternion& q) const{
-        glm::vec3 imaginary = imaginary*q.real + q.imaginary*real + glm::cross(imaginary, q.imaginary);
-        float real = real*q.real - glm::dot(imaginary, q.imaginary);
+        glm::vec3 imaginary = this->imaginary*q.real + q.imaginary*this->real + glm::cross(this->imaginary, q.imaginary);
+        float real= this->real*q.real - glm::dot(this->imaginary, q.imaginary);
         return Quaternion(imaginary, real);
     }
     Quaternion Multiply(const Quaternion& q) const{
@@ -100,5 +100,6 @@ public:
     glm::vec3 GetAxis(){
         float angle = GetAngleRad();
         glm::vec3 axis = this->imaginary / sin(angle/2);
+        return axis;
     }
 };

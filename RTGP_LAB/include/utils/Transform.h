@@ -26,7 +26,9 @@ public:
     float scale;
 
     Transform::Transform(){
-        
+        this->viewMatrix = glm::mat4(1.0f);
+        this->modelMatrix = glm::mat4(1.0f);
+        this->normalMatrix = glm::mat3(1.0f);
     }
 
     Transform::Transform(glm::mat4 &model, glm::mat3 &normal, glm::mat4 &viewMatrix)
@@ -73,6 +75,17 @@ public:
         Scale(scaleVector);
 
         InverseTranspose(viewMatrix);
+    }
+
+    void Transform::Transformation()
+    {
+        ResetToIdentity();
+
+        Translate(this->translation);
+        Rotate(this->rotation.GetAngleDegree(), this->rotation.GetAxis());
+        Scale(glm::vec3(this->scale));
+
+        InverseTranspose(this->viewMatrix);
     }
 
 
