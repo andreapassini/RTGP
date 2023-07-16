@@ -7,7 +7,7 @@
 /* Some physics constants */
 #define DAMPING 0.02f // how much to damp the cloth simulation each frame
 #define TIME_STEPSIZE2 (0.5f*0.5f)
-#define COLLISION_OFFSET_MULTIPLIER 1.75f
+#define COLLISION_OFFSET_MULTIPLIER 1.15f
 
 #define FIXED_TIME_STEP (1.0f / 60.0f)
 #define FIXED_TIME_STEP2 (FIXED_TIME_STEP * FIXED_TIME_STEP)
@@ -97,9 +97,10 @@ public:
 	void SphereCollision(glm::mat4 clothModelMatrix, const glm::vec3 centerWorld,const float radius){
 		glm::vec3 v = glm::vec3(glm::vec4(this->getPos(), 1.0f) * clothModelMatrix) - centerWorld;
 		float l = glm::length(v);
-		if (glm::length(v) < radius) // if the particle is inside the ball
+
+		if (l < (radius * COLLISION_OFFSET_MULTIPLIER)) // if the particle is inside the ball
 		{
-			this->offsetPos(glm::normalize(v) * ((radius-l) * COLLISION_OFFSET_MULTIPLIER)); // project the particle to the surface of the ball
+			this->offsetPos(glm::normalize(v) * (((radius * COLLISION_OFFSET_MULTIPLIER)-l))); // project the particle to the surface of the ball
 		}
 	}
 
@@ -108,7 +109,16 @@ public:
 		glm::vec3 v = glm::vec3(glm::vec4(this->getPos(), 1.0f) * clothModelMatrix) - sphereWorldPosition;
 		float l = glm::length(v);
 		
-		if (glm::length(v) < sphereCollider.radius) // if the particle is inside the ball
+		float abs_l = abs(l);
+
+		if(abs_l <= 2 *FLT_EPSILON){
+			if(l >= 0.0f)
+				l += 2 * FLT_EPSILON;
+			else 
+				l -= 2 * FLT_EPSILON;
+		}
+
+		if (l < (sphereCollider.radius * COLLISION_OFFSET_MULTIPLIER)) // if the particle is inside the ball
 		{
 			this->offsetPos(glm::normalize(v) * ((sphereCollider.radius - l) * COLLISION_OFFSET_MULTIPLIER)); // project the particle to the surface of the ball
 		}
