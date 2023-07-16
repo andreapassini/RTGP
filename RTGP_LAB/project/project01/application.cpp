@@ -154,8 +154,9 @@ PerformanceCalculator performanceCalculator(windowSize, overlap);
 
 bool pausePhysics;
 
-float sphereBaseSpeed = 1.0f;
-float sphereSpeed = sphereBaseSpeed;
+float sphereMinSpeed = 1.0f;
+float sphereMaxSpeed = 15.0f;
+float sphereSpeed = sphereMinSpeed;
 float sphereAccel = 3.0f;
 
 Transform sphereTransform;
@@ -558,20 +559,20 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         wireframe=!wireframe;
 
     if(key == GLFW_KEY_UP){
-        MoveSphere(-glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action); // - camera.Front cause forward = to the camera
-    } else
-    if(key == GLFW_KEY_DOWN){
         MoveSphere(glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
-    } else
+    } 
+    if(key == GLFW_KEY_DOWN){
+        MoveSphere(-glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
+    } 
     if(key == GLFW_KEY_LEFT){
         MoveSphere(-camera.Right, action);
-    } else
+    } 
     if(key == GLFW_KEY_RIGHT){
         MoveSphere(camera.Right, action);
-    } else
+    } 
     if(key == GLFW_KEY_SPACE){
         MoveSphere(camera.WorldUp, action);
-    } else
+    } 
     if(key == GLFW_KEY_LEFT_CONTROL){
         MoveSphere(-camera.WorldUp, action);
     }
@@ -720,10 +721,13 @@ void PrintVec3(glm::vec3* vec){
 }
 void MoveSphere(glm::vec3 direction, int action){
     if(action == GLFW_PRESS){
-        sphereSpeed = sphereBaseSpeed;
+        sphereSpeed = sphereMinSpeed;
     }
     if(action == GLFW_REPEAT){
         sphereSpeed += sphereSpeed * sphereAccel * deltaTime;
+        if(sphereSpeed > sphereMaxSpeed){
+            sphereSpeed = sphereMaxSpeed;
+        }
     }
 
     direction *= sphereSpeed * deltaTime;
