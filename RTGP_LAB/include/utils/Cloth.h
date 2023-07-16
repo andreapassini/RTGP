@@ -44,6 +44,18 @@ private:
 		constraints.push_back(Constraint(p1,p2, rest_distance));
 	}
 
+	glm::vec3 CalculateNormalTriangle(Particle* p1, Particle* p2, Particle* p3){
+		glm::vec3 pos1 = p1->pos;
+		glm::vec3 pos2 = p2->pos;
+		glm::vec3 pos3 = p3->pos;
+
+		glm::vec3 v1 = pos2-pos1;
+		glm::vec3 v2 = pos3-pos1;
+
+		glm::vec3 norm = glm::cross(v1, v2);
+		glm::normalize(norm);
+		return norm;
+	}
 	glm::vec3 CalculateNormalSquare(float x, float y)
 	{
 		if(x < dim - 1 ||
@@ -86,7 +98,11 @@ private:
 		*/
 		glm::vec3 diagonal2 = pos2-pos3;
 
-		return glm::cross(diagonal2, diagonal1);
+		glm::vec3 norm = glm::cross(diagonal2, diagonal1);
+		glm::normalize(norm);
+
+
+		return norm;
 	}
 	void SetUp()
 	{
@@ -161,21 +177,24 @@ private:
 		{
 			for(int y=0; y < dim-1; y++)
 			{
-				glm::vec3 normal = CalculateNormalSquare(x, y);
+				glm::vec3 normal;
+				// normal = CalculateNormalSquare(x, y);
+				// getParticle(x,   y,   dim)->addToNormal(normal);
+				// getParticle(x+1, y,   dim)->addToNormal(normal);
+				// getParticle(x,   y+1, dim)->addToNormal(normal);
+				// getParticle(x+1, y+1, dim)->addToNormal(normal);
+
+				normal = CalculateNormalTriangle(getParticle(x, y,   dim), getParticle(x+1,   y,   dim), getParticle(x,   y+1, dim));
 				getParticle(x,   y,   dim)->addToNormal(normal);
 				getParticle(x+1, y,   dim)->addToNormal(normal);
 				getParticle(x,   y+1, dim)->addToNormal(normal);
+
+				normal = CalculateNormalTriangle(getParticle(x+1, y+1,   dim), getParticle(x+1, y,   dim), getParticle(x,   y+1, dim));
 				getParticle(x+1, y+1, dim)->addToNormal(normal);
+				getParticle(x+1, y  , dim)->addToNormal(normal);
+				getParticle(x,   y+1, dim)->addToNormal(normal);
+
 			}
-		}
-
-		for(particle = particles.begin(); particle != particles.end(); particle++)
-		{
-			// Prevent division by 0
-			if(particle->normal.x == 0.0f && particle->normal.y == 0.0f && particle->normal.z == 0.0f)
-				return;
-
-			particle->normal = glm::normalize(particle->normal);
 		}	
 	}
 	void UpdateBuffers(){

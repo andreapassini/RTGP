@@ -88,11 +88,14 @@ public:
 	void addToNormal(glm::vec3 n)
 	{
 		this->normal += n;	//glm::normalize(normal);
+		glm::normalize(this->normal);
 	}
 
 	glm::vec3& getNormal() { return normal;} // notice, the normal is not unit length
 
-	void resetNormal() {this->normal = glm::vec3(0.0f);}
+	void resetNormal() {
+		this->normal = glm::normalize(glm::vec3(1.0f));
+	}
 
 	void SphereCollision(glm::mat4 clothModelMatrix, const glm::vec3 centerWorld,const float radius){
 		glm::vec3 v = glm::vec3(glm::vec4(this->getPos(), 1.0f) * clothModelMatrix) - centerWorld;
