@@ -210,7 +210,8 @@ private:
 
 		glEnableVertexAttribArray(2);
 		if(springsType == PHYSICAL || springsType == PHYSICAL_ADVANCED){
-			glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, force));
+			// glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, force));
+			glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, shader_force));
 		} else {
 			glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, shader_force));
 		}
@@ -296,12 +297,6 @@ public:
 					if(x+i < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+i, y, dim), particleDistance * i);
 					if(y+i < dim && x+i < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+i, y+i, dim), particleDistance*glm::sqrt(2.0f) * i);
 				}
-
-				// // Make it an option
-				// if(y+2 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x, y+2, dim), particleDistance * 2);
-				// if(x+2 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+2, y, dim), particleDistance * 2);
-				// if(y+2 < dim && x+2 < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+2, y+2, dim), particleDistance*glm::sqrt(2.0f)*2);
-
 			}
 		}
 
@@ -318,7 +313,6 @@ public:
 	}
 	~Cloth()
 	{
-
 		freeGPUresources();
 	}
 
@@ -364,6 +358,11 @@ public:
 
 	void PhysicsSteps(glm::vec3 sphereCenterWorld, float ballRadius, float planeLimit)
 	{
+		std::vector<Particle>::iterator particle;
+		for(particle = particles.begin(); particle != particles.end(); particle++)
+		{
+			particle->PhysicStep(); // calculate the position of each particle at the next time step.
+		}
 
 		std::vector<Constraint>::iterator constraint;
 		for(size_t i=0; i < this->constraintIterations; i++) // iterate over all constraints several times
@@ -387,11 +386,11 @@ public:
 			}
 		}
 
-		std::vector<Particle>::iterator particle;
-		for(particle = particles.begin(); particle != particles.end(); particle++)
-		{
-			particle->PhysicStep(); // calculate the position of each particle at the next time step.
-		}
+		// std::vector<Particle>::iterator particle;
+		// for(particle = particles.begin(); particle != particles.end(); particle++)
+		// {
+		// 	particle->PhysicStep(); // calculate the position of each particle at the next time step.
+		// }
 
 		for(size_t i = 0; i < this->collisionIterations; i++){
 			for(particle = particles.begin(); particle != particles.end(); particle++)

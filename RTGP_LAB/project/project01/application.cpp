@@ -72,7 +72,6 @@ GLFWwindow* window;
 GLuint screenWidth = 1200, screenHeight = 900;
 
 int SetupOpenGL();
-void SetupShaders();
 void DebugLogStatus();
 
 void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transform &planeTransform, Model &planeModel, Transform &sphereTransform, Model &sphereModel);
@@ -110,10 +109,16 @@ glm::vec3 lightPosition = glm::vec3(1.0f, 1.0f, 1.0f);
 
 // weights for the diffusive, specular and ambient components
 GLfloat Kd = 3.0f;
+// weights for the diffusive, specular and ambient components
+GLfloat Kd_Sphere = 2.0f;
 // roughness index for GGX shader
 GLfloat alpha = 0.2f;
+// roughness index for GGX shader
+GLfloat alpha_Sphere = 0.5f;
 // Fresnel reflectance at 0 degree (Schlik's approximation)
 GLfloat F0 = 0.9f;
+// Fresnel reflectance at 0 degree (Schlik's approximation)
+GLfloat F0_Sphere = 0.85f;
 
 vector<GLint> textureID;
 GLfloat repeat = 1.0f;  // UV repetitions
@@ -169,6 +174,7 @@ int main()
     Shader illumination_shader = Shader("06_illumination.vert", "06_illumination.frag");
     Shader force_shader = Shader("07_force.vert", "07_force.frag");
     Shader fullColor_shader = Shader("00_basic.vert", "01_fullcolor.frag");
+    Shader normal_shader = Shader("03_normal2color.vert", "03_normal2color.frag");
 
     glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);
     // View matrix (=camera): position, view direction, camera "up" vector
@@ -343,6 +349,7 @@ int main()
 
         // CLOTH        
         force_shader.Use();
+        //normal_shader.Use();
 
         glUniformMatrix4fv(glGetUniformLocation(force_shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(glGetUniformLocation(force_shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
@@ -393,9 +400,9 @@ int main()
 
         // we assign the value to the uniform variables
         glUniform3fv(lightDirLocation, 1, glm::value_ptr(lightPosition));
-        glUniform1f(kdLocation, Kd);
-        glUniform1f(alphaLocation, alpha);
-        glUniform1f(f0Location, F0);
+        glUniform1f(kdLocation, Kd_Sphere);
+        glUniform1f(alphaLocation, alpha_Sphere);
+        glUniform1f(f0Location, F0_Sphere);
 
         cloth.Draw();
         
