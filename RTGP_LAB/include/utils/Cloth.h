@@ -39,7 +39,6 @@ private:
 
 	float maxForce;
 
-	Particle* getParticle(int x, int y, int rowDim) {return &particles[x*rowDim + y];}
 	void makeConstraint(Particle *p1, Particle *p2, float rest_distance) {
 		constraints.push_back(Constraint(p1,p2, rest_distance));
 	}
@@ -315,6 +314,9 @@ public:
 	{
 		freeGPUresources();
 	}
+
+	Particle* getParticle(int x, int y, int rowDim) {return &particles[x*rowDim + y];}
+
 
 	void PhysicsSteps(float deltaTime, glm::vec3 sphereCenterWorld, float ballRadius, float planeLimit)
 	{

@@ -166,6 +166,8 @@ float sphereAccel = 3.0f;
 
 Transform sphereTransform;
 
+Cloth* c;
+
 int main()
 {
     if(SetupOpenGL() == -1)
@@ -201,6 +203,8 @@ int main()
 
     Transform clothTransform(view);
     Cloth cloth(clothDim, particleOffset, startingPosition, &clothTransform, pinned, springType, K, U, constraintIterations, gravity, mass, collisionIterations, constraintLevel);
+
+    c = &cloth;
 
     PerformanceCalculator performanceCalculator(windowSize, overlap);
 
@@ -740,4 +744,14 @@ void MoveSphere(glm::vec3 direction, int action){
     direction *= sphereSpeed * deltaTime;
 
     spherePosition += direction;
+
+    // Move pinned particles
+    for(int i = 0; i < clothDim; i++){
+        for(int j = 0; j < clothDim; j++){
+            Particle* p = (*c).getParticle(i, j, clothDim);
+            if(p->movable == false){
+                p->pos += direction;
+            }
+        }
+    }
 }
