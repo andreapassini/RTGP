@@ -3,14 +3,16 @@
 #include <utils/Transform.h>
 #include <glm/glm.hpp>
 
-class SphereCollider
+class PlaneCollider
 {
 private:
 public:
-    float radius;
     Transform* transform;
-    SphereCollider(Transform* transform, float rad) {
+    glm::vec3 normal;
+    PlaneCollider(Transform* transform, glm::vec3 normal){
         this->transform = transform;
-        this->radius = rad;
-    }; 
+        this->normal = normal;
+    }
 };
+
+

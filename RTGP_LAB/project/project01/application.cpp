@@ -40,6 +40,10 @@ positive Z axis points "outside" the screen
 #include <utils/model.h>
 #include <utils/camera.h>
 #include <utils/performanceCalculator.h>
+#include <utils/Scene.h>
+#include <colliders/PlaneCollider.h>
+#include <colliders/sphereCollider.h>
+#include <colliders/CapsuleCollider.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -141,7 +145,7 @@ unsigned int prints = 0;
 bool pinned = true;
 ConstraintType springType = POSITIONAL;
 float gravity = -9.8f;
-float mass = 1.0f;
+float mass = 0.1f;
 float K = 0.5f;
 float U = 0.1f;
 int constraintIterations = 10;
@@ -168,6 +172,8 @@ Transform sphereTransform;
 
 Cloth* c;
 
+Scene scene;
+
 int main()
 {
     if(SetupOpenGL() == -1)
@@ -191,9 +197,6 @@ int main()
 
     // Model and Normal transformation matrices for the objects in the scene: we set to identity
     sphereTransform = Transform(view);
-    SphereCollider sphereCollider(&sphereTransform, 1.0f);
-    std::vector<SphereCollider> sphereColliders;
-    sphereColliders.push_back(sphereCollider);
     positionZ = 0.8f;
     GLint directionZ = 1;
 
@@ -217,6 +220,12 @@ int main()
     //physicsSimulation.AddObjectToPhysicWorld(&sphereTransform, 1.0f, false);
 
     pausePhysics = false;
+
+    PlaneCollider planeCollider(&planeTransform, glm::vec3(0.0f, 1.0f, 0.0f));
+    SphereCollider sphereCollider(&sphereTransform, 1.0f);
+
+    scene.planes.emplace_back(planeCollider);
+    scene.spheres.emplace_back(sphereCollider);
 
     // Rendering loop: this code is executed at each frame
     while(!glfwWindowShouldClose(window))
@@ -272,8 +281,9 @@ int main()
             case 1:
                 // springType = PHYSICAL;
                 K = 15.0f;
-                gravity = -0.8f;
+                gravity = -9.8f;
                 constraintIterations = 5;
+                constraintLevel = 2;
                 break;
             case 2:
                 // springType = POSITIONAL_ADVANCED;
@@ -284,7 +294,7 @@ int main()
             case 3:
                 // springType = PHYSICAL_ADVANCED;
                 K = 3.5f;
-                gravity = -0.8f;
+                gravity = -9.8f;
                 constraintIterations = 1;
                 break;
             default:
@@ -421,7 +431,6 @@ int main()
         } else if(pKeyPressed && !once){
             once = true; 
         }
-
 
         // OBJECTS
         RenderScene1(illumination_shader, projection, view, planeTransform, planeModel, sphereTransform, sphereModel);
@@ -746,12 +755,12 @@ void MoveSphere(glm::vec3 direction, int action){
     spherePosition += direction;
 
     // Move pinned particles
-    for(int i = 0; i < clothDim; i++){
-        for(int j = 0; j < clothDim; j++){
-            Particle* p = (*c).getParticle(i, j, clothDim);
-            if(p->movable == false){
-                p->pos += direction;
-            }
-        }
-    }
+    // for(int i = 0; i < clothDim; i++){
+    //     for(int j = 0; j < clothDim; j++){
+    //         Particle* p = (*c).getParticle(i, j, clothDim);
+    //         if(p->movable == false){
+    //             p->pos += direction;
+    //         }
+    //     }
+    // }
 }

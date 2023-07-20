@@ -1,8 +1,12 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include <colliders/sphereCollider.h>
 #include <physicsSimulation/physicsSimulation.h>
+
+#include <utils/Scene.h>
+#include <colliders/PlaneCollider.h>
+#include <colliders/sphereCollider.h>
+#include <colliders/CapsuleCollider.h>
 
 /* Some physics constants */
 #define DAMPING 0.02f // how much to damp the cloth simulation each frame
@@ -100,6 +104,7 @@ public:
 
 	void SphereCollision(glm::mat4 clothModelMatrix, const glm::vec3 centerWorld,const float radius){
 		glm::vec3 v = glm::vec3(glm::vec4(this->getPos(), 1.0f) * clothModelMatrix) - centerWorld;
+
 		float l = glm::length(v);
 
 		if (l < (radius * COLLISION_OFFSET_MULTIPLIER)) // if the particle is inside the ball
@@ -107,7 +112,19 @@ public:
 			this->offsetPos(glm::normalize(v) * (((radius * COLLISION_OFFSET_MULTIPLIER)-l))); // project the particle to the surface of the ball
 		}
 	}
+	void SphereCollision(const glm::vec3 centerWorld,const float radius){
+		glm::vec3 v = pos - centerWorld;
 
+		float l = glm::length(v);
+
+		if (l < (radius * COLLISION_OFFSET_MULTIPLIER)) // if the particle is inside the ball
+		{
+			this->offsetPos(glm::normalize(v) * (((radius * COLLISION_OFFSET_MULTIPLIER)-l))); // project the particle to the surface of the ball
+		}
+	}
+	void SphereCollision(SphereCollider* SphereCollider){
+		SphereCollision(SphereCollider->transform->GetTranslationVector(), SphereCollider->radius);
+	}
 
 	void PlaneCollision(const float yLimit){
 		if (this->pos.y < yLimit)
@@ -126,6 +143,10 @@ public:
 			this->offsetPos(reposition);
 		}
 	}
+	void PlaneCollision(PlaneCollider* planeCollider){
+		PlaneCollision(planeCollider->normal, planeCollider->transform->GetTranslationVector());
+	}
+
 	void CapsuleCollision(glm::mat4 clothModelMatrix, glm::vec3 p1, glm::vec3 p2, float radius){
 		glm::vec3 posWorld = glm::vec3(glm::vec4(this->getPos(), 1.0f) * clothModelMatrix);
 		glm::vec3 segment = p2 - p1;
@@ -160,6 +181,46 @@ public:
 		}
 
 	}
+	void CapsuleCollision(glm::vec3 p1, glm::vec3 p2, float radius){
+		glm::vec3 posWorld = pos;
+		glm::vec3 segment = p2 - p1;
+		float segmentMagnitude = glm::length(segment);
+
+		glm::vec3 p1_p = posWorld - p1;
+		glm::vec3 p2_p = posWorld - p2;
+		
+		float p1_p_distance = glm::length(p1_p);
+		float p2_p_distance = glm::length(p2_p);
+
+		if(p1_p_distance > radius && p2_p_distance > radius ){
+			return;
+		}
+
+		// Just like a sphere
+		float p1_p_dot_segment = glm::dot(p1_p, segment);
+		if(p1_p_dot_segment >= segmentMagnitude){
+			SphereCollision(p2, radius);
+		} else if (p1_p_dot_segment <= 0.0f){
+			SphereCollision(p1, radius);
+		}
+
+		// distance with segment and angle 90
+		glm::vec3 p = (segment / segmentMagnitude) * p1_p_dot_segment;
+		glm::vec3 distance = p - p1_p_dot_segment;
+		float distanceMagnitude = glm::length(distance);
+
+		if(distanceMagnitude < (radius * COLLISION_OFFSET_MULTIPLIER)){
+			// relocate as sphere
+			this->offsetPos((distance / distanceMagnitude) * ((radius * COLLISION_OFFSET_MULTIPLIER) - distanceMagnitude)); // project the particle to the surface of the ball
+		}
+
+	}
+	void CapsuleCollision(CapsuleCollider* capsuleCollider){
+		CapsuleCollision(capsuleCollider->p1->GetTranslationVector(), capsuleCollider->p2->GetTranslationVector(), capsuleCollider->radius);
+	}
+
+
+
 	void CubeCollision(glm::mat4 clothModelMatrix, const glm::vec3 cubeCenterInWorldSpace, const float edge){
 		float halfEdge = edge * 0.5f;
 		glm::vec3 myPosWorld = glm::vec3(glm::vec4(this->getPos(), 1.0f) * clothModelMatrix);
