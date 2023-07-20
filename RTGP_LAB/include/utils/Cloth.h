@@ -189,10 +189,10 @@ private:
 				getParticle(x+1, y,   dim)->addToNormal(normal);
 				getParticle(x,   y+1, dim)->addToNormal(normal);
 
-				normal = CalculateNormalTriangle(getParticle(x+1, y+1,   dim), getParticle(x+1, y,   dim), getParticle(x,   y+1, dim));
-				getParticle(x+1, y+1, dim)->addToNormal(normal);
-				getParticle(x+1, y  , dim)->addToNormal(normal);
-				getParticle(x,   y+1, dim)->addToNormal(normal);
+				// normal = CalculateNormalTriangle(getParticle(x+1, y+1,   dim), getParticle(x+1, y,   dim), getParticle(x,   y+1, dim));
+				// getParticle(x+1, y+1, dim)->addToNormal(normal);
+				// getParticle(x+1, y  , dim)->addToNormal(normal);
+				// getParticle(x,   y+1, dim)->addToNormal(normal);
 
 			}
 		}	

@@ -110,7 +110,7 @@ glm::vec3 lightPosition = glm::vec3(1.0f, 1.0f, 1.0f);
 // weights for the diffusive, specular and ambient components
 GLfloat Kd = 3.0f;
 // weights for the diffusive, specular and ambient components
-GLfloat Kd_Sphere = 2.0f;
+GLfloat Kd_Sphere = 3.0f;
 // roughness index for GGX shader
 GLfloat alpha = 0.2f;
 // roughness index for GGX shader
@@ -118,7 +118,7 @@ GLfloat alpha_Sphere = 0.5f;
 // Fresnel reflectance at 0 degree (Schlik's approximation)
 GLfloat F0 = 0.9f;
 // Fresnel reflectance at 0 degree (Schlik's approximation)
-GLfloat F0_Sphere = 0.85f;
+GLfloat F0_Sphere = 0.9f;
 
 vector<GLint> textureID;
 GLfloat repeat = 1.0f;  // UV repetitions
@@ -351,8 +351,8 @@ int main()
         force_shader.Use();
         //normal_shader.Use();
 
-        glUniformMatrix4fv(glGetUniformLocation(force_shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
-        glUniformMatrix4fv(glGetUniformLocation(force_shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
+        // glUniformMatrix4fv(glGetUniformLocation(normal_shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
+        // glUniformMatrix4fv(glGetUniformLocation(normal_shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
 
         //cloth.windForce(glm::vec3(0.0f, 0.0f, 1.0f)*3.5f);
         clothTransform.Transformation(
@@ -383,7 +383,6 @@ int main()
                 }
             }
         
-            //cloth.PhysicsSteps(deltaTime, (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
         }
         glUniformMatrix4fv(glGetUniformLocation(force_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.modelMatrix));
         glUniformMatrix3fv(glGetUniformLocation(force_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.normalMatrix));
@@ -454,6 +453,7 @@ int SetupOpenGL(){
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     // we set if the window is resizable
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+    //glEnable(GL_CULL_FACE);
 
     // we create the application's window
     window = glfwCreateWindow(screenWidth, screenHeight, "Application", nullptr, nullptr);
