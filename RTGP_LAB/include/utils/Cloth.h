@@ -195,9 +195,19 @@ private:
 
 			}
 		}	
+
+		for(int x = 0; x < dim-1; x++)
+		{
+			for(int y=0; y < dim-1; y++)
+			{
+				getParticle(x,   y,   dim)->normal = glm::normalize(getParticle(x,   y,   dim)->normal);
+			}
+		}	
 	}
 	void UpdateBuffers(){
 		glBindVertexArray(this->VAO);
+		// glBufferSubData(GL_ARRAY_BUFFER, 0, this->dim * this->dim * sizeof(particles[0]), &particles);
+
 		glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
         glBufferData(GL_ARRAY_BUFFER, this->dim * this->dim * sizeof(Particle), this->particles.data(), GL_DYNAMIC_DRAW);
 		

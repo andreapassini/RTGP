@@ -109,12 +109,12 @@ glm::vec3 lightPosition = glm::vec3(1.0f, 1.0f, 1.0f);
 
 // weights for the diffusive, specular and ambient components
 GLfloat Kd = 3.0f;
-// weights for the diffusive, specular and ambient components
-GLfloat Kd_Sphere = 3.0f;
-// roughness index for GGX shader
+// weights for the diffusive, specular    and ambient components
+GLfloat Kd_Sphere = 4.0f;
+// roughness index for GGX shader  
 GLfloat alpha = 0.2f;
 // roughness index for GGX shader
-GLfloat alpha_Sphere = 0.5f;
+GLfloat alpha_Sphere = 0.35f;
 // Fresnel reflectance at 0 degree (Schlik's approximation)
 GLfloat F0 = 0.9f;
 // Fresnel reflectance at 0 degree (Schlik's approximation)
