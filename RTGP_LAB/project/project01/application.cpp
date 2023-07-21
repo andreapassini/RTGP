@@ -155,7 +155,12 @@ int collisionIterations = 10;
 unsigned int windowSize = 10;
 unsigned int overlap = 3;
 
-glm::vec3 spherePosition(3.0f, -4.5f, -2.5f);
+glm::vec3 spherePosition(0.0f, 2.0f, 0.0f);
+
+glm::vec3 spherePosition1(0.0f, 2.0f, 0.0f);
+glm::vec3 spherePosition2(0.0f, 0.0f, 0.0f);
+
+
 glm::vec3 cubePosition(3.0f, -4.5f, -2.5f);
 glm::vec3 planePosition(0.0f, -10.0f, 0.0f);
 
@@ -189,6 +194,8 @@ int main()
     glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 7.0f), glm::vec3(0.0f, 0.0f, -7.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     Model sphereModel("../../models/sphere.obj");
+    Model sphereModel1("../../models/sphere.obj");
+    Model sphereModel2("../../models/sphere.obj");
     Model planeModel("../../models/plane.obj");
     Model cubeModel("../../models/cube.obj");
 
@@ -203,6 +210,9 @@ int main()
     Transform planeTransform(view);
 
     Transform cubeTransform(view);
+
+    Transform sphereTransform1(view);
+    Transform sphereTransform2(view);
 
     Transform clothTransform(view);
     Cloth cloth(clothDim, particleOffset, startingPosition, &clothTransform, pinned, springType, K, U, constraintIterations, gravity, mass, collisionIterations, constraintLevel);
@@ -222,10 +232,12 @@ int main()
     pausePhysics = false;
 
     PlaneCollider planeCollider(&planeTransform, glm::vec3(0.0f, 1.0f, 0.0f));
-    SphereCollider sphereCollider(&sphereTransform, 1.0f);
+    //SphereCollider sphereCollider(&sphereTransform, 1.0f);
+    CapsuleCollider capsuleCollider(&sphereTransform1, &sphereTransform2, 1.0f);
 
     scene.planes.push_back(&planeCollider);
-    scene.spheres.push_back(&sphereCollider);
+    //scene.spheres.push_back(&sphereCollider);
+    scene.capsules.push_back(&capsuleCollider);
 
     // Rendering loop: this code is executed at each frame
     while(!glfwWindowShouldClose(window))
@@ -431,6 +443,18 @@ int main()
         } else if(pKeyPressed && !once){
             once = true; 
         }
+
+        sphereTransform1.Transformation(
+            glm::vec3(1.0f),
+            0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
+            spherePosition1,
+            view);
+
+        sphereTransform2.Transformation(
+            glm::vec3(1.0f),
+            0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
+            spherePosition2,
+            view);
 
         // OBJECTS
         RenderScene1(illumination_shader, projection, view, planeTransform, planeModel, sphereTransform, sphereModel);
@@ -693,7 +717,7 @@ void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transfor
     glUniform1i(textureLocation, 0);
     glUniform1f(repeatLocation, repeat);
 
-    // Move the Sphere
+    // Sphere
     sphereTransform.Transformation(
         glm::vec3(1.0f),
         0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
@@ -708,6 +732,7 @@ void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transfor
     glBindTexture(GL_TEXTURE_2D, textureID[1]);
     glUniform1i(textureLocation, 1);
     glUniform1f(repeatLocation, 80.0);
+
     
     // PLANE
     planeTransform.Transformation(
@@ -753,6 +778,9 @@ void MoveSphere(glm::vec3 direction, int action){
     direction *= sphereSpeed * deltaTime;
 
     spherePosition += direction;
+
+    spherePosition1 += direction;
+    spherePosition2 += direction;
 
     // Move pinned particles
     // for(int i = 0; i < clothDim; i++){

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <utils/Transform.h>
+#include <colliders/collider.h>
 #include <glm/glm.hpp>
 
 class CapsuleCollider

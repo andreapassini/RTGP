@@ -192,16 +192,13 @@ public:
 		float p1_p_distance = glm::length(p1_p);
 		float p2_p_distance = glm::length(p2_p);
 
-		if(p1_p_distance > radius && p2_p_distance > radius ){
-			return;
-		}
-
 		// Just like a sphere
 		float p1_p_dot_segment = glm::dot(p1_p, segment);
-		if(p1_p_dot_segment >= segmentMagnitude){
-			SphereCollision(p2, radius);
-		} else if (p1_p_dot_segment <= 0.0f){
+		float p2_p_dot_segment = glm::dot(p2_p, -segment);
+		if(p1_p_dot_segment <= 0.0f){
 			SphereCollision(p1, radius);
+		} else if (p2_p_dot_segment <= 0.0f){
+			SphereCollision(p2, radius);
 		}
 
 		// distance with segment and angle 90

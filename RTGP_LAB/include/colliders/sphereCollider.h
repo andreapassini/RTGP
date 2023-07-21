@@ -7,8 +7,8 @@ class SphereCollider
 {
 private:
 public:
-    float radius;
     Transform* transform;
+    float radius;
     SphereCollider(Transform* transform, float rad) {
         this->transform = transform;
         this->radius = rad;
