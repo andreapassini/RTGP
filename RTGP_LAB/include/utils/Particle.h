@@ -134,10 +134,10 @@ public:
 		}
 	}
 	void PlaneCollision(const glm::vec3 normal, const glm::vec3 pointOnPlane){
-		glm::vec3 distance = normal - this->pos;
+		glm::vec3 distance = this->pos - pointOnPlane;
 		float dot = glm::dot(distance, normal);
 
-		if(dot < 0.0f){
+		if(dot <= 0.0f){
 			// under the plane
 			glm::vec3 reposition = normal * (-1 * dot * COLLISION_OFFSET_MULTIPLIER);
 			this->offsetPos(reposition);

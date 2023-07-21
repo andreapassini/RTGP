@@ -4,16 +4,14 @@
 #include <colliders/PlaneCollider.h>
 #include <colliders/sphereCollider.h>
 
-#include <list>
-
 class Scene
 {
 private:
 public:
     
-    std::list<PlaneCollider*> planes;
-    std::list<SphereCollider*> spheres;
-    std::list<CapsuleCollider*> capsules;
+    vector<PlaneCollider*> planes;
+    vector<SphereCollider*> spheres;
+    vector<CapsuleCollider*> capsules;
 
     Scene(){
     }

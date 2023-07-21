@@ -224,8 +224,8 @@ int main()
     PlaneCollider planeCollider(&planeTransform, glm::vec3(0.0f, 1.0f, 0.0f));
     SphereCollider sphereCollider(&sphereTransform, 1.0f);
 
-    scene.planes.emplace_back(planeCollider);
-    scene.spheres.emplace_back(sphereCollider);
+    scene.planes.push_back(&planeCollider);
+    scene.spheres.push_back(&sphereCollider);
 
     // Rendering loop: this code is executed at each frame
     while(!glfwWindowShouldClose(window))
@@ -385,9 +385,9 @@ int main()
                 physicsSimulation.AddForceToAll(glm::vec3(0.0f, gravity, 0.0f));
                 cloth.AddGravityForce();
                 physicsSimulation.FixedTimeStep(currentTime);
-                //cloth.PhysicsSteps(sphereCollider, planePosition.y + 0.1f);
                 //cloth.PhysicsSteps(deltaTime, (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
-                cloth.PhysicsSteps((glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
+                //cloth.PhysicsSteps((glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
+                cloth.PhysicsSteps(&scene);
                 physIter++;
 
                 if(physIter > maxIter){
