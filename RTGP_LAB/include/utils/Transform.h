@@ -56,6 +56,7 @@ public:
     {
         ResetToIdentity();
 
+
         Translate(translationVector);
         Rotate(angleInGrades, axis);
         Scale(scaleVector);
@@ -83,7 +84,7 @@ public:
 
         Translate(this->translation);
         Rotate(this->rotation.GetAngleDegree(), this->rotation.GetAxis());
-        Scale(glm::vec3(this->scale));
+        Scale(glm::vec3(this->scale));        
 
         InverseTranspose(this->viewMatrix);
     }
@@ -114,20 +115,26 @@ public:
 
     void Transform::Scale(glm::vec3 &scaleVector){
         this->modelMatrix = glm::scale(this->modelMatrix, scaleVector);
+        this->scale = scaleVector.x;
     }
     void Transform::Scale(glm::f32 x, glm::f32 y, glm::f32 z){
         this->modelMatrix = glm::scale(this->modelMatrix, glm::vec3(x, y, z));
+        this->scale = x;
     }
 
     void Transform::Rotate(glm::f32 angleInGrades, glm::vec3 &axis){
         this->modelMatrix = glm::rotate(this->modelMatrix, glm::radians(angleInGrades), axis);
+        Quaternion q (axis, angleInGrades);
+        this->rotation = q;
     }
 
     void Transform::Translate(glm::vec3 &translationVector){
         this->modelMatrix = glm::translate(this->modelMatrix, translationVector);
+        this->translation = translationVector;
     }
     void Transform::Translate(glm::f32 x, glm::f32 y, glm::f32 z){
         this->modelMatrix = glm::translate(this->modelMatrix, glm::vec3(x, y, z));
+        this->translation = glm::vec3(x, y, z);
     }
 
     void Transform::InverseTranspose(glm::mat4 &viewMatrix){

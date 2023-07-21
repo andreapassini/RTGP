@@ -40,4 +40,5 @@ void main()
     gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0f);
 		// transformations are applied to the normal
     N = normalize(normalMatrix * normal);
+    //N = normalize(normal);
 }

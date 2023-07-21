@@ -112,7 +112,7 @@ public:
 			this->offsetPos(glm::normalize(v) * (((radius * COLLISION_OFFSET_MULTIPLIER)-l))); // project the particle to the surface of the ball
 		}
 	}
-	void SphereCollision(const glm::vec3 centerWorld,const float radius){
+	void SphereCollision(const glm::vec3 centerWorld, const float radius){
 		glm::vec3 v = pos - centerWorld;
 
 		float l = glm::length(v);
@@ -147,45 +147,10 @@ public:
 		PlaneCollision(planeCollider->normal, planeCollider->transform->GetTranslationVector());
 	}
 
-	void CapsuleCollision(glm::mat4 clothModelMatrix, glm::vec3 p1, glm::vec3 p2, float radius){
-		glm::vec3 posWorld = glm::vec3(glm::vec4(this->getPos(), 1.0f) * clothModelMatrix);
-		glm::vec3 segment = p2 - p1;
-		float segmentMagnitude = glm::length(segment);
-
-		glm::vec3 p1_p = posWorld - p1;
-		glm::vec3 p2_p = posWorld - p2;
-		
-		float p1_p_distance = glm::length(p1_p);
-		float p2_p_distance = glm::length(p2_p);
-
-		if(p1_p_distance > radius && p2_p_distance > radius ){
-			return;
-		}
-
-		// Just like a sphere
-		float p1_p_dot_segment = glm::dot(p1_p, segment);
-		if(p1_p_dot_segment >= segmentMagnitude){
-			SphereCollision(clothModelMatrix, p2, radius);
-		} else if (p1_p_dot_segment <= 0.0f){
-			SphereCollision(clothModelMatrix, p1, radius);
-		}
-
-		// distance with segment and angle 90
-		glm::vec3 p = (segment / segmentMagnitude) * p1_p_dot_segment;
-		glm::vec3 distance = p - p1_p_dot_segment;
-		float distanceMagnitude = glm::length(distance);
-
-		if(distanceMagnitude < (radius * COLLISION_OFFSET_MULTIPLIER)){
-			// relocate as sphere
-			this->offsetPos((distance / distanceMagnitude) * ((radius * COLLISION_OFFSET_MULTIPLIER) - distanceMagnitude)); // project the particle to the surface of the ball
-		}
-
-	}
-	void 
-	CapsuleCollision(glm::vec3 p1, glm::vec3 p2, float radius){
+	void CapsuleCollision(glm::vec3 p1, glm::vec3 p2, float radius){
 		glm::vec3 posWorld = pos;
-		glm::vec3 segment = p2 - p1;
-		float segmentMagnitude = glm::length(segment);
+		glm::vec3 p1_p2 = p2 - p1;
+		float p1_p2Magnitude = glm::length(p1_p2);
 
 		glm::vec3 p1_p = posWorld - p1;
 		glm::vec3 p2_p = posWorld - p2;
@@ -194,21 +159,31 @@ public:
 		float p2_p_distance = glm::length(p2_p);
 
 		// Just like a sphere
-		float p1_p_dot_segment = glm::dot(p1_p, segment);
-		float p2_p_dot_segment = glm::dot(p2_p, -segment);
-		if(p1_p_dot_segment < 0.0f){
+		float p1_p_dot_segment = glm::dot(p1_p, p1_p2);
+		float p2_p_dot_segment = glm::dot(p2_p, p1_p2);
+		if(p1_p_dot_segment <= 0.0f){
 			SphereCollision(p1, radius);
-		} else if (p2_p_dot_segment < 0.0f){
+		} else if (p2_p_dot_segment <= 0.0f){
 			SphereCollision(p2, radius);
 		}
 
 		// distance with segment and angle 90
-		glm::vec3 p = (segment / segmentMagnitude) * p1_p_dot_segment;
-		glm::vec3 distance = p - p1_p_dot_segment;
+		// glm::vec3 p = (segment / segmentMagnitude) * p1_p_dot_segment;
+		// glm::vec3 distance = p - p1_p_dot_segment;
+		// float distanceMagnitude = glm::length(distance);
+		glm::vec3 posOnSegmentOrthogonal;
+		glm::vec3 distance;
+		
+		if(p1_p_dot_segment > p2_p_dot_segment){
+			posOnSegmentOrthogonal = p1 + (p1_p2 / p1_p2Magnitude) * p1_p_dot_segment;
+		} else{
+			posOnSegmentOrthogonal = p2 + (-p1_p2 / p1_p2Magnitude) * p2_p_dot_segment;
+		}
+		
+		distance = posWorld - posOnSegmentOrthogonal;
 		float distanceMagnitude = glm::length(distance);
 
 		if(distanceMagnitude < (radius * COLLISION_OFFSET_MULTIPLIER)){
-			// relocate as sphere
 			this->offsetPos((distance / distanceMagnitude) * ((radius * COLLISION_OFFSET_MULTIPLIER) - distanceMagnitude)); // project the particle to the surface of the ball
 		}
 

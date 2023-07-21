@@ -88,6 +88,7 @@ void apply_camera_movements();
 void imGuiSetup(GLFWwindow *window);
 void PrintVec3(glm::vec3* vec);
 void MoveSphere(glm::vec3 direction, int action);
+void RotateSphere(float angle, int action);
 
 bool keys[1024];
 bool R_KEY = false;
@@ -158,7 +159,7 @@ unsigned int overlap = 3;
 glm::vec3 spherePosition(0.0f, 2.0f, 0.0f);
 
 glm::vec3 spherePosition1(0.0f, 0.0f, 0.0f);
-glm::vec3 spherePosition2(0.0f, 2.0f, 0.0f);
+glm::vec3 spherePosition2(0.0f, 0.0f, 0.0f);
 
 
 glm::vec3 cubePosition(3.0f, -4.5f, -2.5f);
@@ -172,6 +173,13 @@ float sphereMinSpeed = 1.0f;
 float sphereMaxSpeed = 15.0f;
 float sphereSpeed = sphereMinSpeed;
 float sphereAccel = 3.0f;
+
+float sphereMinAngularVelocity = 25.0f;
+float sphereMaxAngularVelocity = 150.0f;
+float sphereAngularVelocity = 0.0f;
+float sphereAngularAccel = 10.0f;
+
+float sphereRotation = 0.0f;
 
 Transform sphereTransform;
 
@@ -233,11 +241,15 @@ int main()
 
     PlaneCollider planeCollider(&planeTransform, glm::vec3(0.0f, 1.0f, 0.0f));
     SphereCollider sphereCollider(&sphereTransform, 1.0f);
-    CapsuleCollider capsuleCollider(&sphereTransform1, &sphereTransform2, 1.0f);
+    SphereCollider sphereCollider1(&sphereTransform1, 1.0f);
+    SphereCollider sphereCollider2(&sphereTransform2, 1.0f);
+
+    CapsuleCollider capsuleCollider(&sphereTransform, &sphereTransform1, 1.0f);
 
     scene.planes.push_back(&planeCollider);
-    //scene.spheres.push_back(&sphereCollider);
-    scene.capsules.push_back(&capsuleCollider);
+    scene.spheres.push_back(&sphereCollider1);
+    scene.spheres.push_back(&sphereCollider2);
+    //scene.capsules.push_back(&capsuleCollider);
 
     // Rendering loop: this code is executed at each frame
     while(!glfwWindowShouldClose(window))
@@ -457,7 +469,7 @@ int main()
             view);
 
         // OBJECTS
-        RenderScene1(illumination_shader, projection, view, planeTransform, planeModel, sphereTransform, sphereModel, sphereTransform1, sphereModel1);
+        RenderScene1(illumination_shader, projection, view, planeTransform, planeModel, sphereTransform1, sphereModel1, sphereTransform2, sphereModel2);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -609,10 +621,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         MoveSphere(-glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
     } 
     if(key == GLFW_KEY_LEFT){
-        MoveSphere(-camera.Right, action);
+        RotateSphere(-1.0f, action);
     } 
     if(key == GLFW_KEY_RIGHT){
-        MoveSphere(camera.Right, action);
+        RotateSphere(1.0f, action);
     } 
     if(key == GLFW_KEY_SPACE){
         MoveSphere(camera.WorldUp, action);
@@ -720,7 +732,7 @@ void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transfor
     // Sphere
     sphereTransform.Transformation(
         glm::vec3(1.0f),
-        0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
+        sphereRotation, glm::vec3(0.0f, 1.0f, 0.0f),
         spherePosition,
         view);
     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.modelMatrix));
@@ -730,7 +742,7 @@ void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transfor
     // Sphere
     sphereTra1.Transformation(
         glm::vec3(1.0f),
-        0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
+        sphereRotation, glm::vec3(0.0f, 1.0f, 0.0f),
         spherePosition1,
         view);
     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTra1.modelMatrix));
@@ -800,4 +812,17 @@ void MoveSphere(glm::vec3 direction, int action){
     //         }
     //     }
     // }
+}
+void RotateSphere(float angle, int action){
+    if(action == GLFW_PRESS){
+        sphereAngularVelocity = sphereMinAngularVelocity;
+    }
+    if(action == GLFW_REPEAT){
+        sphereAngularVelocity += sphereAngularVelocity * sphereAngularAccel * deltaTime;
+        if(sphereAngularVelocity > sphereMaxAngularVelocity){
+            sphereAngularVelocity = sphereMaxAngularVelocity;
+        }
+    }
+    std::cout << "Rot: " << sphereAngularVelocity << std::endl;
+    sphereRotation += angle * sphereAngularVelocity * deltaTime;
 }
