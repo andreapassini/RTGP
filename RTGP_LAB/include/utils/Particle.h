@@ -181,7 +181,8 @@ public:
 		}
 
 	}
-	void CapsuleCollision(glm::vec3 p1, glm::vec3 p2, float radius){
+	void 
+	CapsuleCollision(glm::vec3 p1, glm::vec3 p2, float radius){
 		glm::vec3 posWorld = pos;
 		glm::vec3 segment = p2 - p1;
 		float segmentMagnitude = glm::length(segment);
@@ -195,9 +196,9 @@ public:
 		// Just like a sphere
 		float p1_p_dot_segment = glm::dot(p1_p, segment);
 		float p2_p_dot_segment = glm::dot(p2_p, -segment);
-		if(p1_p_dot_segment <= 0.0f){
+		if(p1_p_dot_segment < 0.0f){
 			SphereCollision(p1, radius);
-		} else if (p2_p_dot_segment <= 0.0f){
+		} else if (p2_p_dot_segment < 0.0f){
 			SphereCollision(p2, radius);
 		}
 

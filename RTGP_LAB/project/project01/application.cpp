@@ -78,7 +78,7 @@ GLuint screenWidth = 1200, screenHeight = 900;
 int SetupOpenGL();
 void DebugLogStatus();
 
-void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transform &planeTransform, Model &planeModel, Transform &sphereTransform, Model &sphereModel);
+void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transform &planeTransform, Model &planeModel, Transform &sphereTransform, Model &sphereModel, Transform &sphereTra1, Model &sphereModel1);
 
 GLint LoadTexture(const char* path);
 
@@ -157,8 +157,8 @@ unsigned int overlap = 3;
 
 glm::vec3 spherePosition(0.0f, 2.0f, 0.0f);
 
-glm::vec3 spherePosition1(0.0f, 2.0f, 0.0f);
-glm::vec3 spherePosition2(0.0f, 0.0f, 0.0f);
+glm::vec3 spherePosition1(0.0f, 0.0f, 0.0f);
+glm::vec3 spherePosition2(0.0f, 2.0f, 0.0f);
 
 
 glm::vec3 cubePosition(3.0f, -4.5f, -2.5f);
@@ -232,7 +232,7 @@ int main()
     pausePhysics = false;
 
     PlaneCollider planeCollider(&planeTransform, glm::vec3(0.0f, 1.0f, 0.0f));
-    //SphereCollider sphereCollider(&sphereTransform, 1.0f);
+    SphereCollider sphereCollider(&sphereTransform, 1.0f);
     CapsuleCollider capsuleCollider(&sphereTransform1, &sphereTransform2, 1.0f);
 
     scene.planes.push_back(&planeCollider);
@@ -457,7 +457,7 @@ int main()
             view);
 
         // OBJECTS
-        RenderScene1(illumination_shader, projection, view, planeTransform, planeModel, sphereTransform, sphereModel);
+        RenderScene1(illumination_shader, projection, view, planeTransform, planeModel, sphereTransform, sphereModel, sphereTransform1, sphereModel1);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -686,7 +686,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
       camera.ProcessMouseMovement(xoffset, yoffset);
 
 }
-void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transform &planeTransform, Model &planeModel, Transform &sphereTransform, Model &sphereModel){
+void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transform &planeTransform, Model &planeModel, Transform &sphereTransform, Model &sphereModel, Transform &sphereTra1, Model &sphereModel1){
 
     shader.Use();
 
@@ -727,6 +727,15 @@ void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transfor
     glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.normalMatrix));
     sphereModel.Draw();
 
+    // Sphere
+    sphereTra1.Transformation(
+        glm::vec3(1.0f),
+        0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
+        spherePosition1,
+        view);
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTra1.modelMatrix));
+    glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTra1.normalMatrix));
+    sphereModel1.Draw();
     
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, textureID[1]);
