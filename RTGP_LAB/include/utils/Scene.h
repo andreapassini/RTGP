@@ -3,7 +3,6 @@
 #include <colliders/CapsuleCollider.h>
 #include <colliders/PlaneCollider.h>
 #include <colliders/sphereCollider.h>
-#include <utils/gameObject.h>
 
 class Scene
 {
@@ -14,10 +13,8 @@ public:
     vector<SphereCollider*> spheres;
     vector<CapsuleCollider*> capsules;
 
-    vector<GameObject*> objects;
-
     Scene(){
-    };
+    }
     ~Scene(){
     };
 };
