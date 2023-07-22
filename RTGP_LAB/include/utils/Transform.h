@@ -174,7 +174,7 @@ public:
         return glm::inverseTranspose(glm::mat3(viewMatrix * GetModelMatrix()));
     }
 
-    glm::vec3 apply(const glm::vec3& p) const{
-        return rotate.apply(p.scaled(scale)) + translate;
+    glm::vec3 Apply(const glm::vec3& p) const{
+        return this->rotation.Apply(p * this->scale) + this->translation;
     }
 };
