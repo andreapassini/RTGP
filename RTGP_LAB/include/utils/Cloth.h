@@ -22,7 +22,6 @@
 class Cloth
 {
 private:
-	Transform *transform;
 	int dim; // number of particles in "width" direction
 	// total number of particles is dim*dim
 
@@ -245,6 +244,8 @@ private:
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 public:
+	Transform *transform;
+
 	std::vector<Particle> particles; // all particles that are part of this cloth
 	float K;
 	float U;
@@ -500,6 +501,16 @@ public:
 
 	void Draw()
 	{
+		for(int i=0 ; i<3 ; i++)
+		{
+			if(this->particles[0 + i ].movable)
+				this->particles[0 + i ].pos = transform->apply(this->particles[0 + i ].pos);
+
+			if(this->particles[0 + (dim - 1 -i)].movable)
+				this->particles[0 + (dim - 1 -i)].pos = transform->apply(this->particles[0 + (dim - 1 -i)].pos);
+		}
+
+
 		//SetUp();
 		UpdateNormals();
 		UpdateBuffers();
