@@ -621,10 +621,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         MoveSphere(-glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
     } 
     if(key == GLFW_KEY_LEFT){
-        RotateSphere(-1.0f, action);
+        MoveSphere(-camera.Right, action);
     } 
     if(key == GLFW_KEY_RIGHT){
-        RotateSphere(1.0f, action);
+        MoveSphere(camera.Right, action);
     } 
     if(key == GLFW_KEY_SPACE){
         MoveSphere(camera.WorldUp, action);
