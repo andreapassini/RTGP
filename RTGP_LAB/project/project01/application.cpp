@@ -78,7 +78,7 @@ GLuint screenWidth = 1200, screenHeight = 900;
 int SetupOpenGL();
 void DebugLogStatus();
 
-void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transform &planeTransform, Model &planeModel, Transform &sphereTransform, Model &sphereModel, Transform &sphereTra1, Model &sphereModel1);
+void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transform &planeTransform, Model &planeModel, Transform &sphereTransform, Model &sphereModel, Transform &sphereTra1, Model &sphereModel1, Transform &sphereTra2, Model &sphereModel2);
 
 GLint LoadTexture(const char* path);
 
@@ -158,8 +158,8 @@ unsigned int overlap = 3;
 
 glm::vec3 spherePosition(0.0f, 2.0f, 0.0f);
 
-glm::vec3 spherePosition1(0.0f, 0.0f, 0.0f);
-glm::vec3 spherePosition2(0.0f, 0.0f, 0.0f);
+glm::vec3 spherePosition1(0.0f, 2.0f, 0.0f);
+glm::vec3 spherePosition2(5.0f, 2.0f, 0.0f);
 
 
 glm::vec3 cubePosition(3.0f, -4.5f, -2.5f);
@@ -186,6 +186,9 @@ Transform sphereTransform;
 Cloth* c;
 
 Scene scene;
+glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 7.0f), glm::vec3(0.0f, 0.0f, -7.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+Transform sphereTransform1(view);
+Transform sphereTransform2(view);
 
 int main()
 {
@@ -199,7 +202,6 @@ int main()
 
     glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);
     // View matrix (=camera): position, view direction, camera "up" vector
-    glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 7.0f), glm::vec3(0.0f, 0.0f, -7.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     Model sphereModel("../../models/sphere.obj");
     Model sphereModel1("../../models/sphere.obj");
@@ -219,8 +221,6 @@ int main()
 
     Transform cubeTransform(view);
 
-    Transform sphereTransform1(view);
-    Transform sphereTransform2(view);
 
     Transform clothTransform(view);
     Cloth cloth(clothDim, particleOffset, startingPosition, &clothTransform, pinned, springType, K, U, constraintIterations, gravity, mass, collisionIterations, constraintLevel);
@@ -240,15 +240,15 @@ int main()
     pausePhysics = false;
 
     PlaneCollider planeCollider(&planeTransform, glm::vec3(0.0f, 1.0f, 0.0f));
-    SphereCollider sphereCollider(&sphereTransform, 1.0f);
+    //SphereCollider sphereCollider(&sphereTransform, 1.0f);
     SphereCollider sphereCollider1(&sphereTransform1, 1.0f);
     SphereCollider sphereCollider2(&sphereTransform2, 1.0f);
 
     CapsuleCollider capsuleCollider(&sphereTransform, &sphereTransform1, 1.0f);
 
-    scene.planes.push_back(&planeCollider);
-    scene.spheres.push_back(&sphereCollider1);
-    scene.spheres.push_back(&sphereCollider2);
+    // scene.planes.push_back(&planeCollider);
+    // scene.spheres.push_back(&sphereCollider1);
+    // scene.spheres.push_back(&sphereCollider2);
     //scene.capsules.push_back(&capsuleCollider);
 
     // Rendering loop: this code is executed at each frame
@@ -469,7 +469,10 @@ int main()
             view);
 
         // OBJECTS
-        RenderScene1(illumination_shader, projection, view, planeTransform, planeModel, sphereTransform1, sphereModel1, sphereTransform2, sphereModel2);
+        RenderScene1(illumination_shader, projection, view, planeTransform, planeModel, 
+        sphereTransform,  sphereModel,
+        sphereTransform1, sphereModel1, 
+        sphereTransform2, sphereModel2);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -621,10 +624,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         MoveSphere(-glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
     } 
     if(key == GLFW_KEY_LEFT){
-        RotateSphere(-1.0f, action);
+        MoveSphere(-camera.Right, action);
     } 
     if(key == GLFW_KEY_RIGHT){
-        RotateSphere(1.0f, action);
+        MoveSphere(camera.Right, action);
     } 
     if(key == GLFW_KEY_SPACE){
         MoveSphere(camera.WorldUp, action);
@@ -698,7 +701,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
       camera.ProcessMouseMovement(xoffset, yoffset);
 
 }
-void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transform &planeTransform, Model &planeModel, Transform &sphereTransform, Model &sphereModel, Transform &sphereTra1, Model &sphereModel1){
+void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transform &planeTransform, Model &planeModel, Transform &sphereTransform, Model &sphereModel, Transform &sphereTra1, Model &sphereModel1, Transform &sphereTra2, Model &sphereModel2){
 
     shader.Use();
 
@@ -748,6 +751,15 @@ void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transfor
     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTra1.modelMatrix));
     glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTra1.normalMatrix));
     sphereModel1.Draw();
+
+    sphereTra2.Transformation(
+        glm::vec3(1.0f),
+        sphereRotation, glm::vec3(0.0f, 1.0f, 0.0f),
+        spherePosition2,
+        view);
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTra2.modelMatrix));
+    glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTra2.normalMatrix));
+    sphereModel2.Draw();
     
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, textureID[1]);
@@ -804,14 +816,14 @@ void MoveSphere(glm::vec3 direction, int action){
     spherePosition2 += direction;
 
     // Move pinned particles
-    // for(int i = 0; i < clothDim; i++){
-    //     for(int j = 0; j < clothDim; j++){
-    //         Particle* p = (*c).getParticle(i, j, clothDim);
-    //         if(p->movable == false){
-    //             p->pos += direction;
-    //         }
-    //     }
-    // }
+    for(int i = 0; i < clothDim; i++){
+        for(int j = 0; j < clothDim; j++){
+            Particle* p = (*c).getParticle(i, j, clothDim);
+            if(p->movable == false){
+                p->pos += direction;
+            }
+        }
+    }
 }
 void RotateSphere(float angle, int action){
     if(action == GLFW_PRESS){
@@ -825,4 +837,19 @@ void RotateSphere(float angle, int action){
     }
     std::cout << "Rot: " << sphereAngularVelocity << std::endl;
     sphereRotation += angle * sphereAngularVelocity * deltaTime;
+
+    // Quaternion q(glm::vec3(0.0f, 1.0f, 0.0f),  sphereRotation);
+
+    for(int i = 0; i < clothDim; i++){
+        for(int j = 0; j < clothDim; j++){
+            Particle* p = (*c).getParticle(i, j, clothDim);
+            if(p->movable == false){
+                if(i < 3)
+                    p->pos += sphereTransform1.Apply(p->pos);
+                else
+                    p->pos += sphereTransform2.Apply(p->pos);
+
+            }
+        }
+    }
 }

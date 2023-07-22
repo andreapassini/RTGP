@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Particle.h>
-#include <transform.h>
+#include <utils/Particle.h>
+#include <utils/transform.h>
 #include <utils/model.h>
 #include <colliders/collider.h>
 

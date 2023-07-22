@@ -501,14 +501,14 @@ public:
 
 	void Draw()
 	{
-		for(int i=0 ; i<3 ; i++)
-		{
-			if(!this->particles[0 + i ].movable)
-				this->particles[0 + i ].pos = this->transform->Apply(this->particles[0 + i ].pos);
+		// for(int i=0 ; i<3 ; i++)
+		// {
+		// 	if(!this->particles[0 + i ].movable)
+		// 		this->particles[0 + i ].pos = this->transform->Apply(this->particles[0 + i ].pos);
 
-			if(!this->particles[0 + (dim - 1 -i)].movable)
-				this->particles[0 + (dim - 1 -i)].pos = this->transform->Apply(this->particles[0 + (dim - 1 -i)].pos);
-		}
+		// 	if(!this->particles[0 + (dim - 1 -i)].movable)
+		// 		this->particles[0 + (dim - 1 -i)].pos = this->transform->Apply(this->particles[0 + (dim - 1 -i)].pos);
+		// }
 
 
 		//SetUp();
