@@ -698,6 +698,37 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
       camera.ProcessMouseMovement(xoffset, yoffset);
 
 }
+void RenderScene(Shader &shader, Scene &scene){
+    shader.Use();
+
+    // we pass projection and view matrices to the Shader Program
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(*scene.projection));
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(*scene.view));
+
+    // we determine the position in the Shader Program of the uniform variables
+    GLint lightDirLocation = glGetUniformLocation(shader.Program, "lightVector");
+    GLint kdLocation = glGetUniformLocation(shader.Program, "Kd");
+    GLint alphaLocation = glGetUniformLocation(shader.Program, "alpha");
+    GLint f0Location = glGetUniformLocation(shader.Program, "F0");
+
+    // we assign the value to the uniform variables
+    glUniform3fv(lightDirLocation, 1, glm::value_ptr(lightPosition));
+    glUniform1f(kdLocation, Kd);
+    glUniform1f(alphaLocation, alpha);
+    glUniform1f(f0Location, F0);
+
+    // we pass the needed uniforms
+    GLint textureLocation = glGetUniformLocation(shader.Program, "tex");
+    GLint repeatLocation = glGetUniformLocation(shader.Program, "repeat");
+    
+    // OBJECTS
+    // Objects with texture
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, textureID[0]);
+    glUniform1i(textureLocation, 0);
+    glUniform1f(repeatLocation, repeat);
+
+}
 void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transform &planeTransform, Model &planeModel, Transform &sphereTransform, Model &sphereModel, Transform &sphereTra1, Model &sphereModel1){
 
     shader.Use();
