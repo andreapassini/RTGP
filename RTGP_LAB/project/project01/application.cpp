@@ -89,6 +89,9 @@ void imGuiSetup(GLFWwindow *window);
 void PrintVec3(glm::vec3* vec);
 void MoveSphere(glm::vec3 direction, int action);
 void RotateSphere(float angle, int action);
+void ForceBlinnPhongShaderSetup(Shader forceBlinnPhongShader, Transform clothTransform, glm::mat4 projection, glm::mat4 view);
+void ForceGGXShaderSetup(Shader forceGGXShader, Transform clothTransform, glm::mat4 projection, glm::mat4 view);
+void SetUpClothShader(Shader shader, Transform clothTransform, glm::mat4 projection, glm::mat4 view);
 
 bool keys[1024];
 bool R_KEY = false;
@@ -115,7 +118,16 @@ glm::vec3 lightPosition = glm::vec3(1.0f, 1.0f, 1.0f);
 // weights for the diffusive, specular and ambient components
 GLfloat Kd = 3.0f;
 // weights for the diffusive, specular    and ambient components
-GLfloat Kd_Sphere = 4.0f;
+GLfloat Ka_Sphere = 0.5f;
+GLfloat Kd_Sphere = 0.5f;
+GLfloat Ks_Sphere = 0.5f;
+GLfloat shininess = 0.5f;
+
+glm::vec3 ambientColor = glm::vec3(0.2f, 0.2f, 0.2f);
+glm::vec3 specularColor = glm::vec3(1.0f, 1.0f, 1.0f);
+
+int shaderNumber = 0;
+
 // roughness index for GGX shader  
 GLfloat alpha = 0.2f;
 // roughness index for GGX shader
@@ -134,6 +146,7 @@ GLfloat clothColor[] = {0.0f, 31.0f, 0.0f};
 GLfloat coral[] = {1.0f, 0.5f, 0.31f};
 GLfloat planeColor[] = {0.13f, 0.07f, 0.34f};
 
+
 glm::vec3 startingPosition(0.0f, 0.0f, 0.0f);
 
 bool once = true;
@@ -141,8 +154,6 @@ unsigned int iter = 0;
 
 int clothDim = 30;
 float particleOffset = 0.15f;
-bool clothExist = true;
-unsigned int prints = 0;
 bool pinned = true;
 ConstraintType springType = POSITIONAL;
 float gravity = -9.8f;
@@ -283,6 +294,15 @@ int main()
         ImGui::SliderInt("Grid dim", &clothDim, 10, 100);
         ImGui::NewLine;
         ImGui::SliderFloat("Particle offset", &particleOffset, 0.05f, 1.0f);
+        ImGui::NewLine;
+        ImGui::SliderInt("Force Shader to use", &shaderNumber, 0, 2);
+        if(shaderNumber == 0){
+            ImGui::Text("BlinnPhong");
+        } else if(shaderNumber == 1) {
+            ImGui::Text("GGX");
+        } else if(shaderNumber == 2) {
+            ImGui::Text("Normal");
+        }
 
         ImGui::NewLine;
         ImGui::Text("Physic Simulation");
@@ -387,13 +407,6 @@ int main()
 
 
         // CLOTH        
-        force_shader.Use();
-        //normal_shader.Use();
-
-        // glUniformMatrix4fv(glGetUniformLocation(normal_shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
-        // glUniformMatrix4fv(glGetUniformLocation(normal_shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
-
-        //cloth.windForce(glm::vec3(0.0f, 0.0f, 1.0f)*3.5f);
         clothTransform.Transformation(
             glm::vec3(1.0f, 1.0f, 1.0f),
             0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
@@ -423,24 +436,20 @@ int main()
             }
         
         }
-        glUniformMatrix4fv(glGetUniformLocation(force_BlinnPhong_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.modelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(force_BlinnPhong_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.normalMatrix));
-        
-        // we pass projection and view matrices to the Shader Program
-        glUniformMatrix4fv(glGetUniformLocation(force_BlinnPhong_shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
-        glUniformMatrix4fv(glGetUniformLocation(force_BlinnPhong_shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
 
-        // we determine the position in the Shader Program of the uniform variables
-        GLint lightDirLocation = glGetUniformLocation(force_BlinnPhong_shader.Program, "lightVector");
-        GLint kdLocation = glGetUniformLocation(force_BlinnPhong_shader.Program, "Kd");
-        GLint alphaLocation = glGetUniformLocation(force_BlinnPhong_shader.Program, "alpha");
-        GLint f0Location = glGetUniformLocation(force_BlinnPhong_shader.Program, "F0");
+        if(shaderNumber == 0){
+            force_BlinnPhong_shader.Use();
+            ForceBlinnPhongShaderSetup(force_BlinnPhong_shader, clothTransform, projection, view);
 
-        // we assign the value to the uniform variables
-        glUniform3fv(lightDirLocation, 1, glm::value_ptr(lightPosition));
-        glUniform1f(kdLocation, Kd_Sphere);
-        glUniform1f(alphaLocation, alpha_Sphere);
-        glUniform1f(f0Location, F0_Sphere);
+        } else if(shaderNumber == 1) {
+            force_shader.Use();
+            ForceGGXShaderSetup(force_shader, clothTransform, projection, view);
+            
+        } else if(shaderNumber == 2) {
+            normal_shader.Use();
+            SetUpClothShader(normal_shader, clothTransform, projection, view);
+        }
+
 
         cloth.Draw();
         
@@ -857,4 +866,47 @@ void RotateSphere(float angle, int action){
     }
     std::cout << "Rot: " << sphereAngularVelocity << std::endl;
     sphereRotation += angle * sphereAngularVelocity * deltaTime;
+}
+void ForceBlinnPhongShaderSetup(Shader forceBlinnPhongShader, Transform clothTransform, glm::mat4 projection, glm::mat4 view){
+
+    SetUpClothShader(forceBlinnPhongShader, clothTransform, projection, view);
+
+    GLint lightDirLocation = glGetUniformLocation(forceBlinnPhongShader.Program, "light");
+    GLint ambientColorLocation = glGetUniformLocation(forceBlinnPhongShader.Program, "ambientColor");
+    GLint specularColorLocation = glGetUniformLocation(forceBlinnPhongShader.Program, "specularColor");
+    GLint kaLocation = glGetUniformLocation(forceBlinnPhongShader.Program, "Ka");
+    GLint kdLocation = glGetUniformLocation(forceBlinnPhongShader.Program, "Kd");
+    GLint ksLocation = glGetUniformLocation(forceBlinnPhongShader.Program, "Ks");
+    GLint shininessLocation = glGetUniformLocation(forceBlinnPhongShader.Program, "shininess");
+
+    // we assign the value to the uniform variables
+    glUniform3fv(lightDirLocation, 1, glm::value_ptr(lightPosition));
+    glUniform3fv(ambientColorLocation, 1, glm::value_ptr(ambientColor));
+    glUniform3fv(specularColorLocation, 1, glm::value_ptr(specularColor));
+    glUniform1f(kaLocation, Ka_Sphere);
+    glUniform1f(kdLocation, Kd_Sphere);
+    glUniform1f(ksLocation, Ks_Sphere);
+    glUniform1f(shininessLocation, shininess);
+
+}
+void ForceGGXShaderSetup(Shader forceGGXShader, Transform clothTransform, glm::mat4 projection, glm::mat4 view){
+
+    SetUpClothShader(forceGGXShader, clothTransform, projection, view);
+
+    GLint lightDirLocation = glGetUniformLocation(forceGGXShader.Program, "lightVector");
+    GLint kdLocation = glGetUniformLocation(forceGGXShader.Program, "Kd");
+    GLint alphaLocation = glGetUniformLocation(forceGGXShader.Program, "alpha");
+    GLint f0Location = glGetUniformLocation(forceGGXShader.Program, "F0");
+    
+    glUniform3fv(lightDirLocation, 1, glm::value_ptr(lightPosition));
+    glUniform1f(kdLocation, Kd_Sphere);
+    glUniform1f(alphaLocation, alpha_Sphere);
+    glUniform1f(f0Location, F0_Sphere);
+
+}
+void SetUpClothShader(Shader shader, Transform clothTransform, glm::mat4 projection, glm::mat4 view){
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.modelMatrix));
+    glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.normalMatrix));
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
 }

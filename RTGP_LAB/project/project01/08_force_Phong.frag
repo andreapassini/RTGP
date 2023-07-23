@@ -53,7 +53,7 @@ uniform float shininess;
 // Blinn-Phong model for multiple lights and force
 vec4 BlinnPhong_ML_TX() 
 {
-    vec4 surfaceColor = colorForce;
+    vec4 surfaceColor = vec4(colorForce, 1.0);
 
     // ambient component can be calculated at the beginning
     vec4 color = vec4(Ka*ambientColor,1.0);

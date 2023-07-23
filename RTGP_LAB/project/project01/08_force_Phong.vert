@@ -20,11 +20,8 @@ Universita' degli Studi di Milano
 
 #version 410 core
 
-// vertex position in world coordinates
 layout (location = 0) in vec3 position;
-// vertex normal in world coordinate
 layout (location = 1) in vec3 normal;
-// vertex force 
 layout (location = 2) in vec3 force;
 
 // vectors of lights positions (passed from the application)
