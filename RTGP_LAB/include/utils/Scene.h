@@ -18,7 +18,7 @@ public:
 
     glm::mat4* projection;
     glm::mat4* view;
-
+    Scene(){};
     Scene(glm::mat4* projectionMatrix, glm::mat4* viewMatrix){
         this->projection = projectionMatrix;
         this->view = viewMatrix;

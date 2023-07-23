@@ -196,6 +196,7 @@ int main()
     Shader force_shader = Shader("07_force.vert", "07_force.frag");
     Shader fullColor_shader = Shader("00_basic.vert", "01_fullcolor.frag");
     Shader normal_shader = Shader("03_normal2color.vert", "03_normal2color.frag");
+    Shader force_BlinnPhong_shader = Shader("08_force_Phong.vert", "08_force_Phong.frag");
 
     glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);
     // View matrix (=camera): position, view direction, camera "up" vector
@@ -422,18 +423,18 @@ int main()
             }
         
         }
-        glUniformMatrix4fv(glGetUniformLocation(force_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.modelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(force_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.normalMatrix));
+        glUniformMatrix4fv(glGetUniformLocation(force_BlinnPhong_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.modelMatrix));
+        glUniformMatrix3fv(glGetUniformLocation(force_BlinnPhong_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.normalMatrix));
         
         // we pass projection and view matrices to the Shader Program
-        glUniformMatrix4fv(glGetUniformLocation(force_shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
-        glUniformMatrix4fv(glGetUniformLocation(force_shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(glGetUniformLocation(force_BlinnPhong_shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
+        glUniformMatrix4fv(glGetUniformLocation(force_BlinnPhong_shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
 
         // we determine the position in the Shader Program of the uniform variables
-        GLint lightDirLocation = glGetUniformLocation(force_shader.Program, "lightVector");
-        GLint kdLocation = glGetUniformLocation(force_shader.Program, "Kd");
-        GLint alphaLocation = glGetUniformLocation(force_shader.Program, "alpha");
-        GLint f0Location = glGetUniformLocation(force_shader.Program, "F0");
+        GLint lightDirLocation = glGetUniformLocation(force_BlinnPhong_shader.Program, "lightVector");
+        GLint kdLocation = glGetUniformLocation(force_BlinnPhong_shader.Program, "Kd");
+        GLint alphaLocation = glGetUniformLocation(force_BlinnPhong_shader.Program, "alpha");
+        GLint f0Location = glGetUniformLocation(force_BlinnPhong_shader.Program, "F0");
 
         // we assign the value to the uniform variables
         glUniform3fv(lightDirLocation, 1, glm::value_ptr(lightPosition));
