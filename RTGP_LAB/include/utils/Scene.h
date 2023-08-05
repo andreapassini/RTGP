@@ -3,7 +3,7 @@
 #include <colliders/CapsuleCollider.h>
 #include <colliders/PlaneCollider.h>
 #include <colliders/sphereCollider.h>
-#include <utils/gameObject.h>
+#include "utils/renderableObject.h"
 
 class Scene
 {
@@ -14,7 +14,7 @@ public:
     vector<SphereCollider*> spheres;
     vector<CapsuleCollider*> capsules;
 
-    vector<GameObject*> objects;
+    vector<RenderableObject*> renderableObjects;
 
     glm::mat4* projection;
     glm::mat4* view;

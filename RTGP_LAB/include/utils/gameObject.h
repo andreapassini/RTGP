@@ -2,7 +2,6 @@
 
 #include <utils/transform.h>
 #include <utils/model.h>
-#include <colliders/collider.h>
 
 class GameObject
 {

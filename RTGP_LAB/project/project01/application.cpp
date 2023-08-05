@@ -79,6 +79,7 @@ int SetupOpenGL();
 void DebugLogStatus();
 
 void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transform &planeTransform, Model &planeModel, Transform &sphereTransform, Model &sphereModel, Transform &sphereTra1, Model &sphereModel1);
+void RenderScene(Shader &shader, Scene &scene);
 
 GLint LoadTexture(const char* path);
 
@@ -127,6 +128,8 @@ glm::vec3 ambientColor = glm::vec3(0.2f, 0.2f, 0.2f);
 glm::vec3 specularColor = glm::vec3(1.0f, 1.0f, 1.0f);
 
 int shaderNumber = 0;
+
+GLfloat Kd_GGXSphere = 3.0f;
 
 // roughness index for GGX shader  
 GLfloat alpha = 0.2f;
@@ -196,7 +199,8 @@ Transform sphereTransform;
 
 Cloth* c;
 
-Scene scene;
+Scene scene1;
+Scene scene2;
 
 int main()
 {
@@ -258,10 +262,15 @@ int main()
 
     CapsuleCollider capsuleCollider(&sphereTransform, &sphereTransform1, 1.0f);
 
-    scene.planes.push_back(&planeCollider);
-    scene.spheres.push_back(&sphereCollider1);
-    scene.spheres.push_back(&sphereCollider2);
+    scene1.planes.push_back(&planeCollider);
+    scene1.spheres.push_back(&sphereCollider1);
+    scene1.spheres.push_back(&sphereCollider2);
     //scene.capsules.push_back(&capsuleCollider);
+
+    GameObject* sphere1 = new GameObject(&sphereTransform1, &sphereModel1);
+    TextureParameter* sphereTextureParameter = new TextureParameter(true, 0, repeat);
+    RenderableObject* renderableSphere = new RenderableObject(sphere1, sphereTextureParameter);
+    scene1.renderableObjects.push_back(renderableSphere);
 
     // Rendering loop: this code is executed at each frame
     while(!glfwWindowShouldClose(window))
@@ -425,7 +434,7 @@ int main()
                 physicsSimulation.FixedTimeStep(currentTime);
                 //cloth.PhysicsSteps(deltaTime, (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
                 //cloth.PhysicsSteps((glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
-                cloth.PhysicsSteps(&scene);
+                cloth.PhysicsSteps(&scene1);
                 physIter++;
 
                 if(physIter > maxIter){
@@ -479,7 +488,9 @@ int main()
             view);
 
         // OBJECTS
-        RenderScene1(illumination_shader, projection, view, planeTransform, planeModel, sphereTransform1, sphereModel1, sphereTransform2, sphereModel2);
+        //RenderScene1(illumination_shader, projection, view, planeTransform, planeModel, sphereTransform1, sphereModel1, sphereTransform2, sphereModel2);
+
+        RenderScene(illumination_shader, scene1);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -731,12 +742,26 @@ void RenderScene(Shader &shader, Scene &scene){
     GLint textureLocation = glGetUniformLocation(shader.Program, "tex");
     GLint repeatLocation = glGetUniformLocation(shader.Program, "repeat");
     
-    // OBJECTS
-    // Objects with texture
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, textureID[0]);
-    glUniform1i(textureLocation, 0);
-    glUniform1f(repeatLocation, repeat);
+    int size = scene.renderableObjects.size();
+    for(int i=0; i < size; i++){
+        // Objects with texture
+        if(scene.renderableObjects[i]->textureParameter->useTexture){
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, textureID[scene.renderableObjects[i]->textureParameter->textureId]);
+            glUniform1i(textureLocation, 0);
+            glUniform1f(repeatLocation, scene.renderableObjects[i]->textureParameter->repeat);
+        }
+
+        scene.renderableObjects[i]->gameObject->transform->Transformation(
+            glm::vec3(1.0f),
+            sphereRotation, glm::vec3(0.0f, 1.0f, 0.0f),
+            spherePosition,
+            *scene.view);
+        
+        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(scene.renderableObjects[i]->gameObject->transform->modelMatrix));
+        glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(scene.renderableObjects[i]->gameObject->transform->normalMatrix));
+        scene.renderableObjects[i]->gameObject->model->Draw();
+    }
 
 }
 void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transform &planeTransform, Model &planeModel, Transform &sphereTransform, Model &sphereModel, Transform &sphereTra1, Model &sphereModel1){
@@ -899,7 +924,7 @@ void ForceGGXShaderSetup(Shader forceGGXShader, Transform clothTransform, glm::m
     GLint f0Location = glGetUniformLocation(forceGGXShader.Program, "F0");
     
     glUniform3fv(lightDirLocation, 1, glm::value_ptr(lightPosition));
-    glUniform1f(kdLocation, Kd_Sphere);
+    glUniform1f(kdLocation, Kd_GGXSphere);
     glUniform1f(alphaLocation, alpha_Sphere);
     glUniform1f(f0Location, F0_Sphere);
 
