@@ -79,7 +79,7 @@ int SetupOpenGL();
 void DebugLogStatus();
 
 void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transform &planeTransform, Model &planeModel, Transform &sphereTransform, Model &sphereModel, Transform &sphereTra1, Model &sphereModel1);
-void RenderScene(Shader &shader, Scene &scene);
+void RenderScene(Shader &shader, Scene &scene, glm::mat4 projection, glm::mat4 view);
 
 GLint LoadTexture(const char* path);
 
@@ -195,7 +195,8 @@ float sphereAngularAccel = 10.0f;
 
 float sphereRotation = 0.0f;
 
-Transform sphereTransform;
+Transform sphereTransform1;
+Transform sphereTransform2;
 
 Cloth* c;
 
@@ -207,11 +208,15 @@ int main()
     if(SetupOpenGL() == -1)
         return -1;
 
+    std::cout << "SetupOpenGL: complete" << std::endl;
+
     Shader illumination_shader = Shader("06_illumination.vert", "06_illumination.frag");
     Shader force_shader = Shader("07_force.vert", "07_force.frag");
     Shader fullColor_shader = Shader("00_basic.vert", "01_fullcolor.frag");
     Shader normal_shader = Shader("03_normal2color.vert", "03_normal2color.frag");
     Shader force_BlinnPhong_shader = Shader("08_force_Phong.vert", "08_force_Phong.frag");
+
+    std::cout << "Shader Set-Up: complete" << std::endl;
 
     glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);
     // View matrix (=camera): position, view direction, camera "up" vector
@@ -223,11 +228,16 @@ int main()
     Model planeModel("../../models/plane.obj");
     Model cubeModel("../../models/cube.obj");
 
+    std::cout << "Model load: complete" << std::endl;
+
     textureID.push_back(LoadTexture("../../textures/UV_Grid_Sm.png"));
     textureID.push_back(LoadTexture("../../textures/SoilCracked.png"));
 
+    std::cout << "Texture load: complete" << std::endl;
+
+
     // Model and Normal transformation matrices for the objects in the scene: we set to identity
-    sphereTransform = Transform(view);
+    sphereTransform1 = Transform(view);
     positionZ = 0.8f;
     GLint directionZ = 1;
 
@@ -238,8 +248,12 @@ int main()
     Transform sphereTransform1(view);
     Transform sphereTransform2(view);
 
+    std::cout << "Spheres and Planes Transform: complete" << std::endl;
+
     Transform clothTransform(view);
     Cloth cloth(clothDim, particleOffset, startingPosition, &clothTransform, pinned, springType, K, U, constraintIterations, gravity, mass, collisionIterations, constraintLevel);
+    
+    std::cout << "Cloth Transform: complete" << std::endl;
 
     c = &cloth;
 
@@ -256,21 +270,27 @@ int main()
     pausePhysics = false;
 
     PlaneCollider planeCollider(&planeTransform, glm::vec3(0.0f, 1.0f, 0.0f));
-    SphereCollider sphereCollider(&sphereTransform, 1.0f);
     SphereCollider sphereCollider1(&sphereTransform1, 1.0f);
     SphereCollider sphereCollider2(&sphereTransform2, 1.0f);
-
-    CapsuleCollider capsuleCollider(&sphereTransform, &sphereTransform1, 1.0f);
 
     scene1.planes.push_back(&planeCollider);
     scene1.spheres.push_back(&sphereCollider1);
     scene1.spheres.push_back(&sphereCollider2);
     //scene.capsules.push_back(&capsuleCollider);
+    
+    std::cout << "Colliders: complete" << std::endl;
 
     GameObject* sphere1 = new GameObject(&sphereTransform1, &sphereModel1);
     TextureParameter* sphereTextureParameter = new TextureParameter(true, 0, repeat);
     RenderableObject* renderableSphere = new RenderableObject(sphere1, sphereTextureParameter);
     scene1.renderableObjects.push_back(renderableSphere);
+
+    GameObject* sphere2 = new GameObject(&sphereTransform2, &sphereModel2);
+    TextureParameter* sphereTextureParameter2 = new TextureParameter(true, 0, repeat);
+    RenderableObject* renderableSphere2 = new RenderableObject(sphere2, sphereTextureParameter2);
+    scene1.renderableObjects.push_back(renderableSphere2);
+
+    std::cout << "Scene 1 renderable objects: complete" << std::endl;
 
     // Rendering loop: this code is executed at each frame
     while(!glfwWindowShouldClose(window))
@@ -490,7 +510,7 @@ int main()
         // OBJECTS
         //RenderScene1(illumination_shader, projection, view, planeTransform, planeModel, sphereTransform1, sphereModel1, sphereTransform2, sphereModel2);
 
-        RenderScene(illumination_shader, scene1);
+        RenderScene(illumination_shader, scene1, projection, view);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -719,12 +739,13 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
       camera.ProcessMouseMovement(xoffset, yoffset);
 
 }
-void RenderScene(Shader &shader, Scene &scene){
+void RenderScene(Shader &shader, Scene &scene, glm::mat4 projection, glm::mat4 view){
     shader.Use();
+    // std::cout << "shader.Use() " << std::endl;
 
     // we pass projection and view matrices to the Shader Program
-    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(*scene.projection));
-    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(*scene.view));
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
 
     // we determine the position in the Shader Program of the uniform variables
     GLint lightDirLocation = glGetUniformLocation(shader.Program, "lightVector");
@@ -741,8 +762,12 @@ void RenderScene(Shader &shader, Scene &scene){
     // we pass the needed uniforms
     GLint textureLocation = glGetUniformLocation(shader.Program, "tex");
     GLint repeatLocation = glGetUniformLocation(shader.Program, "repeat");
+
+    // std::cout << "Uniform " << std::endl;
     
     int size = scene.renderableObjects.size();
+    // std::cout << "scene.renderableObjects.size  " << std::endl;
+
     for(int i=0; i < size; i++){
         // Objects with texture
         if(scene.renderableObjects[i]->textureParameter->useTexture){
@@ -750,17 +775,18 @@ void RenderScene(Shader &shader, Scene &scene){
             glBindTexture(GL_TEXTURE_2D, textureID[scene.renderableObjects[i]->textureParameter->textureId]);
             glUniform1i(textureLocation, 0);
             glUniform1f(repeatLocation, scene.renderableObjects[i]->textureParameter->repeat);
+            // std::cout << "scene.renderableObjects[i]->textureParameter->useTexture" << std::endl;
         }
 
-        scene.renderableObjects[i]->gameObject->transform->Transformation(
-            glm::vec3(1.0f),
-            sphereRotation, glm::vec3(0.0f, 1.0f, 0.0f),
-            spherePosition,
-            *scene.view);
-        
+        scene.renderableObjects[i]->gameObject->transform->Transformation();
+        // std::cout << "scene.renderableObjects[i]->gameObject->transform->Transformation" << std::endl;
+
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(scene.renderableObjects[i]->gameObject->transform->modelMatrix));
         glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(scene.renderableObjects[i]->gameObject->transform->normalMatrix));
+
         scene.renderableObjects[i]->gameObject->model->Draw();
+
+        // std::cout << "i: " << i << std::endl;
     }
 
 }
@@ -868,6 +894,8 @@ void MoveSphere(glm::vec3 direction, int action){
 
     spherePosition1 += direction;
     spherePosition2 += direction;
+
+    
 
     // Move pinned particles
     // for(int i = 0; i < clothDim; i++){
