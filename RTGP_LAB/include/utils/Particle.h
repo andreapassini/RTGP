@@ -123,7 +123,7 @@ public:
 		}
 	}
 	void SphereCollision(SphereCollider* SphereCollider){
-		SphereCollision(SphereCollider->transform->GetTranslationVector(), SphereCollider->radius);
+		SphereCollision(SphereCollider->transform->translation, SphereCollider->radius);
 	}
 
 	void PlaneCollision(const float yLimit){
@@ -144,7 +144,7 @@ public:
 		}
 	}
 	void PlaneCollision(PlaneCollider* planeCollider){
-		PlaneCollision(planeCollider->normal, planeCollider->transform->GetTranslationVector());
+		PlaneCollision(planeCollider->normal, planeCollider->transform->translation);
 	}
 
 	void CapsuleCollision(glm::vec3 p1, glm::vec3 p2, float radius){

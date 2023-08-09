@@ -46,10 +46,6 @@ public:
     {
     }
 
-    void Transform::Transformation(glm::mat4 &viewMatrix){
-        InverseTranspose(this->viewMatrix);
-    }
-
     void Transform::Transformation(glm::vec3 &scaleVector,
                             glm::f32 angleInGrades, glm::vec3 &axis,
                             glm::vec3 &translationVector)
@@ -76,6 +72,18 @@ public:
         Scale(scaleVector);
 
         InverseTranspose(viewMatrix);
+    }
+
+    void Transform::Transformation(glm::mat4 &viewMatrix)
+    {
+        this->viewMatrix = viewMatrix;
+        ResetToIdentity();
+
+        Translate(this->translation);
+        Rotate(this->rotation.GetAngleDegree(), this->rotation.GetAxis());
+        Scale(glm::vec3(this->scale));        
+
+        InverseTranspose(this->viewMatrix);
     }
 
     void Transform::Transformation()
