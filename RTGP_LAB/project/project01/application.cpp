@@ -778,19 +778,7 @@ void RenderScene(Shader &shader, Scene &scene, glm::mat4 projection, glm::mat4 v
             glUniform1f(repeatLocation, scene.renderableObjects[i]->textureParameter->repeat);
         }
 
-        // scene.renderableObjects[i]->gameObject->transform->Transformation(
-        //     glm::vec3(1.0f),
-        //     sphereRotation, glm::vec3(0.0f, 1.0f, 0.0f),
-        //     spherePosition1,
-        //     view);
-
-        scene.renderableObjects[i]->gameObject->transform->Transformation(
-            glm::vec3(scene.renderableObjects[i]->gameObject->transform->scale),
-            sphereRotation, glm::vec3(0.0f, 1.0f, 0.0f),
-            scene.renderableObjects[i]->gameObject->transform->translation,
-            view);
-
-        // scene.renderableObjects[i]->gameObject->transform->Transformation(view);
+        scene.renderableObjects[i]->gameObject->transform->Transformation(view);
 
         scene.renderableObjects[i]->gameObject->transform->PrintTransform();
 

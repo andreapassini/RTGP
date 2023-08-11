@@ -18,7 +18,10 @@ public:
         this->real = cos(angleRad*0.5f);
     };
     // empty construction: returns quaternion 1 + 0 * i
-    Quaternion():Quaternion(glm::vec3(0.0f), 1){}
+    Quaternion(){
+        this->imaginary = glm::vec3(0.0f, 1.0f, 0.0f);
+        this->real = 0.0f;
+    }
 
     ~Quaternion(){
     }
