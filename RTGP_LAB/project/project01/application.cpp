@@ -237,6 +237,7 @@ int main()
 
     // Model and Normal transformation matrices for the objects in the scene: we set to identity
     sphereTransform1 = Transform(view);
+    sphereTransform2 = Transform(view);
     positionZ = 0.8f;
     GLint directionZ = 1;
 
@@ -245,9 +246,9 @@ int main()
 
     Transform cubeTransform(view);
 
-    Transform sphereTransform1(view);
     sphereTransform1.scale = 1.0f;
-    Transform sphereTransform2(view);
+    sphereTransform1.translation = spherePosition1;
+    sphereTransform1.rotation = Quaternion();
 
     std::cout << "Spheres and Planes Transform: complete" << std::endl;
 
@@ -496,17 +497,17 @@ int main()
             once = true; 
         }
 
-        sphereTransform1.Transformation(
-            glm::vec3(1.0f),
-            0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
-            spherePosition1,
-            view);
+        // sphereTransform1.Transformation(
+        //     glm::vec3(1.0f),
+        //     0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
+        //     spherePosition1,
+        //     view);
 
-        sphereTransform2.Transformation(
-            glm::vec3(1.0f),
-            0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
-            spherePosition2,
-            view);
+        // sphereTransform2.Transformation(
+        //     glm::vec3(1.0f),
+        //     0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
+        //     spherePosition2,
+        //     view);
 
         // OBJECTS
         // RenderScene1(illumination_shader, projection, view, planeTransform, planeModel, sphereTransform1, sphereModel1, sphereTransform2, sphereModel2);
@@ -782,7 +783,18 @@ void RenderScene(Shader &shader, Scene &scene, glm::mat4 projection, glm::mat4 v
         //     sphereRotation, glm::vec3(0.0f, 1.0f, 0.0f),
         //     spherePosition1,
         //     view);
-        scene.renderableObjects[i]->gameObject->transform->Transformation(view);
+
+        scene.renderableObjects[i]->gameObject->transform->Transformation(
+            glm::vec3(scene.renderableObjects[i]->gameObject->transform->scale),
+            sphereRotation, glm::vec3(0.0f, 1.0f, 0.0f),
+            scene.renderableObjects[i]->gameObject->transform->translation,
+            view);
+
+        // scene.renderableObjects[i]->gameObject->transform->Transformation(view);
+
+        scene.renderableObjects[i]->gameObject->transform->PrintTransform();
+
+
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(scene.renderableObjects[i]->gameObject->transform->modelMatrix));
         glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(scene.renderableObjects[i]->gameObject->transform->normalMatrix));
 
@@ -830,6 +842,7 @@ void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transfor
     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.modelMatrix));
     glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.normalMatrix));
     sphereModel.Draw();
+    sphereTransform.PrintTransform();
 
     // Sphere
     sphereTra1.Transformation(
@@ -897,6 +910,8 @@ void MoveSphere(glm::vec3 direction, int action){
     spherePosition2 += direction;
 
     sphereTransform1.translation = spherePosition1;
+    // std::cout << "Move" << std::endl;
+    // sphereTransform1.PrintTransform();
     sphereTransform2.translation = spherePosition2;
 
     // Move pinned particles
