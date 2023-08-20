@@ -13,6 +13,7 @@ public:
     float real;
 
     Quaternion(glm::vec3 axis, float angle){
+        axis = glm::normalize(axis);
         float angleRad = glm::radians(angle);
         this->imaginary = axis * sin(angleRad*0.5f);
         this->real = cos(angleRad*0.5f);

@@ -294,6 +294,15 @@ int main()
 
     std::cout << "Scene 1 renderable objects: complete" << std::endl;
 
+    Transform plane1_TransformScene2;
+    plane1_TransformScene2.scale = 10.0f;
+    plane1_TransformScene2.translation = glm::vec3(0.0f, -3.0f, 5.0f); 
+    plane1_TransformScene2.rotation = Quaternion(glm::vec3(0.0f, 0.0f, 1.0f), -45.0f);
+    GameObject* plane1_GOScene2 = new GameObject(&plane1_TransformScene2, &planeModel);
+    TextureParameter* plane1_TP = new TextureParameter(true, 1, 80.0f);
+    RenderableObject* renderablePlane1 = new RenderableObject(plane1_GOScene2, plane1_TP);
+    scene2.renderableObjects.push_back(renderablePlane1);
+
     // Rendering loop: this code is executed at each frame
     while(!glfwWindowShouldClose(window))
     {
@@ -512,7 +521,7 @@ int main()
         // OBJECTS
         // RenderScene1(illumination_shader, projection, view, planeTransform, planeModel, sphereTransform1, sphereModel1, sphereTransform2, sphereModel2);
 
-        RenderScene(illumination_shader, scene1, projection, view);
+        RenderScene(illumination_shader, scene2, projection, view);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -779,9 +788,6 @@ void RenderScene(Shader &shader, Scene &scene, glm::mat4 projection, glm::mat4 v
         }
 
         scene.renderableObjects[i]->gameObject->transform->Transformation(view);
-
-        scene.renderableObjects[i]->gameObject->transform->PrintTransform();
-
 
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(scene.renderableObjects[i]->gameObject->transform->modelMatrix));
         glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(scene.renderableObjects[i]->gameObject->transform->normalMatrix));
