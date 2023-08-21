@@ -144,7 +144,7 @@ public:
 		}
 	}
 	void PlaneCollision(PlaneCollider* planeCollider){
-		PlaneCollision(planeCollider->normal, planeCollider->transform->translation);
+		PlaneCollision(planeCollider->normal, glm::vec3(0.0f) + planeCollider->transform->translation);
 	}
 
 	void CapsuleCollision(glm::vec3 p1, glm::vec3 p2, float radius){

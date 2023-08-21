@@ -12,11 +12,11 @@ public:
     glm::vec3 imaginary;
     float real;
 
-    Quaternion(glm::vec3 axis, float angle){
+    Quaternion(glm::vec3 axis, float angleDegree){
         axis = glm::normalize(axis);
-        float angleRad = glm::radians(angle);
-        this->imaginary = axis * sin(angleRad*0.5f);
-        this->real = cos(angleRad*0.5f);
+        float angleRad = glm::radians(angleDegree);
+        this->imaginary = axis * sin(angleRad / 2);
+        this->real = cos(angleRad / 2);
     };
     // empty construction: returns quaternion 1 + 0 * i
     Quaternion(){

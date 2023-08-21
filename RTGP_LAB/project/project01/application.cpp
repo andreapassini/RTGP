@@ -202,6 +202,9 @@ Cloth* c;
 Scene scene1;
 Scene scene2;
 
+Transform plane1_TransformScene2;
+
+
 int main()
 {
     if(SetupOpenGL() == -1)
@@ -248,7 +251,7 @@ int main()
 
     sphereTransform1.scale = 1.0f;
     sphereTransform1.translation = spherePosition1;
-    sphereTransform1.rotation = Quaternion();
+    sphereTransform1.rotation = &Quaternion();
 
     std::cout << "Spheres and Planes Transform: complete" << std::endl;
 
@@ -271,7 +274,7 @@ int main()
 
     pausePhysics = false;
 
-    PlaneCollider planeCollider(&planeTransform, glm::vec3(0.0f, 1.0f, 0.0f));
+    PlaneCollider planeCollider(&planeTransform);
     SphereCollider sphereCollider1(&sphereTransform1, sphereTransform1.scale);
     SphereCollider sphereCollider2(&sphereTransform2, sphereTransform2.scale);
 
@@ -294,14 +297,19 @@ int main()
 
     std::cout << "Scene 1 renderable objects: complete" << std::endl;
 
-    Transform plane1_TransformScene2;
-    plane1_TransformScene2.scale = 10.0f;
+    plane1_TransformScene2.scale = 2.0f;
     plane1_TransformScene2.translation = glm::vec3(0.0f, -3.0f, 5.0f); 
-    plane1_TransformScene2.rotation = Quaternion(glm::vec3(0.0f, 0.0f, 1.0f), -45.0f);
+    plane1_TransformScene2.rotation = &Quaternion(glm::vec3(0.0f, 0.0f, 1.0f), 45.0f);
     GameObject* plane1_GOScene2 = new GameObject(&plane1_TransformScene2, &planeModel);
     TextureParameter* plane1_TP = new TextureParameter(true, 1, 80.0f);
     RenderableObject* renderablePlane1 = new RenderableObject(plane1_GOScene2, plane1_TP);
     scene2.renderableObjects.push_back(renderablePlane1);
+
+    GameObject* spherePlane_GOScene2 = new GameObject(&plane1_TransformScene2, &sphereModel);
+    TextureParameter* spherePlane_TP = new TextureParameter(true, 0, repeat);
+    RenderableObject* renderableSpherePlane1 = new RenderableObject(spherePlane_GOScene2, spherePlane_TP);
+    scene2.renderableObjects.push_back(renderableSpherePlane1);
+
 
     // Rendering loop: this code is executed at each frame
     while(!glfwWindowShouldClose(window))
@@ -907,6 +915,18 @@ void MoveSphere(glm::vec3 direction, int action){
     // std::cout << "Move" << std::endl;
     // sphereTransform1.PrintTransform();
     sphereTransform2.translation = spherePosition2;
+
+    plane1_TransformScene2.translation += direction;
+
+    plane1_TransformScene2.rotation = &Quaternion(plane1_TransformScene2.rotation->GetAxis(), plane1_TransformScene2.rotation->GetAngleDegree() + 1.0f);
+
+    // Quaternion q = Quaternion(glm::vec3(0.0f, 1.0f, 0.0f), 45.0f);
+    // std::cout << "Q => Im: " << q.GetAxis().x << " " << q.GetAxis().y << " " << q.GetAxis().z << " Real: " << q.GetAngleDegree() << std::endl;
+    // Transform t = Transform();
+    // t.rotation = &q;
+    // std::cout << "Q => Im: " << t.rotation->GetAxis().x << " " << t.rotation->GetAxis().y << " " << t.rotation->GetAxis().z << " Real: " << t.rotation->GetAngleDegree() << std::endl;
+
+    plane1_TransformScene2.PrintTransform();
 
     // Move pinned particles
     // for(int i = 0; i < clothDim; i++){

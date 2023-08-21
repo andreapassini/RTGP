@@ -6,6 +6,10 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "quaternion.h"
 
+#include <glm/gtc/quaternion.hpp> 
+#include <glm/gtx/quaternion.hpp>
+#include <iostream>
+
 // In charge of managing:
 //  - Model Matrix
 //      - Rotation
@@ -22,7 +26,7 @@ public:
     glm::mat4 viewMatrix;
 
     glm::vec3 translation;
-    Quaternion rotation;
+    Quaternion* rotation;
     float scale;
 
     Transform(){        
@@ -31,7 +35,7 @@ public:
         this->normalMatrix = glm::mat3(1.0f);
 
         this->scale = 1.0f;
-        this->rotation = Quaternion();
+        this->rotation = &Quaternion();
         this->translation = glm::vec3(0.0f);
     }
 
@@ -42,7 +46,7 @@ public:
         this->viewMatrix = viewMatrix;
 
         this->scale = 1.0f;
-        this->rotation = Quaternion();
+        this->rotation = &Quaternion();
         this->translation = glm::vec3(0.0f);
 
     }
@@ -52,7 +56,7 @@ public:
         this->normalMatrix = glm::mat3(1.0f);
 
         this->scale = 1.0f;
-        this->rotation = Quaternion();
+        this->rotation = &Quaternion();
         this->translation = glm::vec3(0.0f);
     }
     ~Transform()
@@ -91,7 +95,7 @@ public:
     {
         Transformation(
             glm::vec3(this->scale),
-            this->rotation.GetAngleDegree(), this->rotation.GetAxis(),
+            this->rotation->GetAngleDegree(), this->rotation->GetAxis(),
             this->translation,
             viewMatrix
             );
@@ -102,7 +106,7 @@ public:
         ResetToIdentity();
 
         Translate(this->translation);
-        Rotate(this->rotation.GetAngleDegree(), this->rotation.GetAxis());
+        Rotate(this->rotation->GetAngleDegree(), this->rotation->GetAxis());
         Scale(glm::vec3(this->scale));        
 
         InverseTranspose(this->viewMatrix);
@@ -112,8 +116,8 @@ public:
     Transform operator * (const Transform &b) const {
         Transform c;
         c.scale = scale * b.scale;
-        c.rotation = b.rotation * rotation;
-        c.translation = translation + rotation.Apply(b.translation * scale);
+        *c.rotation = (*b.rotation) * *rotation;
+        c.translation = translation + rotation->Apply(b.translation * scale);
 
         return c;
     }
@@ -122,8 +126,8 @@ public:
         Transform res;
 
         res.scale = 1/scale;
-        res.rotation = rotation.inverse();
-        res.translation = res.rotation.Apply(-translation * res.scale);
+        *res.rotation = rotation->inverse();
+        res.translation = res.rotation->Apply(-translation * res.scale);
         return res;
     }
 
@@ -141,10 +145,8 @@ public:
         // this->scale = x;
     }
 
-    void Transform::Rotate(glm::f32 angleInGrades, glm::vec3 &axis){
-        this->modelMatrix = glm::rotate(this->modelMatrix, glm::radians(angleInGrades), axis);
-        // Quaternion q (axis, angleInGrades);
-        // this->rotation = q;
+    void Transform::Rotate(glm::f32 angleInDegree, glm::vec3 &axis){
+        this->modelMatrix = glm::rotate(this->modelMatrix, glm::radians(angleInDegree), axis);
     }
 
     void Transform::Translate(glm::vec3 &translationVector){
@@ -185,7 +187,7 @@ public:
     glm::mat4 GetModelMatrix(){
         glm::mat4 modelMatrix = glm::mat4(1.0f);
         modelMatrix = glm::translate(modelMatrix, translation);
-        modelMatrix = glm::rotate(modelMatrix, rotation.GetAngleRad(), rotation.GetAxis());
+        modelMatrix = glm::rotate(modelMatrix, rotation->GetAngleDegree(), rotation->GetAxis());
         modelMatrix = glm::scale(modelMatrix, glm::vec3(scale));
     }
 
@@ -194,7 +196,7 @@ public:
     }
 
     glm::vec3 Apply(const glm::vec3& p) const{
-        return this->rotation.Apply(p * this->scale) + this->translation;
+        return this->rotation->Apply(p * this->scale) + this->translation;
     }
 
     void PrintTransform(){
@@ -204,9 +206,9 @@ public:
             << " " << this->translation.z 
             << std::endl;
         std::cout << "  - Rotation: " << 
-            this->rotation.GetAxis().x << " " << this->rotation.GetAxis().y << " "
-            << this->rotation.GetAxis().z << " "
-            << this->rotation.GetAngleDegree() << std::endl;
+            this->rotation->GetAxis().x << " " << this->rotation->GetAxis().y << " "
+            << this->rotation->GetAxis().z << " "
+            << this->rotation->GetAngleDegree() << std::endl;
         std::cout << "  - Scale: " << 
             this->scale << std::endl;
     }
