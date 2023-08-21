@@ -918,7 +918,8 @@ void MoveSphere(glm::vec3 direction, int action){
 
     plane1_TransformScene2.translation += direction;
 
-    plane1_TransformScene2.rotation = &Quaternion(plane1_TransformScene2.rotation->GetAxis(), plane1_TransformScene2.rotation->GetAngleDegree() + 1.0f);
+    // plane1_TransformScene2.rotation->real = cos((plane1_TransformScene2.rotation->GetAngleDegree() + 0.1f) / 2);
+    plane1_TransformScene2.rotation = &Quaternion(glm::vec3(0.0f, 1.0f, 0.0f), 35.0f);
 
     // Quaternion q = Quaternion(glm::vec3(0.0f, 1.0f, 0.0f), 45.0f);
     // std::cout << "Q => Im: " << q.GetAxis().x << " " << q.GetAxis().y << " " << q.GetAxis().z << " Real: " << q.GetAngleDegree() << std::endl;
