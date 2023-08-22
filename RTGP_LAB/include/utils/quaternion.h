@@ -15,13 +15,14 @@ public:
     Quaternion(glm::vec3 axis, float angleDegree){
         axis = glm::normalize(axis);
         float angleRad = glm::radians(angleDegree);
-        this->imaginary = axis * sin(angleRad / 2);
-        this->real = cos(angleRad / 2);
+
+        this->imaginary = axis * std::sin(angleRad / 2);
+        this->real = std::cos(angleRad / 2);
     };
     // empty construction: returns quaternion 1 + 0 * i
     Quaternion(){
-        this->imaginary = glm::vec3(0.0f, 1.0f, 0.0f);
-        this->real = 0.0f;
+        this->imaginary = glm::vec3(0.0f, 0.0f, 0.0f);
+        this->real = 1.0f;
     }
 
     ~Quaternion(){

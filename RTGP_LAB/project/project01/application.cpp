@@ -227,6 +227,7 @@ int main()
     Model sphereModel("../../models/sphere.obj");
     Model sphereModel1("../../models/sphere.obj");
     Model sphereModel2("../../models/sphere.obj");
+
     Model planeModel("../../models/plane.obj");
     Model cubeModel("../../models/cube.obj");
 
@@ -241,17 +242,17 @@ int main()
     // Model and Normal transformation matrices for the objects in the scene: we set to identity
     sphereTransform1 = Transform(view);
     sphereTransform2 = Transform(view);
-    positionZ = 0.8f;
-    GLint directionZ = 1;
+
+    sphereTransform1.scale = 1.0f;
+    sphereTransform1.translation = glm::vec3(-3.0f, 2.0f, 0.0f);
+    // sphereTransform1.rotation = &Quaternion();
+
+    sphereTransform2.scale = 1.0f;
+    sphereTransform2.translation = glm::vec3(-3.0f, 0.0f, 0.0f);
+    // sphereTransform2.rotation = &Quaternion();
 
     Transform planeTransform(view);
     planeTransform.translation = planePosition; 
-
-    Transform cubeTransform(view);
-
-    sphereTransform1.scale = 1.0f;
-    sphereTransform1.translation = spherePosition1;
-    sphereTransform1.rotation = &Quaternion();
 
     std::cout << "Spheres and Planes Transform: complete" << std::endl;
 
@@ -275,40 +276,45 @@ int main()
     pausePhysics = false;
 
     PlaneCollider planeCollider(&planeTransform);
+
     SphereCollider sphereCollider1(&sphereTransform1, sphereTransform1.scale);
     SphereCollider sphereCollider2(&sphereTransform2, sphereTransform2.scale);
 
-    scene1.planes.push_back(&planeCollider);
+    // scene1.planes.push_back(&planeCollider);
     scene1.spheres.push_back(&sphereCollider1);
     scene1.spheres.push_back(&sphereCollider2);
     //scene.capsules.push_back(&capsuleCollider);
     
     std::cout << "Colliders: complete" << std::endl;
 
-    GameObject* sphere1 = new GameObject(&sphereTransform1, &sphereModel);
+    GameObject* sphere1 = new GameObject(&sphereTransform1, &sphereModel1);
     TextureParameter* sphereTextureParameter1 = new TextureParameter(true, 0, repeat);
-    RenderableObject* renderableSphere = new RenderableObject(sphere1, sphereTextureParameter1);
-    scene1.renderableObjects.push_back(renderableSphere);
+    RenderableObject* renderableSphere1 = new RenderableObject(sphere1, sphereTextureParameter1);
+    scene1.renderableObjects.push_back(renderableSphere1);
 
-    GameObject* sphere2 = new GameObject(&sphereTransform2, &sphereModel2);
+    GameObject* sphere2 = new GameObject(&sphereTransform2, &sphereModel1);
     TextureParameter* sphereTextureParameter2 = new TextureParameter(true, 0, repeat);
     RenderableObject* renderableSphere2 = new RenderableObject(sphere2, sphereTextureParameter2);
-    //scene1.renderableObjects.push_back(renderableSphere2);
+    scene1.renderableObjects.push_back(renderableSphere2);
 
-    std::cout << "Scene 1 renderable objects: complete" << std::endl;
+
+    std::cout << "Scene 1: complete" << std::endl;
+
 
     plane1_TransformScene2.scale = 2.0f;
-    plane1_TransformScene2.translation = glm::vec3(0.0f, -3.0f, 5.0f); 
-    plane1_TransformScene2.rotation = &Quaternion(glm::vec3(0.0f, 0.0f, 1.0f), 45.0f);
+    plane1_TransformScene2.translation = glm::vec3(0.0f, -6.0f, -5.0f); 
+    plane1_TransformScene2.rotation = &Quaternion(glm::vec3(1.0f, 0.0f, 0.0f), 37.0f);
     GameObject* plane1_GOScene2 = new GameObject(&plane1_TransformScene2, &planeModel);
     TextureParameter* plane1_TP = new TextureParameter(true, 1, 80.0f);
     RenderableObject* renderablePlane1 = new RenderableObject(plane1_GOScene2, plane1_TP);
     scene2.renderableObjects.push_back(renderablePlane1);
 
-    GameObject* spherePlane_GOScene2 = new GameObject(&plane1_TransformScene2, &sphereModel);
-    TextureParameter* spherePlane_TP = new TextureParameter(true, 0, repeat);
-    RenderableObject* renderableSpherePlane1 = new RenderableObject(spherePlane_GOScene2, spherePlane_TP);
-    scene2.renderableObjects.push_back(renderableSpherePlane1);
+    // GameObject* spherePlane_GOScene2 = new GameObject(&plane1_TransformScene2, &sphereModel);
+    // TextureParameter* spherePlane_TP = new TextureParameter(true, 0, repeat);
+    // RenderableObject* renderableSpherePlane1 = new RenderableObject(spherePlane_GOScene2, spherePlane_TP);
+    // scene2.renderableObjects.push_back(renderableSpherePlane1);
+
+    std::cout << "Scene 2: complete" << std::endl;
 
 
     // Rendering loop: this code is executed at each frame
@@ -514,22 +520,7 @@ int main()
             once = true; 
         }
 
-        // sphereTransform1.Transformation(
-        //     glm::vec3(1.0f),
-        //     0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
-        //     spherePosition1,
-        //     view);
-
-        // sphereTransform2.Transformation(
-        //     glm::vec3(1.0f),
-        //     0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
-        //     spherePosition2,
-        //     view);
-
-        // OBJECTS
-        // RenderScene1(illumination_shader, projection, view, planeTransform, planeModel, sphereTransform1, sphereModel1, sphereTransform2, sphereModel2);
-
-        RenderScene(illumination_shader, scene2, projection, view);
+        RenderScene(illumination_shader, scene1, projection, view);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -906,28 +897,18 @@ void MoveSphere(glm::vec3 direction, int action){
 
     direction *= sphereSpeed * deltaTime;
 
-    spherePosition += direction;
-
-    spherePosition1 += direction;
-    spherePosition2 += direction;
-
-    sphereTransform1.translation = spherePosition1;
+    sphereTransform1.translation += direction;
     // std::cout << "Move" << std::endl;
     // sphereTransform1.PrintTransform();
-    sphereTransform2.translation = spherePosition2;
+    sphereTransform2.translation += direction;
 
     plane1_TransformScene2.translation += direction;
 
     // plane1_TransformScene2.rotation->real = cos((plane1_TransformScene2.rotation->GetAngleDegree() + 0.1f) / 2);
-    plane1_TransformScene2.rotation = &Quaternion(glm::vec3(0.0f, 1.0f, 0.0f), 35.0f);
+    // std::cout << "Print angle before adding: " << plane1_TransformScene2.rotation->GetAngleDegree() << std::endl;
+    // plane1_TransformScene2.rotation = &Quaternion(glm::vec3(0.0f, 1.0f, 0.0f), plane1_TransformScene2.rotation->GetAngleDegree() + 0.01f);
 
-    // Quaternion q = Quaternion(glm::vec3(0.0f, 1.0f, 0.0f), 45.0f);
-    // std::cout << "Q => Im: " << q.GetAxis().x << " " << q.GetAxis().y << " " << q.GetAxis().z << " Real: " << q.GetAngleDegree() << std::endl;
-    // Transform t = Transform();
-    // t.rotation = &q;
-    // std::cout << "Q => Im: " << t.rotation->GetAxis().x << " " << t.rotation->GetAxis().y << " " << t.rotation->GetAxis().z << " Real: " << t.rotation->GetAngleDegree() << std::endl;
-
-    plane1_TransformScene2.PrintTransform();
+    // plane1_TransformScene2.PrintTransform();
 
     // Move pinned particles
     // for(int i = 0; i < clothDim; i++){
