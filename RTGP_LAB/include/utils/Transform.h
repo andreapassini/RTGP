@@ -8,6 +8,7 @@
 
 #include <glm/gtc/quaternion.hpp> 
 #include <glm/gtx/quaternion.hpp>
+#include <glm/common.hpp>
 #include <iostream>
 
 // In charge of managing:
@@ -26,7 +27,7 @@ public:
     glm::mat4 viewMatrix;
 
     glm::vec3 translation;
-    Quaternion* rotation;
+    glm::quat* rotation;
     float scale;
 
     Transform(){        
@@ -35,7 +36,7 @@ public:
         this->normalMatrix = glm::mat3(1.0f);
 
         this->scale = 1.0f;
-        this->rotation = &Quaternion();
+        this->rotation = &glm::quat();
         this->translation = glm::vec3(0.0f);
     }
 
@@ -46,7 +47,7 @@ public:
         this->viewMatrix = viewMatrix;
 
         this->scale = 1.0f;
-        this->rotation = &Quaternion();
+        this->rotation = &glm::quat();
         this->translation = glm::vec3(0.0f);
 
     }
@@ -56,7 +57,7 @@ public:
         this->normalMatrix = glm::mat3(1.0f);
 
         this->scale = 1.0f;
-        this->rotation = &Quaternion();
+        this->rotation = &glm::quat();
         this->translation = glm::vec3(0.0f);
     }
     ~Transform()
@@ -95,7 +96,7 @@ public:
     {
         Transformation(
             glm::vec3(this->scale),
-            this->rotation->GetAngleDegree(), this->rotation->GetAxis(),
+            Quaternion::GetAngleDegree(*this->rotation), Quaternion::GetAxis(*this->rotation),
             this->translation,
             viewMatrix
             );
@@ -106,7 +107,7 @@ public:
         ResetToIdentity();
 
         Translate(this->translation);
-        Rotate(this->rotation->GetAngleDegree(), this->rotation->GetAxis());
+        Rotate(Quaternion::GetAngleDegree(*this->rotation), Quaternion::GetAxis(*this->rotation));
         Scale(glm::vec3(this->scale));        
 
         InverseTranspose(this->viewMatrix);
@@ -117,7 +118,7 @@ public:
         Transform c;
         c.scale = scale * b.scale;
         *c.rotation = (*b.rotation) * *rotation;
-        c.translation = translation + rotation->Apply(b.translation * scale);
+        c.translation = translation + glm::rotate(*this->rotation, b.translation * scale);
 
         return c;
     }
@@ -126,8 +127,8 @@ public:
         Transform res;
 
         res.scale = 1/scale;
-        *res.rotation = rotation->inverse();
-        res.translation = res.rotation->Apply(-translation * res.scale);
+        *res.rotation = glm::inverse(*rotation);
+        res.translation = glm::rotate(*res.rotation, -translation * res.scale);
         return res;
     }
 
@@ -187,7 +188,7 @@ public:
     glm::mat4 GetModelMatrix(){
         glm::mat4 modelMatrix = glm::mat4(1.0f);
         modelMatrix = glm::translate(modelMatrix, translation);
-        modelMatrix = glm::rotate(modelMatrix, rotation->GetAngleDegree(), rotation->GetAxis());
+        modelMatrix = glm::rotate(modelMatrix, Quaternion::GetAngleDegree(*this->rotation), Quaternion::GetAxis(*this->rotation));
         modelMatrix = glm::scale(modelMatrix, glm::vec3(scale));
     }
 
@@ -196,7 +197,7 @@ public:
     }
 
     glm::vec3 Apply(const glm::vec3& p) const{
-        return this->rotation->Apply(p * this->scale) + this->translation;
+        return glm::rotate(*this->rotation, (p * this->scale) + this->translation);
     }
 
     void PrintTransform(){
@@ -206,9 +207,9 @@ public:
             << " " << this->translation.z 
             << std::endl;
         std::cout << "  - Rotation: " << 
-            this->rotation->GetAxis().x << " " << this->rotation->GetAxis().y << " "
-            << this->rotation->GetAxis().z << " "
-            << this->rotation->GetAngleDegree() << std::endl;
+            Quaternion::GetAxis(*this->rotation).x << " " << Quaternion::GetAxis(*this->rotation).y << " "
+            << Quaternion::GetAxis(*this->rotation).z << " "
+            << Quaternion::GetAngleDegree(*this->rotation) << std::endl;
         std::cout << "  - Scale: " << 
             this->scale << std::endl;
     }

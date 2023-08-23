@@ -9,9 +9,9 @@ private:
 public:
     Transform* transform;
     glm::vec3 normal;
-    PlaneCollider(Transform* transform){
+    PlaneCollider(Transform* transform, glm::vec3 n){
         this->transform = transform;
-        this->normal = transform->rotation->Apply(glm::vec3(0.0f, 1.0f, 0.0f));
+        this->normal = n;
     }
 };
 

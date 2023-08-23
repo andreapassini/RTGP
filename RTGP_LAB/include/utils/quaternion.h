@@ -4,6 +4,9 @@
 
 #include <cmath>
 #include "../glm/glm.hpp"
+#include <glm/gtc/quaternion.hpp> 
+#include <glm/gtx/quaternion.hpp>
+
 
 class Quaternion
 {
@@ -98,13 +101,27 @@ public:
         return 2 * acos(real);
     }
 
+    static float GetAngleRad (glm::quat q){
+        return 2 * acos(q.w);
+    }
+
     float GetAngleDegree(){
         return glm::degrees(2 * acos(real));
+    }
+
+    static float GetAngleDegree(glm::quat q){
+        return glm::degrees(2 * acos(q.w));
     }
 
     glm::vec3 GetAxis(){
         float angle = GetAngleRad();
         glm::vec3 axis = this->imaginary / sin(angle/2);
+        return axis;
+    }
+
+    static glm::vec3 GetAxis(glm::quat q){
+        float angle = GetAngleRad(q);
+        glm::vec3 axis = glm::vec3(q.x, q.y, q.z) / sin(angle/2);
         return axis;
     }
 };

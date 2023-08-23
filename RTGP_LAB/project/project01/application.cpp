@@ -243,16 +243,13 @@ int main()
     sphereTransform1 = Transform(view);
     sphereTransform2 = Transform(view);
 
-    sphereTransform1.scale = 1.0f;
+    // sphereTransform1.scale = 1.0f;
     sphereTransform1.translation = glm::vec3(-3.0f, 2.0f, 0.0f);
     // sphereTransform1.rotation = &Quaternion();
 
-    sphereTransform2.scale = 1.0f;
+    // sphereTransform2.scale = 1.0f;
     sphereTransform2.translation = glm::vec3(-3.0f, 0.0f, 0.0f);
     // sphereTransform2.rotation = &Quaternion();
-
-    Transform planeTransform(view);
-    planeTransform.translation = planePosition; 
 
     std::cout << "Spheres and Planes Transform: complete" << std::endl;
 
@@ -275,8 +272,6 @@ int main()
 
     pausePhysics = false;
 
-    PlaneCollider planeCollider(&planeTransform);
-
     SphereCollider sphereCollider1(&sphereTransform1, sphereTransform1.scale);
     SphereCollider sphereCollider2(&sphereTransform2, sphereTransform2.scale);
 
@@ -287,7 +282,7 @@ int main()
     
     std::cout << "Colliders: complete" << std::endl;
 
-    GameObject* sphere1 = new GameObject(&sphereTransform1, &sphereModel1);
+    GameObject* sphere1 = new GameObject(&sphereTransform1, &sphereModel2);
     TextureParameter* sphereTextureParameter1 = new TextureParameter(true, 0, repeat);
     RenderableObject* renderableSphere1 = new RenderableObject(sphere1, sphereTextureParameter1);
     scene1.renderableObjects.push_back(renderableSphere1);
@@ -298,22 +293,27 @@ int main()
     scene1.renderableObjects.push_back(renderableSphere2);
 
 
-    std::cout << "Scene 1: complete" << std::endl;
 
 
     plane1_TransformScene2.scale = 2.0f;
     plane1_TransformScene2.translation = glm::vec3(0.0f, -6.0f, -5.0f); 
-    plane1_TransformScene2.rotation = &Quaternion(glm::vec3(1.0f, 0.0f, 0.0f), 37.0f);
+    plane1_TransformScene2.rotation = &glm::angleAxis(glm::radians(37.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     GameObject* plane1_GOScene2 = new GameObject(&plane1_TransformScene2, &planeModel);
     TextureParameter* plane1_TP = new TextureParameter(true, 1, 80.0f);
     RenderableObject* renderablePlane1 = new RenderableObject(plane1_GOScene2, plane1_TP);
-    scene2.renderableObjects.push_back(renderablePlane1);
+    scene1.renderableObjects.push_back(renderablePlane1);
 
     // GameObject* spherePlane_GOScene2 = new GameObject(&plane1_TransformScene2, &sphereModel);
     // TextureParameter* spherePlane_TP = new TextureParameter(true, 0, repeat);
     // RenderableObject* renderableSpherePlane1 = new RenderableObject(spherePlane_GOScene2, spherePlane_TP);
     // scene2.renderableObjects.push_back(renderableSpherePlane1);
+    PlaneCollider planeCollider(&plane1_TransformScene2, glm::rotate(*plane1_TransformScene2.rotation, planeModel.meshes[0].vertices[0].Normal));
+    std::cout << "Plane Normal: "<< std::endl;
+    PrintVec3(&planeCollider.normal);
 
+    scene1.planes.push_back(&planeCollider);
+
+    std::cout << "Scene 1: complete" << std::endl;
     std::cout << "Scene 2: complete" << std::endl;
 
 
