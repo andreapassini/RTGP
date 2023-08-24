@@ -93,6 +93,7 @@ void RotateSphere(float angle, int action);
 void ForceBlinnPhongShaderSetup(Shader forceBlinnPhongShader, Transform clothTransform, glm::mat4 projection, glm::mat4 view);
 void ForceGGXShaderSetup(Shader forceGGXShader, Transform clothTransform, glm::mat4 projection, glm::mat4 view);
 void SetUpClothShader(Shader shader, Transform clothTransform, glm::mat4 projection, glm::mat4 view);
+void UpdateScene1 (Scene* scene);
 
 bool keys[1024];
 bool R_KEY = false;
@@ -199,10 +200,14 @@ Transform sphereTransform2;
 
 Cloth* c;
 
+Scene* activeScene;
+
 Scene scene1;
 Scene scene2;
 
 Transform plane1_TransformScene2;
+
+    glm::vec3 direction = glm::vec3(0.0f, 0.0f, 1.0f);
 
 
 int main()
@@ -244,11 +249,11 @@ int main()
     sphereTransform2 = Transform(view);
 
     // sphereTransform1.scale = 1.0f;
-    sphereTransform1.translation = glm::vec3(-3.0f, 2.0f, 0.0f);
+    sphereTransform1.translation = glm::vec3(2.0f, -4.0f, 2.0f);
     // sphereTransform1.rotation = &Quaternion();
 
     // sphereTransform2.scale = 1.0f;
-    sphereTransform2.translation = glm::vec3(-3.0f, 0.0f, 0.0f);
+    sphereTransform2.translation = glm::vec3(3.0f, -2.0f, -2.0f);
     // sphereTransform2.rotation = &Quaternion();
 
     std::cout << "Spheres and Planes Transform: complete" << std::endl;
@@ -314,8 +319,10 @@ int main()
     scene1.planes.push_back(&planeCollider);
 
     std::cout << "Scene 1: complete" << std::endl;
-    std::cout << "Scene 2: complete" << std::endl;
 
+    scene1.Update = UpdateScene1;
+
+    activeScene = &scene1;
 
     // Rendering loop: this code is executed at each frame
     while(!glfwWindowShouldClose(window))
@@ -477,9 +484,7 @@ int main()
                 physicsSimulation.AddForceToAll(glm::vec3(0.0f, gravity, 0.0f));
                 cloth.AddGravityForce();
                 physicsSimulation.FixedTimeStep(currentTime);
-                //cloth.PhysicsSteps(deltaTime, (glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
-                //cloth.PhysicsSteps((glm::vec4(spherePosition, 1.0f) * sphereTransform.modelMatrix), 1.0f, planePosition.y + 0.1f);
-                cloth.PhysicsSteps(&scene1);
+                cloth.PhysicsSteps(activeScene);
                 physIter++;
 
                 if(physIter > maxIter){
@@ -520,7 +525,8 @@ int main()
             once = true; 
         }
 
-        RenderScene(illumination_shader, scene1, projection, view);
+        activeScene->Update(activeScene);
+        RenderScene(illumination_shader, *activeScene, projection, view);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -864,6 +870,18 @@ void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transfor
     planeModel.Draw();
 }
 
+void UpdateScene1 (Scene* scene){
+    if(scene->renderableObjects[0]->gameObject->transform->translation.z > 5.0f){
+        direction = glm::vec3(0.0f, 0.0f, -1.0f);
+        std::cout << "Change dir 5.0f" << std::endl;
+    } else if(scene->renderableObjects[0]->gameObject->transform->translation.z <= -5.0f){
+        direction = glm::vec3(0.0f, 0.0f, 1.0f);
+        std::cout << "Change dir -5.0f " << std::endl;
+    }
+    scene->renderableObjects[0]->gameObject->transform->translation += direction * 5.0f * deltaTime;
+    scene->renderableObjects[1]->gameObject->transform->translation -= direction * 5.0f * deltaTime;
+}
+
 void imGuiSetup(GLFWwindow *window)
 {
     // ImGui SETUP
@@ -897,12 +915,10 @@ void MoveSphere(glm::vec3 direction, int action){
 
     direction *= sphereSpeed * deltaTime;
 
-    sphereTransform1.translation += direction;
-    // std::cout << "Move" << std::endl;
-    // sphereTransform1.PrintTransform();
-    sphereTransform2.translation += direction;
+    // sphereTransform1.translation += direction;
+    // sphereTransform2.translation += direction;
 
-    plane1_TransformScene2.translation += direction;
+    // plane1_TransformScene2.translation += direction;
 
     // plane1_TransformScene2.rotation->real = cos((plane1_TransformScene2.rotation->GetAngleDegree() + 0.1f) / 2);
     // std::cout << "Print angle before adding: " << plane1_TransformScene2.rotation->GetAngleDegree() << std::endl;
