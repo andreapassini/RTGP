@@ -94,6 +94,7 @@ void ForceBlinnPhongShaderSetup(Shader forceBlinnPhongShader, Transform clothTra
 void ForceGGXShaderSetup(Shader forceGGXShader, Transform clothTransform, glm::mat4 projection, glm::mat4 view);
 void SetUpClothShader(Shader shader, Transform clothTransform, glm::mat4 projection, glm::mat4 view);
 void UpdateScene1 (Scene* scene);
+void UpdateScene2 (Scene* scene);
 
 bool keys[1024];
 bool R_KEY = false;
@@ -204,8 +205,9 @@ Scene* activeScene;
 
 Scene scene1;
 Scene scene2;
+Scene scene3;
 
-Transform plane1_TransformScene2;
+Transform plane1_TransformScene1;
 
     glm::vec3 direction = glm::vec3(0.0f, 0.0f, 1.0f);
 
@@ -277,52 +279,78 @@ int main()
 
     pausePhysics = false;
 
+
+    // Load scene 1
+    std::cout << "Scene 1: Loading... " << std::endl;
+
     SphereCollider sphereCollider1(&sphereTransform1, sphereTransform1.scale);
     SphereCollider sphereCollider2(&sphereTransform2, sphereTransform2.scale);
 
-    // scene1.planes.push_back(&planeCollider);
     scene1.spheres.push_back(&sphereCollider1);
     scene1.spheres.push_back(&sphereCollider2);
-    //scene.capsules.push_back(&capsuleCollider);
     
-    std::cout << "Colliders: complete" << std::endl;
-
-    GameObject* sphere1 = new GameObject(&sphereTransform1, &sphereModel2);
+    GameObject* sphere1 = new GameObject(&sphereTransform1, &sphereModel);
     TextureParameter* sphereTextureParameter1 = new TextureParameter(true, 0, repeat);
     RenderableObject* renderableSphere1 = new RenderableObject(sphere1, sphereTextureParameter1);
     scene1.renderableObjects.push_back(renderableSphere1);
 
-    GameObject* sphere2 = new GameObject(&sphereTransform2, &sphereModel1);
+    GameObject* sphere2 = new GameObject(&sphereTransform2, &sphereModel);
     TextureParameter* sphereTextureParameter2 = new TextureParameter(true, 0, repeat);
     RenderableObject* renderableSphere2 = new RenderableObject(sphere2, sphereTextureParameter2);
     scene1.renderableObjects.push_back(renderableSphere2);
 
-
-
-
-    plane1_TransformScene2.scale = 2.0f;
-    plane1_TransformScene2.translation = glm::vec3(0.0f, -6.0f, -5.0f); 
-    plane1_TransformScene2.rotation = &glm::angleAxis(glm::radians(37.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    GameObject* plane1_GOScene2 = new GameObject(&plane1_TransformScene2, &planeModel);
+    plane1_TransformScene1.scale = 2.0f;
+    plane1_TransformScene1.translation = glm::vec3(0.0f, -6.0f, -5.0f); 
+    plane1_TransformScene1.rotation = &glm::angleAxis(glm::radians(37.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    GameObject* plane1_GOScene1 = new GameObject(&plane1_TransformScene1, &planeModel);
     TextureParameter* plane1_TP = new TextureParameter(true, 1, 80.0f);
-    RenderableObject* renderablePlane1 = new RenderableObject(plane1_GOScene2, plane1_TP);
+    RenderableObject* renderablePlane1 = new RenderableObject(plane1_GOScene1, plane1_TP);
     scene1.renderableObjects.push_back(renderablePlane1);
 
-    // GameObject* spherePlane_GOScene2 = new GameObject(&plane1_TransformScene2, &sphereModel);
+    // GameObject* spherePlane_GOScene2 = new GameObject(&plane1_TransformScene1, &sphereModel);
     // TextureParameter* spherePlane_TP = new TextureParameter(true, 0, repeat);
     // RenderableObject* renderableSpherePlane1 = new RenderableObject(spherePlane_GOScene2, spherePlane_TP);
     // scene2.renderableObjects.push_back(renderableSpherePlane1);
-    PlaneCollider planeCollider(&plane1_TransformScene2, glm::rotate(*plane1_TransformScene2.rotation, planeModel.meshes[0].vertices[0].Normal));
-    std::cout << "Plane Normal: "<< std::endl;
-    PrintVec3(&planeCollider.normal);
+    PlaneCollider planeCollider(&plane1_TransformScene1, glm::rotate(*plane1_TransformScene1.rotation, planeModel.meshes[0].vertices[0].Normal));
 
     scene1.planes.push_back(&planeCollider);
 
-    std::cout << "Scene 1: complete" << std::endl;
-
     scene1.Update = UpdateScene1;
 
-    activeScene = &scene1;
+    std::cout << "Scene 1: loading complete" << std::endl;
+
+
+    // Load scene 2
+    std::cout << "Scene 2: Loading... " << std::endl;
+
+    Transform plane1_Transform1_scene2;
+    plane1_Transform1_scene2.translation = glm::vec3(7.0f, 0.0f, 0.0f);
+    plane1_Transform1_scene2.scale = 10.0f;
+    plane1_Transform1_scene2.rotation = &glm::angleAxis(glm::radians(25.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    GameObject* plane1_GO_scene2 = new GameObject(&plane1_Transform1_scene2, &planeModel);
+    TextureParameter* plane1_TP_scene2 = new TextureParameter(true, 1, 80.0f);
+    RenderableObject* renderablePlane1_scene2 = new RenderableObject(plane1_GO_scene2, plane1_TP_scene2);
+    scene2.renderableObjects.push_back(renderablePlane1_scene2);
+    PlaneCollider plane1_collider_scene2(&plane1_Transform1_scene2, glm::rotate(*plane1_Transform1_scene2.rotation, plane1_GO_scene2->model->meshes[0].vertices[0].Normal));
+    scene2.planes.push_back(&plane1_collider_scene2);
+
+    Transform plane2_Transform1_scene2;
+    plane2_Transform1_scene2.translation = glm::vec3(-7.0f, 0.0f, 0.0f);
+    plane2_Transform1_scene2.scale = 10.0f;
+    plane2_Transform1_scene2.rotation = &glm::angleAxis(glm::radians(-25.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    GameObject* plane2_GO_scene2 = new GameObject(&plane2_Transform1_scene2, &planeModel);
+    TextureParameter* plane2_TP_scene2 = new TextureParameter(true, 1, 80.0f);
+    RenderableObject* renderablePlane2_scene2 = new RenderableObject(plane2_GO_scene2, plane2_TP_scene2);
+    scene2.renderableObjects.push_back(renderablePlane2_scene2);
+    PlaneCollider plane2_collider_scene2(&plane2_Transform1_scene2, glm::rotate(*plane2_Transform1_scene2.rotation, plane2_GO_scene2->model->meshes[0].vertices[0].Normal));
+    scene2.planes.push_back(&plane2_collider_scene2);
+    scene2.Update = UpdateScene2;
+
+    std::cout << "Scene 2: loading complete" << std::endl;
+
+
+    activeScene = &scene2;
+
 
     // Rendering loop: this code is executed at each frame
     while(!glfwWindowShouldClose(window))
@@ -652,14 +680,30 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         instantiate = !instantiate;
     }
 
-    // // pressing a key between 1 and 5, we change the shader applied to the models
-    // if((key >= GLFW_KEY_1 && key <= GLFW_KEY_5) && action == GLFW_PRESS)
-    // {
-    //     // "1" to "5" -> ASCII codes from 49 to 57
-    //     // we subtract 48 (= ASCII CODE of "0") to have integers from 1 to 5
-    //     // we subtract 1 to have indices from 0 to 4 in the shaders list
-    //     unsigned int pressedInt = (key-'0'-1);
-    // }
+    // pressing a key between 1 and 5, we change the shader applied to the models
+    if((key >= GLFW_KEY_1 && key <= GLFW_KEY_5) && action == GLFW_PRESS)
+    {
+        // "1" to "5" -> ASCII codes from 49 to 57
+        // we subtract 48 (= ASCII CODE of "0") to have integers from 1 to 5
+        // we subtract 1 to have indices from 0 to 4 in the shaders list
+        unsigned int pressedInt = (key-'0'-1);
+
+        // switch (pressedInt)
+        // {
+        // case 1:
+        //     activeScene = &scene1;
+        //     break;
+        // case 2:
+        //     activeScene = &scene2;
+        //     break;
+        // case 3:
+        //     activeScene = &scene3;
+        //     break;            
+        // default:
+        //     activeScene = &scene1;
+        //     break;
+        // }
+    }
 
     // if R is pressed, we start/stop the animated rotation of models
     if(key == GLFW_KEY_R && action == GLFW_PRESS){
@@ -873,15 +917,15 @@ void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transfor
 void UpdateScene1 (Scene* scene){
     if(scene->renderableObjects[0]->gameObject->transform->translation.z > 5.0f){
         direction = glm::vec3(0.0f, 0.0f, -1.0f);
-        std::cout << "Change dir 5.0f" << std::endl;
     } else if(scene->renderableObjects[0]->gameObject->transform->translation.z <= -5.0f){
         direction = glm::vec3(0.0f, 0.0f, 1.0f);
-        std::cout << "Change dir -5.0f " << std::endl;
     }
-    scene->renderableObjects[0]->gameObject->transform->translation += direction * 5.0f * deltaTime;
-    scene->renderableObjects[1]->gameObject->transform->translation -= direction * 5.0f * deltaTime;
+    scene->renderableObjects[0]->gameObject->transform->translation += direction * 3.5f * deltaTime;
+    scene->renderableObjects[1]->gameObject->transform->translation -= direction * 3.5f * deltaTime;
 }
-
+void UpdateScene2 (Scene* scene){
+    
+}
 void imGuiSetup(GLFWwindow *window)
 {
     // ImGui SETUP
@@ -899,7 +943,6 @@ void DebugLogStatus(){
     std::cout << "  - Constraint Iterations: " << constraintIterations << std::endl;
 }
 void PrintVec3(glm::vec3* vec){
-
     std::cout << vec->x << ", " << vec->y << ", " << vec->z << std::endl;
 }
 void MoveSphere(glm::vec3 direction, int action){
@@ -918,13 +961,13 @@ void MoveSphere(glm::vec3 direction, int action){
     // sphereTransform1.translation += direction;
     // sphereTransform2.translation += direction;
 
-    // plane1_TransformScene2.translation += direction;
+    // plane1_TransformScene1.translation += direction;
 
-    // plane1_TransformScene2.rotation->real = cos((plane1_TransformScene2.rotation->GetAngleDegree() + 0.1f) / 2);
-    // std::cout << "Print angle before adding: " << plane1_TransformScene2.rotation->GetAngleDegree() << std::endl;
-    // plane1_TransformScene2.rotation = &Quaternion(glm::vec3(0.0f, 1.0f, 0.0f), plane1_TransformScene2.rotation->GetAngleDegree() + 0.01f);
+    // plane1_TransformScene1.rotation->real = cos((plane1_TransformScene1.rotation->GetAngleDegree() + 0.1f) / 2);
+    // std::cout << "Print angle before adding: " << plane1_TransformScene1.rotation->GetAngleDegree() << std::endl;
+    // plane1_TransformScene1.rotation = &Quaternion(glm::vec3(0.0f, 1.0f, 0.0f), plane1_TransformScene1.rotation->GetAngleDegree() + 0.01f);
 
-    // plane1_TransformScene2.PrintTransform();
+    // plane1_TransformScene1.PrintTransform();
 
     // Move pinned particles
     // for(int i = 0; i < clothDim; i++){
