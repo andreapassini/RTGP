@@ -203,9 +203,6 @@ Cloth* c;
 
 Scene* activeScene;
 
-Scene scene1;
-Scene scene2;
-Scene scene3;
 
 Transform plane1_TransformScene1;
 
@@ -230,6 +227,11 @@ int main()
     glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);
     // View matrix (=camera): position, view direction, camera "up" vector
     glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 7.0f), glm::vec3(0.0f, 0.0f, -7.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+    Scene scene1;
+    Scene scene2;
+    Scene scene3;
+
 
     Model sphereModel("../../models/sphere.obj");
     Model sphereModel1("../../models/sphere.obj");
@@ -348,9 +350,20 @@ int main()
 
     std::cout << "Scene 2: loading complete" << std::endl;
 
+    std::cout << "Scene 3: Loading... " << std::endl;
+    // Scene 3
+    Model heroModel = ("../../models/knight.obj");
+    Transform hero_Transform_scene3;
+    hero_Transform_scene3.translation = glm::vec3(0.0f);
 
-    activeScene = &scene2;
+    GameObject* hero_GO_scene3 = new GameObject(&hero_Transform_scene3, &heroModel);
+    TextureParameter* hero_TP_scene3 = new TextureParameter(false, 0.0f, 0.0f);
+    RenderableObject* hero_RO_scene3 = new RenderableObject(hero_GO_scene3, hero_TP_scene3);
+    scene3.planes.push_back(&plane2_collider_scene2);
+    std::cout << "Scene 3: loading complete" << std::endl;
 
+
+    activeScene = &scene3;
 
     // Rendering loop: this code is executed at each frame
     while(!glfwWindowShouldClose(window))
