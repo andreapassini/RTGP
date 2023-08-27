@@ -228,6 +228,8 @@ int main()
     // View matrix (=camera): position, view direction, camera "up" vector
     glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 7.0f), glm::vec3(0.0f, 0.0f, -7.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
+    std::vector<Scene*> scenes;
+
     Scene scene1;
     Scene scene2;
     Scene scene3;
@@ -301,6 +303,8 @@ int main()
     RenderableObject* renderableSphere2 = new RenderableObject(sphere2, sphereTextureParameter2);
     scene1.renderableObjects.push_back(renderableSphere2);
 
+
+
     plane1_TransformScene1.scale = 2.0f;
     plane1_TransformScene1.translation = glm::vec3(0.0f, -6.0f, -5.0f); 
     plane1_TransformScene1.rotation = &glm::angleAxis(glm::radians(37.0f), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -318,6 +322,8 @@ int main()
     scene1.planes.push_back(&planeCollider);
 
     scene1.Update = UpdateScene1;
+
+    scenes.push_back(&scene1);
 
     std::cout << "Scene 1: loading complete" << std::endl;
 
@@ -347,6 +353,7 @@ int main()
     PlaneCollider plane2_collider_scene2(&plane2_Transform1_scene2, glm::rotate(*plane2_Transform1_scene2.rotation, plane2_GO_scene2->model->meshes[0].vertices[0].Normal));
     scene2.planes.push_back(&plane2_collider_scene2);
     scene2.Update = UpdateScene2;
+    scenes.push_back(&scene2);
 
     std::cout << "Scene 2: loading complete" << std::endl;
 
@@ -360,10 +367,10 @@ int main()
     TextureParameter* hero_TP_scene3 = new TextureParameter(false, 0.0f, 0.0f);
     RenderableObject* hero_RO_scene3 = new RenderableObject(hero_GO_scene3, hero_TP_scene3);
     scene3.planes.push_back(&plane2_collider_scene2);
+    scenes.push_back(&scene3);
     std::cout << "Scene 3: loading complete" << std::endl;
 
-
-    activeScene = &scene3;
+    int sceneNumber = 0;
 
     // Rendering loop: this code is executed at each frame
     while(!glfwWindowShouldClose(window))
@@ -405,6 +412,13 @@ int main()
         } else if(shaderNumber == 2) {
             ImGui::Text("Normal");
         }
+
+        ImGui::NewLine;
+        ImGui::SliderInt("Scenes", &sceneNumber, 0, 2);
+        ImGui::Text("Scene: ");
+        ImGui::Text((char*)std::to_string(sceneNumber + 1).c_str());
+        activeScene = scenes[sceneNumber];
+
 
         ImGui::NewLine;
         ImGui::Text("Physic Simulation");
