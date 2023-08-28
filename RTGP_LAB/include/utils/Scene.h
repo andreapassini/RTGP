@@ -16,6 +16,7 @@ public:
 
     vector<RenderableObject*> renderableObjects;
 
+    void (*Start)(Scene* thisScene);
     void (*Update)(Scene* thisScene);
 
     Scene(){};

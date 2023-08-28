@@ -22,8 +22,6 @@
 class Cloth
 {
 private:
-	int dim; // number of particles in "width" direction
-	// total number of particles is dim*dim
 
 	std::vector<Constraint> constraints; // alle constraints between particles as part of this cloth
 	ConstraintType springsType;
@@ -244,6 +242,9 @@ private:
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 public:
+	int dim; // number of particles in "width" direction
+	// total number of particles is dim*dim
+
 	Transform *transform;
 
 	std::vector<Particle> particles; // all particles that are part of this cloth
