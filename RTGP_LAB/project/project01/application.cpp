@@ -88,13 +88,19 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void apply_camera_movements();
 void imGuiSetup(GLFWwindow *window);
 void PrintVec3(glm::vec3* vec);
-void MoveSphere(glm::vec3 direction, int action);
+void MoveSphere(Transform* sphere_transform , glm::vec3 direction, int action);
+void MoveSphereAndCloth(Transform* sphere_transform , glm::vec3 direction, int action);
 void RotateSphere(float angle, int action);
 void ForceBlinnPhongShaderSetup(Shader forceBlinnPhongShader, Transform clothTransform, glm::mat4 projection, glm::mat4 view);
 void ForceGGXShaderSetup(Shader forceGGXShader, Transform clothTransform, glm::mat4 projection, glm::mat4 view);
 void SetUpClothShader(Shader shader, Transform clothTransform, glm::mat4 projection, glm::mat4 view);
 void UpdateScene1 (Scene* scene);
 void UpdateScene2 (Scene* scene);
+void UpdateScene3 (Scene* scene);
+void MoveClothPinnedParticles(glm::vec3 direction);
+void ChangeScene(Scene* sceneToChange);
+void Start(Scene* scene);
+void Start3(Scene* scene);
 
 bool keys[1024];
 bool R_KEY = false;
@@ -184,7 +190,7 @@ PerformanceCalculator performanceCalculator(windowSize, overlap);
 
 bool pausePhysics;
 
-float sphereMinSpeed = 1.0f;
+float sphereMinSpeed = 2.0f;
 float sphereMaxSpeed = 15.0f;
 float sphereSpeed = sphereMinSpeed;
 float sphereAccel = 3.0f;
@@ -196,19 +202,15 @@ float sphereAngularAccel = 10.0f;
 
 float sphereRotation = 0.0f;
 
-Transform sphereTransform1;
-Transform sphereTransform2;
 
 Cloth* c;
 
 Scene* activeScene;
+Scene* previousActiveScene;
 
+glm::vec3 direction = glm::vec3(0.0f, 0.0f, 1.0f);
 
-Transform plane1_TransformScene1;
-
-    glm::vec3 direction = glm::vec3(0.0f, 0.0f, 1.0f);
-
-
+int action = 0;
 int main()
 {
     if(SetupOpenGL() == -1)
@@ -232,6 +234,7 @@ int main()
     Scene scene2;
     Scene scene3;
 
+    std::vector<Scene*> scenes;
 
     Model sphereModel("../../models/sphere.obj");
     Model sphereModel1("../../models/sphere.obj");
@@ -246,21 +249,6 @@ int main()
     textureID.push_back(LoadTexture("../../textures/SoilCracked.png"));
 
     std::cout << "Texture load: complete" << std::endl;
-
-
-    // Model and Normal transformation matrices for the objects in the scene: we set to identity
-    sphereTransform1 = Transform(view);
-    sphereTransform2 = Transform(view);
-
-    // sphereTransform1.scale = 1.0f;
-    sphereTransform1.translation = glm::vec3(2.0f, -4.0f, 2.0f);
-    // sphereTransform1.rotation = &Quaternion();
-
-    // sphereTransform2.scale = 1.0f;
-    sphereTransform2.translation = glm::vec3(3.0f, -2.0f, -2.0f);
-    // sphereTransform2.rotation = &Quaternion();
-
-    std::cout << "Spheres and Planes Transform: complete" << std::endl;
 
     Transform clothTransform(view);
     Cloth cloth(clothDim, particleOffset, startingPosition, &clothTransform, pinned, springType, K, U, constraintIterations, gravity, mass, collisionIterations, constraintLevel);
@@ -282,88 +270,127 @@ int main()
     pausePhysics = false;
 
 
-    // Load scene 1
+    // -----------------------------------------------------------------------------------
+    // Scene 1
     std::cout << "Scene 1: Loading... " << std::endl;
 
-    SphereCollider sphereCollider1(&sphereTransform1, sphereTransform1.scale);
-    SphereCollider sphereCollider2(&sphereTransform2, sphereTransform2.scale);
+    // Sphere 1
+    Transform sphereTransform1;
+    sphereTransform1 = Transform(view);
+    // sphereTransform1.scale = 1.0f;
+    sphereTransform1.translation = glm::vec3(0.0f, 0.0f, 0.0f);
+    // sphereTransform1.rotation = &Quaternion();
 
-    scene1.spheres.push_back(&sphereCollider1);
-    scene1.spheres.push_back(&sphereCollider2);
-    
     GameObject* sphere1 = new GameObject(&sphereTransform1, &sphereModel);
     TextureParameter* sphereTextureParameter1 = new TextureParameter(true, 0, repeat);
     RenderableObject* renderableSphere1 = new RenderableObject(sphere1, sphereTextureParameter1);
     scene1.renderableObjects.push_back(renderableSphere1);
 
-    GameObject* sphere2 = new GameObject(&sphereTransform2, &sphereModel);
-    TextureParameter* sphereTextureParameter2 = new TextureParameter(true, 0, repeat);
-    RenderableObject* renderableSphere2 = new RenderableObject(sphere2, sphereTextureParameter2);
-    scene1.renderableObjects.push_back(renderableSphere2);
+    SphereCollider sphereCollider1(&sphereTransform1, sphereTransform1.scale);
+    scene1.spheres.push_back(&sphereCollider1);
 
+    // Plane 1
+    Transform plane1_TransformScene1;
+    plane1_TransformScene1 = Transform(view);
     plane1_TransformScene1.scale = 2.0f;
     plane1_TransformScene1.translation = glm::vec3(0.0f, -6.0f, -5.0f); 
-    plane1_TransformScene1.rotation = &glm::angleAxis(glm::radians(37.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    plane1_TransformScene1.rotation = &glm::angleAxis(glm::radians(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
     GameObject* plane1_GOScene1 = new GameObject(&plane1_TransformScene1, &planeModel);
     TextureParameter* plane1_TP = new TextureParameter(true, 1, 80.0f);
     RenderableObject* renderablePlane1 = new RenderableObject(plane1_GOScene1, plane1_TP);
     scene1.renderableObjects.push_back(renderablePlane1);
 
-    // GameObject* spherePlane_GOScene2 = new GameObject(&plane1_TransformScene1, &sphereModel);
-    // TextureParameter* spherePlane_TP = new TextureParameter(true, 0, repeat);
-    // RenderableObject* renderableSpherePlane1 = new RenderableObject(spherePlane_GOScene2, spherePlane_TP);
-    // scene2.renderableObjects.push_back(renderableSpherePlane1);
     PlaneCollider planeCollider(&plane1_TransformScene1, glm::rotate(*plane1_TransformScene1.rotation, planeModel.meshes[0].vertices[0].Normal));
 
     scene1.planes.push_back(&planeCollider);
 
+    scene1.Start = Start;
     scene1.Update = UpdateScene1;
+    scenes.push_back(&scene1);
 
     std::cout << "Scene 1: loading complete" << std::endl;
 
-
-    // Load scene 2
+    // -----------------------------------------------------------------------------
+    // Scene 2
     std::cout << "Scene 2: Loading... " << std::endl;
 
+    Transform sphere3_transform;
+    sphere3_transform = Transform(view);
+    sphere3_transform.scale = 1.0f;
+    sphere3_transform.translation = glm::vec3(2.0f, -0.05f, -0.5f);
+    sphere3_transform.rotation = &glm::angleAxis(glm::radians(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+    GameObject* sphere3 = new GameObject(&sphere3_transform, &sphereModel);
+    TextureParameter* sphereTextureParameter3 = new TextureParameter(true, 0, repeat);
+    RenderableObject* renderableSphere3 = new RenderableObject(sphere3, sphereTextureParameter3);
+    scene2.renderableObjects.push_back(renderableSphere3);
+
+    SphereCollider sphereCollider3(&sphere3_transform, sphere3_transform.scale);
+    scene2.spheres.push_back(&sphereCollider3);
+
     Transform plane1_Transform1_scene2;
-    plane1_Transform1_scene2.translation = glm::vec3(7.0f, 0.0f, 0.0f);
+    plane1_Transform1_scene2 = Transform(view),
+    plane1_Transform1_scene2.translation = glm::vec3(7.0f, -5.0f, 0.0f);
     plane1_Transform1_scene2.scale = 10.0f;
     plane1_Transform1_scene2.rotation = &glm::angleAxis(glm::radians(25.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
     GameObject* plane1_GO_scene2 = new GameObject(&plane1_Transform1_scene2, &planeModel);
     TextureParameter* plane1_TP_scene2 = new TextureParameter(true, 1, 80.0f);
     RenderableObject* renderablePlane1_scene2 = new RenderableObject(plane1_GO_scene2, plane1_TP_scene2);
     scene2.renderableObjects.push_back(renderablePlane1_scene2);
+
     PlaneCollider plane1_collider_scene2(&plane1_Transform1_scene2, glm::rotate(*plane1_Transform1_scene2.rotation, plane1_GO_scene2->model->meshes[0].vertices[0].Normal));
     scene2.planes.push_back(&plane1_collider_scene2);
 
     Transform plane2_Transform1_scene2;
-    plane2_Transform1_scene2.translation = glm::vec3(-7.0f, 0.0f, 0.0f);
+    plane2_Transform1_scene2 = Transform(view),
+    plane2_Transform1_scene2.translation = glm::vec3(-7.0f, -5.0f, 0.0f);
     plane2_Transform1_scene2.scale = 10.0f;
     plane2_Transform1_scene2.rotation = &glm::angleAxis(glm::radians(-25.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
     GameObject* plane2_GO_scene2 = new GameObject(&plane2_Transform1_scene2, &planeModel);
     TextureParameter* plane2_TP_scene2 = new TextureParameter(true, 1, 80.0f);
     RenderableObject* renderablePlane2_scene2 = new RenderableObject(plane2_GO_scene2, plane2_TP_scene2);
     scene2.renderableObjects.push_back(renderablePlane2_scene2);
+
     PlaneCollider plane2_collider_scene2(&plane2_Transform1_scene2, glm::rotate(*plane2_Transform1_scene2.rotation, plane2_GO_scene2->model->meshes[0].vertices[0].Normal));
     scene2.planes.push_back(&plane2_collider_scene2);
+
+    scene2.Start = Start;
     scene2.Update = UpdateScene2;
+
+    scenes.push_back(&scene2);
 
     std::cout << "Scene 2: loading complete" << std::endl;
 
+
+
     std::cout << "Scene 3: Loading... " << std::endl;
     // Scene 3
-    Model heroModel = ("../../models/knight.obj");
-    Transform hero_Transform_scene3;
-    hero_Transform_scene3.translation = glm::vec3(0.0f);
+    
+    Transform sphere4_transform;
+    sphere4_transform = Transform(view);
+    sphere4_transform.scale = 1.0f;
+    sphere4_transform.translation = glm::vec3(2.0f, -0.05f, -0.5f);
+    sphere4_transform.rotation = &glm::angleAxis(glm::radians(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-    GameObject* hero_GO_scene3 = new GameObject(&hero_Transform_scene3, &heroModel);
-    TextureParameter* hero_TP_scene3 = new TextureParameter(false, 0.0f, 0.0f);
-    RenderableObject* hero_RO_scene3 = new RenderableObject(hero_GO_scene3, hero_TP_scene3);
-    scene3.planes.push_back(&plane2_collider_scene2);
+    GameObject* sphere4 = new GameObject(&sphere4_transform, &sphereModel);
+    TextureParameter* sphereTextureParameter4 = new TextureParameter(true, 0, repeat);
+    RenderableObject* renderableSphere4 = new RenderableObject(sphere4, sphereTextureParameter4);
+    scene3.renderableObjects.push_back(renderableSphere4);
+
+    SphereCollider sphereCollider4(&sphere4_transform, sphere4_transform.scale);
+    scene3.spheres.push_back(&sphereCollider4);
+
+    scene3.Start = Start3;
+    scene3.Update = UpdateScene3;
+    scenes.push_back(&scene3);
     std::cout << "Scene 3: loading complete" << std::endl;
 
+    int sceneIndex = 0;
 
-    activeScene = &scene3;
+    activeScene = scenes[sceneIndex];
 
     // Rendering loop: this code is executed at each frame
     while(!glfwWindowShouldClose(window))
@@ -403,8 +430,17 @@ int main()
         } else if(shaderNumber == 1) {
             ImGui::Text("GGX");
         } else if(shaderNumber == 2) {
-            ImGui::Text("Normal");
+            ImGui::Text("Normal");  
         }
+
+        // activeScene
+        ImGui::NewLine;
+        ImGui::SliderInt("Scene active: ", &sceneIndex, 0, 2);
+        if(previousActiveScene != scenes[sceneIndex]){
+            ChangeScene(scenes[sceneIndex]);
+        }
+        ImGui::Text((std::to_string(sceneIndex + 1)).c_str());
+
 
         ImGui::NewLine;
         ImGui::Text("Physic Simulation");
@@ -728,24 +764,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     if(key == GLFW_KEY_L && action == GLFW_PRESS)
         wireframe=!wireframe;
 
-    if(key == GLFW_KEY_UP){
-        MoveSphere(glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
-    } 
-    if(key == GLFW_KEY_DOWN){
-        MoveSphere(-glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
-    } 
-    if(key == GLFW_KEY_LEFT){
-        MoveSphere(-camera.Right, action);
-    } 
-    if(key == GLFW_KEY_RIGHT){
-        MoveSphere(camera.Right, action);
-    } 
-    if(key == GLFW_KEY_SPACE){
-        MoveSphere(camera.WorldUp, action);
-    } 
-    if(key == GLFW_KEY_LEFT_CONTROL){
-        MoveSphere(-camera.WorldUp, action);
-    }
     // we keep trace of the pressed keys
     // with this method, we can manage 2 keys pressed at the same time:
     // many I/O managers often consider only 1 key pressed at the time (the first pressed, until it is released)
@@ -928,17 +946,100 @@ void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transfor
 }
 
 void UpdateScene1 (Scene* scene){
-    if(scene->renderableObjects[0]->gameObject->transform->translation.z > 5.0f){
-        direction = glm::vec3(0.0f, 0.0f, -1.0f);
-    } else if(scene->renderableObjects[0]->gameObject->transform->translation.z <= -5.0f){
-        direction = glm::vec3(0.0f, 0.0f, 1.0f);
+
+    if(keys[GLFW_KEY_UP])
+    {
+        MoveSphere(scene->renderableObjects[0]->gameObject->transform, glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
     }
-    scene->renderableObjects[0]->gameObject->transform->translation += direction * 3.5f * deltaTime;
-    scene->renderableObjects[1]->gameObject->transform->translation -= direction * 3.5f * deltaTime;
+    if(keys[GLFW_KEY_DOWN])
+    {
+        MoveSphere(scene->renderableObjects[0]->gameObject->transform, -glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
+    }
+    if(keys[GLFW_KEY_LEFT])
+    {
+        MoveSphere(scene->renderableObjects[0]->gameObject->transform, -camera.Right, action);
+    }
+    if(keys[GLFW_KEY_RIGHT])
+    {
+        MoveSphere(scene->renderableObjects[0]->gameObject->transform, camera.Right, action);
+    }
+    if(keys[GLFW_KEY_SPACE]){
+        MoveSphere(scene->renderableObjects[0]->gameObject->transform, camera.WorldUp, action);
+    }
+    if(keys[GLFW_KEY_LEFT_CONTROL]){
+        MoveSphere(scene->renderableObjects[0]->gameObject->transform, -camera.WorldUp, action);
+    }
 }
 void UpdateScene2 (Scene* scene){
-    
+    // Coat attached to the sphere
+
+    // // Moving sphere
+    // if(scene->renderableObjects[0]->gameObject->transform->translation.z > 5.0f){
+    //     direction = glm::vec3(0.0f, 0.0f, -1.0f);
+    // } else if(scene->renderableObjects[0]->gameObject->transform->translation.z <= -5.0f){
+    //     direction = glm::vec3(0.0f, 0.0f, 1.0f);
+    // }
+
+    // scene->renderableObjects[0]->gameObject->transform->translation += direction * sphereSpeed * deltaTime;
+    // // scene->renderableObjects[1]->gameObject->transform->translation -= direction * sphereSpeed;
+
+    // MoveClothPinnedParticles(direction * sphereSpeed * deltaTime);
+
+    if(keys[GLFW_KEY_UP])
+    {
+        MoveSphereAndCloth(scene->renderableObjects[0]->gameObject->transform, glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
+    }
+    if(keys[GLFW_KEY_DOWN])
+    {
+        MoveSphereAndCloth(scene->renderableObjects[0]->gameObject->transform, -glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
+    }
+    if(keys[GLFW_KEY_LEFT])
+    {
+        MoveSphereAndCloth(scene->renderableObjects[0]->gameObject->transform, -camera.Right, action);
+    }
+    if(keys[GLFW_KEY_RIGHT])
+    {
+        MoveSphereAndCloth(scene->renderableObjects[0]->gameObject->transform, camera.Right, action);
+    }
+    if(keys[GLFW_KEY_SPACE]){
+        MoveSphereAndCloth(scene->renderableObjects[0]->gameObject->transform, camera.WorldUp, action);
+    }
+    if(keys[GLFW_KEY_LEFT_CONTROL]){
+        MoveSphereAndCloth(scene->renderableObjects[0]->gameObject->transform, -camera.WorldUp, action);
+    }
+
+
 }
+void UpdateScene3 (Scene* scene){
+    if(keys[GLFW_KEY_UP])
+    {
+        MoveSphere(scene->renderableObjects[0]->gameObject->transform, glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
+    }
+    if(keys[GLFW_KEY_DOWN])
+    {
+        MoveSphere(scene->renderableObjects[0]->gameObject->transform, -glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
+    }
+    if(keys[GLFW_KEY_LEFT])
+    {
+        MoveSphere(scene->renderableObjects[0]->gameObject->transform, -camera.Right, action);
+    }
+    if(keys[GLFW_KEY_RIGHT])
+    {
+        MoveSphere(scene->renderableObjects[0]->gameObject->transform, camera.Right, action);
+    }
+    if(keys[GLFW_KEY_SPACE]){
+        MoveSphere(scene->renderableObjects[0]->gameObject->transform, camera.WorldUp, action);
+    }
+    if(keys[GLFW_KEY_LEFT_CONTROL]){
+        MoveSphere(scene->renderableObjects[0]->gameObject->transform, -camera.WorldUp, action);
+    }
+}
+void ChangeScene(Scene* sceneToChange){
+    previousActiveScene = activeScene;
+    activeScene = sceneToChange;
+    activeScene->Start(activeScene);
+}
+
 void imGuiSetup(GLFWwindow *window)
 {
     // ImGui SETUP
@@ -958,7 +1059,7 @@ void DebugLogStatus(){
 void PrintVec3(glm::vec3* vec){
     std::cout << vec->x << ", " << vec->y << ", " << vec->z << std::endl;
 }
-void MoveSphere(glm::vec3 direction, int action){
+void MoveSphere(Transform* sphere_transform , glm::vec3 direction, int action){
     if(action == GLFW_PRESS){
         sphereSpeed = sphereMinSpeed;
     }
@@ -971,27 +1072,43 @@ void MoveSphere(glm::vec3 direction, int action){
 
     direction *= sphereSpeed * deltaTime;
 
-    // sphereTransform1.translation += direction;
-    // sphereTransform2.translation += direction;
+    sphere_transform->translation += direction;
 
-    // plane1_TransformScene1.translation += direction;
+    direction = glm::vec3(0.0f);
 
-    // plane1_TransformScene1.rotation->real = cos((plane1_TransformScene1.rotation->GetAngleDegree() + 0.1f) / 2);
-    // std::cout << "Print angle before adding: " << plane1_TransformScene1.rotation->GetAngleDegree() << std::endl;
-    // plane1_TransformScene1.rotation = &Quaternion(glm::vec3(0.0f, 1.0f, 0.0f), plane1_TransformScene1.rotation->GetAngleDegree() + 0.01f);
 
-    // plane1_TransformScene1.PrintTransform();
-
-    // Move pinned particles
-    // for(int i = 0; i < clothDim; i++){
-    //     for(int j = 0; j < clothDim; j++){
-    //         Particle* p = (*c).getParticle(i, j, clothDim);
-    //         if(p->movable == false){
-    //             p->pos += direction;
-    //         }
-    //     }
-    // }
 }
+void MoveSphereAndCloth(Transform* sphere_transform , glm::vec3 direction, int action){
+    if(action == GLFW_PRESS){
+        sphereSpeed = sphereMinSpeed;
+    }
+    if(action == GLFW_REPEAT){
+        sphereSpeed += sphereSpeed * sphereAccel * deltaTime;
+        if(sphereSpeed > sphereMaxSpeed){
+            sphereSpeed = sphereMaxSpeed;
+        }
+    }
+
+    direction *= sphereSpeed * deltaTime;
+
+    sphere_transform->translation += direction;
+
+    MoveClothPinnedParticles(direction);
+
+    direction = glm::vec3(0.0f);
+}
+void MoveClothPinnedParticles(glm::vec3 direction){
+    // Move pinned particles
+    for(int i = 0; i < clothDim; i++){
+        for(int j = 0; j < clothDim; j++){
+            Particle* p = (*c).getParticle(i, j, clothDim);
+            if(p->movable == false){
+                p->pos += direction;
+            }
+        }
+    }
+}
+
 void RotateSphere(float angle, int action){
     if(action == GLFW_PRESS){
         sphereAngularVelocity = sphereMinAngularVelocity;
@@ -1047,4 +1164,19 @@ void SetUpClothShader(Shader shader, Transform clothTransform, glm::mat4 project
     glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(clothTransform.normalMatrix));
     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
+}
+
+void Start(Scene* scene){
+
+}
+
+void Start3(Scene* scene){
+    // Init cloth fixed in 4 points
+
+    c->getParticle(c->dim-1, 0, c->dim)->movable = false;
+    c->getParticle(c->dim-1, 1, c->dim)->movable = false;
+
+    c->getParticle(c->dim-1, c->dim-1, c->dim)->movable = false;
+    c->getParticle(c->dim-1, c->dim-2, c->dim)->movable = false;
+
 }
