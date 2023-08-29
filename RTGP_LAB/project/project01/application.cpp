@@ -329,6 +329,21 @@ int main()
     SphereCollider sphereCollider3(&sphere3_transform, sphere3_transform.scale);
     scene2.spheres.push_back(&sphereCollider3);
 
+    Transform sphere31_transform;
+    sphere31_transform = Transform(view);
+    sphere31_transform.scale = 1.0f;
+    sphere31_transform.translation = glm::vec3(2.0f, -1.55f, -0.5f);
+    sphere31_transform.rotation = &glm::angleAxis(glm::radians(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+    GameObject* sphere31 = new GameObject(&sphere31_transform, &sphereModel);
+    TextureParameter* sphereTextureParameter31 = new TextureParameter(true, 0, repeat);
+    RenderableObject* renderableSphere31 = new RenderableObject(sphere31, sphereTextureParameter31);
+    scene2.renderableObjects.push_back(renderableSphere31);
+
+    SphereCollider sphereCollider31(&sphere31_transform, sphere31_transform.scale);
+    scene2.spheres.push_back(&sphereCollider31);
+
+
     Transform plane1_Transform1_scene2;
     plane1_Transform1_scene2 = Transform(view),
     plane1_Transform1_scene2.translation = glm::vec3(7.0f, -5.0f, 0.0f);
@@ -372,7 +387,7 @@ int main()
     Transform sphere4_transform;
     sphere4_transform = Transform(view);
     sphere4_transform.scale = 1.0f;
-    sphere4_transform.translation = glm::vec3(2.0f, -0.05f, -0.5f);
+    sphere4_transform.translation = glm::vec3(2.0f, -3.0f, -3.0f);
     sphere4_transform.rotation = &glm::angleAxis(glm::radians(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     GameObject* sphere4 = new GameObject(&sphere4_transform, &sphereModel);
@@ -586,7 +601,7 @@ int main()
             SetUpClothShader(normal_shader, clothTransform, projection, view);
         }
 
-
+        cloth.CheckForCuts();
         cloth.Draw();
         
         if(!pKeyPressed && once)
@@ -988,24 +1003,30 @@ void UpdateScene2 (Scene* scene){
     if(keys[GLFW_KEY_UP])
     {
         MoveSphereAndCloth(scene->renderableObjects[0]->gameObject->transform, glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
+        MoveSphere(scene->renderableObjects[1]->gameObject->transform, glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
     }
     if(keys[GLFW_KEY_DOWN])
     {
         MoveSphereAndCloth(scene->renderableObjects[0]->gameObject->transform, -glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
+        MoveSphere(scene->renderableObjects[1]->gameObject->transform, -glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
     }
     if(keys[GLFW_KEY_LEFT])
     {
         MoveSphereAndCloth(scene->renderableObjects[0]->gameObject->transform, -camera.Right, action);
+        MoveSphere(scene->renderableObjects[1]->gameObject->transform, -camera.Right, action);
     }
     if(keys[GLFW_KEY_RIGHT])
     {
         MoveSphereAndCloth(scene->renderableObjects[0]->gameObject->transform, camera.Right, action);
+        MoveSphere(scene->renderableObjects[1]->gameObject->transform, camera.Right, action);
     }
     if(keys[GLFW_KEY_SPACE]){
         MoveSphereAndCloth(scene->renderableObjects[0]->gameObject->transform, camera.WorldUp, action);
+        MoveSphere(scene->renderableObjects[1]->gameObject->transform, camera.WorldUp, action);
     }
     if(keys[GLFW_KEY_LEFT_CONTROL]){
         MoveSphereAndCloth(scene->renderableObjects[0]->gameObject->transform, -camera.WorldUp, action);
+        MoveSphere(scene->renderableObjects[1]->gameObject->transform, -camera.WorldUp, action);
     }
 
 
@@ -1032,6 +1053,10 @@ void UpdateScene3 (Scene* scene){
     }
     if(keys[GLFW_KEY_LEFT_CONTROL]){
         MoveSphere(scene->renderableObjects[0]->gameObject->transform, -camera.WorldUp, action);
+    }
+
+    if(keys[GLFW_KEY_E]){
+        c->CutAHole(c->dim - 5, c->dim - 5);
     }
 }
 void ChangeScene(Scene* sceneToChange){
@@ -1075,8 +1100,6 @@ void MoveSphere(Transform* sphere_transform , glm::vec3 direction, int action){
     sphere_transform->translation += direction;
 
     direction = glm::vec3(0.0f);
-
-
 }
 void MoveSphereAndCloth(Transform* sphere_transform , glm::vec3 direction, int action){
     if(action == GLFW_PRESS){
@@ -1095,7 +1118,7 @@ void MoveSphereAndCloth(Transform* sphere_transform , glm::vec3 direction, int a
 
     MoveClothPinnedParticles(direction);
 
-    direction = glm::vec3(0.0f);
+    // direction = glm::vec3(0.0f);
 }
 void MoveClothPinnedParticles(glm::vec3 direction){
     // Move pinned particles
@@ -1179,4 +1202,8 @@ void Start3(Scene* scene){
     c->getParticle(c->dim-1, c->dim-1, c->dim)->movable = false;
     c->getParticle(c->dim-1, c->dim-2, c->dim)->movable = false;
 
+    int numOfConstraints = c->constraints.capacity();
+    for(int i = 0; i < numOfConstraints; i++){
+        c->constraints[i].cuttable = true;
+    }
 }

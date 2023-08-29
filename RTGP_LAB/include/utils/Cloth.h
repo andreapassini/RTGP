@@ -4,6 +4,7 @@
 #include <vector>
 #include <glad/glad.h>
 #include <physicsSimulation/physicsSimulation.h>
+#include <utils/particlesToCut.h>
 
 // GLFW
 #include <glfw/glfw3.h>
@@ -23,7 +24,6 @@ class Cloth
 {
 private:
 
-	std::vector<Constraint> constraints; // alle constraints between particles as part of this cloth
 	ConstraintType springsType;
 	unsigned int constraintIterations;
 	unsigned int collisionIterations;
@@ -36,6 +36,7 @@ private:
     std::vector<GLuint> indices;
 
 	float maxForce;
+	bool hole;
 
 	void makeConstraint(Particle *p1, Particle *p2, float rest_distance) {
 		constraints.push_back(Constraint(p1,p2, rest_distance));
@@ -229,12 +230,23 @@ private:
         }
     }
 
-	int FindIndexParticle(Particle p){
-		for(size_t i = 0; i <= particles.size(); i++ )
+	glm::vec3 FindIndexParticle(Particle* p){
+		int linearizedIndex = -1;
+
+		for(size_t i = 0; i <= particles.capacity() && linearizedIndex == -1; i++ )
 		{							
-			if(particles[i] == p)
-				return i;
+			if(&particles[i] == p){
+				linearizedIndex = i;
+			}
 		}
+
+		glm::vec3 index = glm::vec3(-1.0f);
+
+		int x = linearizedIndex / this->dim;
+		int y = linearizedIndex % this->dim;
+
+		index = glm::vec3(x, y, -1.0f);
+		return index;
 	}
 	
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -246,7 +258,8 @@ public:
 	// total number of particles is dim*dim
 
 	Transform *transform;
-
+	
+	std::vector<Constraint> constraints; // alle constraints between particles as part of this cloth
 	std::vector<Particle> particles; // all particles that are part of this cloth
 	float K;
 	float U;
@@ -416,7 +429,12 @@ public:
 
 	void Draw()
 	{
-		//SetUp();
+		if(hole){
+			SetUp();
+			hole = false;
+		} else {
+		}
+
 		UpdateNormals();
 		UpdateBuffers();
 
@@ -464,6 +482,7 @@ public:
 		}
 
 		pToDelete->renderable = false;
+		hole = true;
 
 		// for(size_t x = 0; x < particles.size(); x++){
 		// 	for(size_t y = 0; y < particles.size(); y++){
@@ -472,8 +491,7 @@ public:
 		// 	}
 		// }
 
-
-		std::cout << "Del: " << del << std::endl;
+		// std::cout << "Del: " << del << std::endl;
 	}
 	void CutAHole(unsigned int x, unsigned int y){
 		Particle* pToDelete0 = getParticle(x, y, dim);
@@ -497,4 +515,26 @@ public:
 		DeleteAllConstraintOfParticle(pToDelete8);
 	}
 
+	void CutAHole(Particle* p){
+		unsigned int x, y;
+
+		glm::vec3 index = FindIndexParticle(p);
+		x = index.x;
+		y = index.y;
+		
+		CutAHole( x,  y);
+	}
+
+	void CheckForCuts(){
+		int capacity = ParticlesToCut::instance().particles.capacity();
+
+		if(capacity > 0){
+			hole = true;
+		}
+
+		for(int i = 0; i < capacity; i++){
+			Particle* pToCut = ParticlesToCut::instance().particles[i];
+			CutAHole(pToCut);
+		}
+	}
 };

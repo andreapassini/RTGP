@@ -1,7 +1,7 @@
 #pragma once
 
 #include <utils/particle.h>
-
+#include <utils/particlesToCut.h>
 
 class Constraint
 {
@@ -10,6 +10,7 @@ private:
 
 public:
 	Particle *p1, *p2; // the two particles that are connected through this constraint
+	bool cuttable;
 
 	Constraint(Particle *p1, Particle *p2, float rest) :  p1(p1),p2(p2),rest_distance(rest)
 	{
@@ -49,13 +50,21 @@ private:
 		float current_distance = glm::length(p1_to_p2); // current distance between p1 and p2
 		float abs_cur = abs(current_distance);
 
-		if(abs_cur <= 2 *FLT_EPSILON){
-			if(current_distance >= 0.0f)
-				current_distance += 2 * FLT_EPSILON;
-			else 
-				current_distance -= 2 * FLT_EPSILON;
+		// if(abs_cur <= 2 *FLT_EPSILON){
+		// 	if(current_distance >= 0.0f)
+		// 		current_distance += 2 * FLT_EPSILON;
+		// 	else 
+		// 		current_distance -= 2 * FLT_EPSILON;
+		// }
+
+		if(cuttable){
+			if(current_distance >= rest_distance * 2.0f){
+				ParticlesToCut::instance().particles.push_back(p1);
+				ParticlesToCut::instance().particles.push_back(p2);
+			}
 		}
-		
+
+
 		p1_to_p2 /= current_distance;
 
 		float deltaDistance = current_distance - rest_distance;
