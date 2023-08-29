@@ -526,15 +526,21 @@ public:
 	}
 
 	void CheckForCuts(){
-		int capacity = ParticlesToCut::instance().particles.capacity();
+		int size = ParticlesToCut::GetInstance()->particles.size();
 
-		if(capacity > 0){
+		if(size > 0){
 			hole = true;
+			std::cout << "Capacity: " << size << std::endl;
+
+			for(int i = 0; i < size; i++){
+				Particle* pToCut = ParticlesToCut::GetInstance()->particles[i];
+				CutAHole(pToCut);
+				std::cout << "Cutting " << std::endl;
+			}
+
+			ParticlesToCut::GetInstance()->particles.clear();
 		}
 
-		for(int i = 0; i < capacity; i++){
-			Particle* pToCut = ParticlesToCut::instance().particles[i];
-			CutAHole(pToCut);
-		}
+
 	}
 };

@@ -12,7 +12,7 @@ public:
 	Particle *p1, *p2; // the two particles that are connected through this constraint
 	bool cuttable;
 
-	Constraint(Particle *p1, Particle *p2, float rest) :  p1(p1),p2(p2),rest_distance(rest)
+	Constraint(Particle *p1, Particle *p2, float rest) :  p1(p1),p2(p2),rest_distance(rest),cuttable(false)
 	{
 	}
 
@@ -58,9 +58,9 @@ private:
 		// }
 
 		if(cuttable){
-			if(current_distance >= rest_distance * 2.0f){
-				ParticlesToCut::instance().particles.push_back(p1);
-				ParticlesToCut::instance().particles.push_back(p2);
+			if(current_distance >= rest_distance * 5.0f){
+				ParticlesToCut::GetInstance()->particles.push_back(p1);
+				ParticlesToCut::GetInstance()->particles.push_back(p2);
 			}
 		}
 

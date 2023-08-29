@@ -386,7 +386,7 @@ int main()
     
     Transform sphere4_transform;
     sphere4_transform = Transform(view);
-    sphere4_transform.scale = 1.0f;
+    sphere4_transform.scale = 0.5f;
     sphere4_transform.translation = glm::vec3(2.0f, -3.0f, -3.0f);
     sphere4_transform.rotation = &glm::angleAxis(glm::radians(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
@@ -578,6 +578,7 @@ int main()
                 physicsSimulation.FixedTimeStep(currentTime);
                 cloth.PhysicsSteps(activeScene);
                 physIter++;
+                cloth.CheckForCuts();
 
                 if(physIter > maxIter){
                     std::cout << "Physics Simulation lagging " << std::endl;
@@ -601,7 +602,6 @@ int main()
             SetUpClothShader(normal_shader, clothTransform, projection, view);
         }
 
-        cloth.CheckForCuts();
         cloth.Draw();
         
         if(!pKeyPressed && once)
@@ -1055,9 +1055,9 @@ void UpdateScene3 (Scene* scene){
         MoveSphere(scene->renderableObjects[0]->gameObject->transform, -camera.WorldUp, action);
     }
 
-    if(keys[GLFW_KEY_E]){
-        c->CutAHole(c->dim - 5, c->dim - 5);
-    }
+    // if(keys[GLFW_KEY_E]){
+    //     c->CutAHole(c->dim - 5, c->dim - 5);
+    // }
 }
 void ChangeScene(Scene* sceneToChange){
     previousActiveScene = activeScene;
