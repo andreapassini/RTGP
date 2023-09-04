@@ -202,13 +202,13 @@ float sphereAngularAccel = 10.0f;
 
 float sphereRotation = 0.0f;
 
-
-Cloth* c;
+std::vector<Cloth*> c;
 
 Scene* activeScene;
 Scene* previousActiveScene;
 
 glm::vec3 direction = glm::vec3(0.0f, 0.0f, 1.0f);
+glm::mat4 view;
 
 int action = 0;
 int main()
@@ -228,7 +228,7 @@ int main()
 
     glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);
     // View matrix (=camera): position, view direction, camera "up" vector
-    glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 7.0f), glm::vec3(0.0f, 0.0f, -7.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    view = glm::lookAt(glm::vec3(0.0f, 0.0f, 7.0f), glm::vec3(0.0f, 0.0f, -7.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     Scene scene1;
     Scene scene2;
@@ -255,7 +255,7 @@ int main()
     
     std::cout << "Cloth Transform: complete" << std::endl;
 
-    c = &cloth;
+    c.push_back(&cloth) ;
 
     PerformanceCalculator performanceCalculator(windowSize, overlap);
 
@@ -576,9 +576,16 @@ int main()
                 physicsSimulation.AddForceToAll(glm::vec3(0.0f, gravity, 0.0f));
                 cloth.AddGravityForce();
                 physicsSimulation.FixedTimeStep(currentTime);
+
+                for(int i = 0; i < c.size(); i++){
+                    c[i]->PhysicsSteps(activeScene);
+                    c[i]->CheckForCuts();
+                }
+
                 cloth.PhysicsSteps(activeScene);
-                physIter++;
                 cloth.CheckForCuts();
+
+                physIter++;
 
                 if(physIter > maxIter){
                     std::cout << "Physics Simulation lagging " << std::endl;
@@ -1194,6 +1201,15 @@ void Start(Scene* scene){
 }
 
 void Start3(Scene* scene){
+    c.clear();
+
+    // Create 2 cloths, one constraint and the other one physic
+    Transform clothTransform1(view);
+    Cloth cloth1(clothDim, particleOffset, startingPosition, &clothTransform1, pinned, springType, K, U, constraintIterations, gravity, mass, collisionIterations, constraintLevel);
+
+    Transform clothTransform2(view);
+    Cloth cloth2(clothDim, particleOffset, startingPosition, &clothTransform2, pinned, springType, K, U, constraintIterations, gravity, mass, collisionIterations, constraintLevel);
+
     // Init cloth fixed in 4 points
 
     c->getParticle(c->dim-1, 0, c->dim)->movable = false;
@@ -1206,4 +1222,7 @@ void Start3(Scene* scene){
     for(int i = 0; i < numOfConstraints; i++){
         c->constraints[i].cuttable = true;
     }
+
+    c.push_back(&cloth1);
+    c.push_back(&cloth2);
 }
