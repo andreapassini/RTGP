@@ -89,18 +89,21 @@ void apply_camera_movements();
 void imGuiSetup(GLFWwindow *window);
 void PrintVec3(glm::vec3* vec);
 void MoveSphere(Transform* sphere_transform , glm::vec3 direction, int action);
-void MoveSphereAndCloth(Transform* sphere_transform , glm::vec3 direction, int action);
+void MoveSphereAndCloth(Transform* sphere_transform , glm::vec3 direction, int action, Cloth* clothToMove);
 void RotateSphere(float angle, int action);
 void ForceBlinnPhongShaderSetup(Shader forceBlinnPhongShader, Transform clothTransform, glm::mat4 projection, glm::mat4 view);
 void ForceGGXShaderSetup(Shader forceGGXShader, Transform clothTransform, glm::mat4 projection, glm::mat4 view);
 void SetUpClothShader(Shader shader, Transform clothTransform, glm::mat4 projection, glm::mat4 view);
+void MoveClothPinnedParticles(glm::vec3 direction, Cloth* clothToMove);
+void ChangeScene(Scene* sceneToChange);
+
+void Start1(Scene* scene);
+void Start2(Scene* scene);
+void Start3(Scene* scene);
+
 void UpdateScene1 (Scene* scene);
 void UpdateScene2 (Scene* scene);
 void UpdateScene3 (Scene* scene);
-void MoveClothPinnedParticles(glm::vec3 direction);
-void ChangeScene(Scene* sceneToChange);
-void Start(Scene* scene);
-void Start3(Scene* scene);
 
 bool keys[1024];
 bool R_KEY = false;
@@ -202,7 +205,7 @@ float sphereAngularAccel = 10.0f;
 
 float sphereRotation = 0.0f;
 
-std::vector<Cloth*> c;
+std::vector<Cloth> c;
 
 Scene* activeScene;
 Scene* previousActiveScene;
@@ -255,7 +258,7 @@ int main()
     
     std::cout << "Cloth Transform: complete" << std::endl;
 
-    c.push_back(&cloth) ;
+    c.push_back(cloth) ;
 
     PerformanceCalculator performanceCalculator(windowSize, overlap);
 
@@ -305,7 +308,7 @@ int main()
 
     scene1.planes.push_back(&planeCollider);
 
-    scene1.Start = Start;
+    scene1.Start = Start1;
     scene1.Update = UpdateScene1;
     scenes.push_back(&scene1);
 
@@ -372,7 +375,7 @@ int main()
     PlaneCollider plane2_collider_scene2(&plane2_Transform1_scene2, glm::rotate(*plane2_Transform1_scene2.rotation, plane2_GO_scene2->model->meshes[0].vertices[0].Normal));
     scene2.planes.push_back(&plane2_collider_scene2);
 
-    scene2.Start = Start;
+    scene2.Start = Start2;
     scene2.Update = UpdateScene2;
 
     scenes.push_back(&scene2);
@@ -404,9 +407,8 @@ int main()
     std::cout << "Scene 3: loading complete" << std::endl;
 
     int sceneIndex = 0;
-
     activeScene = scenes[sceneIndex];
-
+    
     // Rendering loop: this code is executed at each frame
     while(!glfwWindowShouldClose(window))
     {
@@ -455,6 +457,7 @@ int main()
             ChangeScene(scenes[sceneIndex]);
         }
         ImGui::Text((std::to_string(sceneIndex + 1)).c_str());
+        std::cout << "Particles in imgui : " << c[0].particles.size() << std::endl;
 
 
         ImGui::NewLine;
@@ -559,6 +562,9 @@ int main()
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 
+        std::cout << "physic sim per cloths: " << c.size() <<  " - " << c[0].particles.size() << std::endl;
+
+
         // CLOTH        
         clothTransform.Transformation(
             glm::vec3(1.0f, 1.0f, 1.0f),
@@ -577,9 +583,15 @@ int main()
                 cloth.AddGravityForce();
                 physicsSimulation.FixedTimeStep(currentTime);
 
+                std::cout << "physic sim per cloths: " << c[0].particles.size() << std::endl;
                 for(int i = 0; i < c.size(); i++){
-                    c[i]->PhysicsSteps(activeScene);
-                    c[i]->CheckForCuts();
+                    std::cout << "ResetShaderForce" << std::endl;
+                    c[i].ResetShaderForce();
+                    std::cout << "AddGravityForce" << std::endl;
+                    c[i].AddGravityForce();
+                    std::cout << "PhysicsSteps" << std::endl;
+                    c[i].PhysicsSteps(activeScene);
+                    c[i].CheckForCuts();
                 }
 
                 cloth.PhysicsSteps(activeScene);
@@ -609,8 +621,20 @@ int main()
             SetUpClothShader(normal_shader, clothTransform, projection, view);
         }
 
+
         cloth.Draw();
-        
+        for(int i = 0; i < c.size(); i++){
+            std::cout << "Drawing Cloths" << std::endl;
+            c[i].transform->Transformation(
+                glm::vec3(1.0f, 1.0f, 1.0f),
+                0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
+                startingPosition,
+                view
+            );
+            c[i].Draw();
+            std::cout << "complete Drawing" << std::endl;
+        }
+
         if(!pKeyPressed && once)
         {
             cloth.~Cloth();
@@ -898,76 +922,9 @@ void RenderScene(Shader &shader, Scene &scene, glm::mat4 projection, glm::mat4 v
     }
 
 }
-void RenderScene1(Shader &shader, glm::mat4 projection, glm::mat4 view, Transform &planeTransform, Model &planeModel, Transform &sphereTransform, Model &sphereModel, Transform &sphereTra1, Model &sphereModel1){
-
-    shader.Use();
-
-    // we pass projection and view matrices to the Shader Program
-    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
-    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
-
-    // we determine the position in the Shader Program of the uniform variables
-    GLint lightDirLocation = glGetUniformLocation(shader.Program, "lightVector");
-    GLint kdLocation = glGetUniformLocation(shader.Program, "Kd");
-    GLint alphaLocation = glGetUniformLocation(shader.Program, "alpha");
-    GLint f0Location = glGetUniformLocation(shader.Program, "F0");
-
-    // we assign the value to the uniform variables
-    glUniform3fv(lightDirLocation, 1, glm::value_ptr(lightPosition));
-    glUniform1f(kdLocation, Kd);
-    glUniform1f(alphaLocation, alpha);
-    glUniform1f(f0Location, F0);
-
-    // we pass the needed uniforms
-    GLint textureLocation = glGetUniformLocation(shader.Program, "tex");
-    GLint repeatLocation = glGetUniformLocation(shader.Program, "repeat");
-
-    // OBJECTS
-    // Objects with texture
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, textureID[0]);
-    glUniform1i(textureLocation, 0);
-    glUniform1f(repeatLocation, repeat);
-
-    // Sphere
-    sphereTransform.Transformation(
-        glm::vec3(1.0f),
-        sphereRotation, glm::vec3(0.0f, 1.0f, 0.0f),
-        spherePosition,
-        view);
-    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.modelMatrix));
-    glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTransform.normalMatrix));
-    sphereModel.Draw();
-    sphereTransform.PrintTransform();
-
-    // Sphere
-    sphereTra1.Transformation(
-        glm::vec3(1.0f),
-        sphereRotation, glm::vec3(0.0f, 1.0f, 0.0f),
-        spherePosition1,
-        view);
-    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTra1.modelMatrix));
-    glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(sphereTra1.normalMatrix));
-    sphereModel1.Draw();
-    
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, textureID[1]);
-    glUniform1i(textureLocation, 1);
-    glUniform1f(repeatLocation, 80.0);
-
-    
-    // PLANE
-    planeTransform.Transformation(
-        glm::vec3(10.0f, 1.0f, 10.0f),
-        0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
-        planePosition,
-        view);
-    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(planeTransform.modelMatrix));
-    glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(planeTransform.normalMatrix));
-    planeModel.Draw();
-}
 
 void UpdateScene1 (Scene* scene){
+    std::cout << "Update scene 1" << std::endl;
 
     if(keys[GLFW_KEY_UP])
     {
@@ -1009,30 +966,30 @@ void UpdateScene2 (Scene* scene){
 
     if(keys[GLFW_KEY_UP])
     {
-        MoveSphereAndCloth(scene->renderableObjects[0]->gameObject->transform, glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
+        MoveSphereAndCloth(scene->renderableObjects[0]->gameObject->transform, glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action, &c[0]);
         MoveSphere(scene->renderableObjects[1]->gameObject->transform, glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
     }
     if(keys[GLFW_KEY_DOWN])
     {
-        MoveSphereAndCloth(scene->renderableObjects[0]->gameObject->transform, -glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
+        MoveSphereAndCloth(scene->renderableObjects[0]->gameObject->transform, -glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action, &c[0]);
         MoveSphere(scene->renderableObjects[1]->gameObject->transform, -glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
     }
     if(keys[GLFW_KEY_LEFT])
     {
-        MoveSphereAndCloth(scene->renderableObjects[0]->gameObject->transform, -camera.Right, action);
+        MoveSphereAndCloth(scene->renderableObjects[0]->gameObject->transform, -camera.Right, action, &c[0]);
         MoveSphere(scene->renderableObjects[1]->gameObject->transform, -camera.Right, action);
     }
     if(keys[GLFW_KEY_RIGHT])
     {
-        MoveSphereAndCloth(scene->renderableObjects[0]->gameObject->transform, camera.Right, action);
+        MoveSphereAndCloth(scene->renderableObjects[0]->gameObject->transform, camera.Right, action, &c[0]);
         MoveSphere(scene->renderableObjects[1]->gameObject->transform, camera.Right, action);
     }
     if(keys[GLFW_KEY_SPACE]){
-        MoveSphereAndCloth(scene->renderableObjects[0]->gameObject->transform, camera.WorldUp, action);
+        MoveSphereAndCloth(scene->renderableObjects[0]->gameObject->transform, camera.WorldUp, action, &c[0]);
         MoveSphere(scene->renderableObjects[1]->gameObject->transform, camera.WorldUp, action);
     }
     if(keys[GLFW_KEY_LEFT_CONTROL]){
-        MoveSphereAndCloth(scene->renderableObjects[0]->gameObject->transform, -camera.WorldUp, action);
+        MoveSphereAndCloth(scene->renderableObjects[0]->gameObject->transform, -camera.WorldUp, action, &c[0]);
         MoveSphere(scene->renderableObjects[1]->gameObject->transform, -camera.WorldUp, action);
     }
 
@@ -1066,6 +1023,7 @@ void UpdateScene3 (Scene* scene){
     //     c->CutAHole(c->dim - 5, c->dim - 5);
     // }
 }
+
 void ChangeScene(Scene* sceneToChange){
     previousActiveScene = activeScene;
     activeScene = sceneToChange;
@@ -1108,7 +1066,7 @@ void MoveSphere(Transform* sphere_transform , glm::vec3 direction, int action){
 
     direction = glm::vec3(0.0f);
 }
-void MoveSphereAndCloth(Transform* sphere_transform , glm::vec3 direction, int action){
+void MoveSphereAndCloth(Transform* sphere_transform , glm::vec3 direction, int action, Cloth* clothToMove){
     if(action == GLFW_PRESS){
         sphereSpeed = sphereMinSpeed;
     }
@@ -1123,15 +1081,15 @@ void MoveSphereAndCloth(Transform* sphere_transform , glm::vec3 direction, int a
 
     sphere_transform->translation += direction;
 
-    MoveClothPinnedParticles(direction);
+    MoveClothPinnedParticles(direction, clothToMove);
 
     // direction = glm::vec3(0.0f);
 }
-void MoveClothPinnedParticles(glm::vec3 direction){
+void MoveClothPinnedParticles(glm::vec3 direction, Cloth* clothToMove){
     // Move pinned particles
     for(int i = 0; i < clothDim; i++){
         for(int j = 0; j < clothDim; j++){
-            Particle* p = (*c).getParticle(i, j, clothDim);
+            Particle* p = (*clothToMove).getParticle(i, j, clothDim);
             if(p->movable == false){
                 p->pos += direction;
             }
@@ -1196,33 +1154,58 @@ void SetUpClothShader(Shader shader, Transform clothTransform, glm::mat4 project
     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
 }
 
-void Start(Scene* scene){
+void Start1(Scene* scene){
+    std::cout << "Start Scene 1" << std::endl;
+    c.clear();
+
+    Transform clothTransform1(view);
+    Cloth cloth1(clothDim, particleOffset, startingPosition, &clothTransform1, pinned, springType, K, U, constraintIterations, gravity, mass, collisionIterations, constraintLevel);
+    std::cout << "cloth dim: " << clothDim << std::endl;
+    std::cout << "Particles: " << cloth1.particles.size() << std::endl;
+    c.push_back(cloth1);
+    std::cout << "physic sim per cloths: " << c[0].particles.size() << std::endl;
 
 }
+void Start2(Scene* scene){
+    std::cout << "Start Scene 2" << std::endl;
 
+}
 void Start3(Scene* scene){
+    std::cout << "Start Scene 3" << std::endl;
+
     c.clear();
 
     // Create 2 cloths, one constraint and the other one physic
     Transform clothTransform1(view);
     Cloth cloth1(clothDim, particleOffset, startingPosition, &clothTransform1, pinned, springType, K, U, constraintIterations, gravity, mass, collisionIterations, constraintLevel);
+    
+    // fixed in 4 points
+    cloth1.getParticle(cloth1.dim-1, 0, cloth1.dim)->movable = false;
+    cloth1.getParticle(cloth1.dim-1, 1, cloth1.dim)->movable = false;
+
+    cloth1.getParticle(cloth1.dim-1, cloth1.dim-1, cloth1.dim)->movable = false;
+    cloth1.getParticle(cloth1.dim-1, cloth1.dim-2, cloth1.dim)->movable = false;
+
+    int numOfConstraints = cloth1.constraints.capacity();
+    for(int i = 0; i < numOfConstraints; i++){
+        cloth1.constraints[i].cuttable = true;
+    }
 
     Transform clothTransform2(view);
     Cloth cloth2(clothDim, particleOffset, startingPosition, &clothTransform2, pinned, springType, K, U, constraintIterations, gravity, mass, collisionIterations, constraintLevel);
 
-    // Init cloth fixed in 4 points
+    // fixed in 4 points
+    cloth2.getParticle(cloth2.dim-1, 0, cloth2.dim)->movable = false;
+    cloth2.getParticle(cloth2.dim-1, 1, cloth2.dim)->movable = false;
 
-    c->getParticle(c->dim-1, 0, c->dim)->movable = false;
-    c->getParticle(c->dim-1, 1, c->dim)->movable = false;
+    cloth2.getParticle(cloth2.dim-1, cloth2.dim-1, cloth2.dim)->movable = false;
+    cloth2.getParticle(cloth2.dim-1, cloth2.dim-2, cloth2.dim)->movable = false;
 
-    c->getParticle(c->dim-1, c->dim-1, c->dim)->movable = false;
-    c->getParticle(c->dim-1, c->dim-2, c->dim)->movable = false;
-
-    int numOfConstraints = c->constraints.capacity();
+    numOfConstraints = cloth2.constraints.capacity();
     for(int i = 0; i < numOfConstraints; i++){
-        c->constraints[i].cuttable = true;
+        cloth2.constraints[i].cuttable = true;
     }
 
-    c.push_back(&cloth1);
-    c.push_back(&cloth2);
+    c.push_back(cloth1);
+    c.push_back(cloth2);
 }
