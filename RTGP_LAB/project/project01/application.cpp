@@ -457,7 +457,6 @@ int main()
             ChangeScene(scenes[sceneIndex]);
         }
         ImGui::Text((std::to_string(sceneIndex + 1)).c_str());
-        std::cout << "Particles in imgui : " << c[0].particles.size() << std::endl;
 
 
         ImGui::NewLine;
@@ -562,9 +561,6 @@ int main()
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 
-        std::cout << "physic sim per cloths: " << c.size() <<  " - " << c[0].particles.size() << std::endl;
-
-
         // CLOTH        
         clothTransform.Transformation(
             glm::vec3(1.0f, 1.0f, 1.0f),
@@ -583,13 +579,9 @@ int main()
                 cloth.AddGravityForce();
                 physicsSimulation.FixedTimeStep(currentTime);
 
-                std::cout << "physic sim per cloths: " << c[0].particles.size() << std::endl;
                 for(int i = 0; i < c.size(); i++){
-                    std::cout << "ResetShaderForce" << std::endl;
                     c[i].ResetShaderForce();
-                    std::cout << "AddGravityForce" << std::endl;
                     c[i].AddGravityForce();
-                    std::cout << "PhysicsSteps" << std::endl;
                     c[i].PhysicsSteps(activeScene);
                     c[i].CheckForCuts();
                 }
@@ -624,7 +616,6 @@ int main()
 
         cloth.Draw();
         for(int i = 0; i < c.size(); i++){
-            std::cout << "Drawing Cloths" << std::endl;
             c[i].transform->Transformation(
                 glm::vec3(1.0f, 1.0f, 1.0f),
                 0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
@@ -632,7 +623,6 @@ int main()
                 view
             );
             c[i].Draw();
-            std::cout << "complete Drawing" << std::endl;
         }
 
         if(!pKeyPressed && once)
@@ -924,7 +914,6 @@ void RenderScene(Shader &shader, Scene &scene, glm::mat4 projection, glm::mat4 v
 }
 
 void UpdateScene1 (Scene* scene){
-    std::cout << "Update scene 1" << std::endl;
 
     if(keys[GLFW_KEY_UP])
     {
@@ -1160,11 +1149,7 @@ void Start1(Scene* scene){
 
     Transform clothTransform1(view);
     Cloth cloth1(clothDim, particleOffset, startingPosition, &clothTransform1, pinned, springType, K, U, constraintIterations, gravity, mass, collisionIterations, constraintLevel);
-    std::cout << "cloth dim: " << clothDim << std::endl;
-    std::cout << "Particles: " << cloth1.particles.size() << std::endl;
     c.push_back(cloth1);
-    std::cout << "physic sim per cloths: " << c[0].particles.size() << std::endl;
-
 }
 void Start2(Scene* scene){
     std::cout << "Start Scene 2" << std::endl;

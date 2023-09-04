@@ -264,7 +264,7 @@ public:
 	float K;
 	float U;
 
-	Cloth(int dim, float particleDistance, glm::vec3 topLeftPosition, Transform *t, bool pinned, ConstraintType usePhysicConstraints, float k, float u, unsigned int contraintIt, float gravity, float m, unsigned int collisionIt, unsigned int constraintLevel){
+	Cloth(int dim, float particleDistance, glm::vec3 topLeftPosition, Transform *t, bool pinned, ConstraintType usePhysicConstraints, float k, float u, unsigned int contraintIt, float gravity, float m, unsigned int collisionIt, unsigned int constraintLevel){		
 		this->dim = dim;
 		this->transform = t;
 		this->springsType = usePhysicConstraints;
@@ -530,12 +530,10 @@ public:
 
 		if(size > 0){
 			hole = true;
-			std::cout << "Capacity: " << size << std::endl;
 
 			for(int i = 0; i < size; i++){
 				Particle* pToCut = ParticlesToCut::GetInstance()->particles[i];
 				CutAHole(pToCut);
-				std::cout << "Cutting " << std::endl;
 			}
 
 			ParticlesToCut::GetInstance()->particles.clear();
