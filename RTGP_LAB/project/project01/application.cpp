@@ -205,7 +205,7 @@ float sphereAngularAccel = 10.0f;
 
 float sphereRotation = 0.0f;
 
-std::vector<Cloth> c;
+Cloth* c;
 
 Scene* activeScene;
 Scene* previousActiveScene;
@@ -258,7 +258,7 @@ int main()
     
     std::cout << "Cloth Transform: complete" << std::endl;
 
-    c.push_back(cloth) ;
+    c = &cloth ;
 
     PerformanceCalculator performanceCalculator(windowSize, overlap);
 
@@ -579,13 +579,6 @@ int main()
                 cloth.AddGravityForce();
                 physicsSimulation.FixedTimeStep(currentTime);
 
-                for(int i = 0; i < c.size(); i++){
-                    c[i].ResetShaderForce();
-                    c[i].AddGravityForce();
-                    c[i].PhysicsSteps(activeScene);
-                    c[i].CheckForCuts();
-                }
-
                 cloth.PhysicsSteps(activeScene);
                 cloth.CheckForCuts();
 
@@ -615,15 +608,6 @@ int main()
 
 
         cloth.Draw();
-        for(int i = 0; i < c.size(); i++){
-            c[i].transform->Transformation(
-                glm::vec3(1.0f, 1.0f, 1.0f),
-                0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
-                startingPosition,
-                view
-            );
-            c[i].Draw();
-        }
 
         if(!pKeyPressed && once)
         {
@@ -1145,11 +1129,7 @@ void SetUpClothShader(Shader shader, Transform clothTransform, glm::mat4 project
 
 void Start1(Scene* scene){
     std::cout << "Start Scene 1" << std::endl;
-    c.clear();
-
-    Transform clothTransform1(view);
-    Cloth cloth1(clothDim, particleOffset, startingPosition, &clothTransform1, pinned, springType, K, U, constraintIterations, gravity, mass, collisionIterations, constraintLevel);
-    c.push_back(cloth1);
+    
 }
 void Start2(Scene* scene){
     std::cout << "Start Scene 2" << std::endl;
@@ -1157,24 +1137,6 @@ void Start2(Scene* scene){
 }
 void Start3(Scene* scene){
     std::cout << "Start Scene 3" << std::endl;
-
-    c.clear();
-
-    // Create 2 cloths, one constraint and the other one physic
-    Transform clothTransform1(view);
-    Cloth cloth1(clothDim, particleOffset, startingPosition, &clothTransform1, pinned, springType, K, U, constraintIterations, gravity, mass, collisionIterations, constraintLevel);
-    
-    // fixed in 4 points
-    cloth1.getParticle(cloth1.dim-1, 0, cloth1.dim)->movable = false;
-    cloth1.getParticle(cloth1.dim-1, 1, cloth1.dim)->movable = false;
-
-    cloth1.getParticle(cloth1.dim-1, cloth1.dim-1, cloth1.dim)->movable = false;
-    cloth1.getParticle(cloth1.dim-1, cloth1.dim-2, cloth1.dim)->movable = false;
-
-    int numOfConstraints = cloth1.constraints.capacity();
-    for(int i = 0; i < numOfConstraints; i++){
-        cloth1.constraints[i].cuttable = true;
-    }
 
     Transform clothTransform2(view);
     Cloth cloth2(clothDim, particleOffset, startingPosition, &clothTransform2, pinned, springType, K, U, constraintIterations, gravity, mass, collisionIterations, constraintLevel);
@@ -1186,11 +1148,8 @@ void Start3(Scene* scene){
     cloth2.getParticle(cloth2.dim-1, cloth2.dim-1, cloth2.dim)->movable = false;
     cloth2.getParticle(cloth2.dim-1, cloth2.dim-2, cloth2.dim)->movable = false;
 
-    numOfConstraints = cloth2.constraints.capacity();
+    int numOfConstraints = cloth2.constraints.capacity();
     for(int i = 0; i < numOfConstraints; i++){
         cloth2.constraints[i].cuttable = true;
     }
-
-    c.push_back(cloth1);
-    c.push_back(cloth2);
 }
