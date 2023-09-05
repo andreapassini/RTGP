@@ -41,6 +41,6 @@ void main()
   // we apply the projection transformation
   gl_Position = projectionMatrix * mvPosition;
   
-  colorForce = force;
+  colorForce = color;
   posLightSpace = mPosition;
 }

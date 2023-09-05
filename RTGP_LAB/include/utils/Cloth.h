@@ -29,6 +29,7 @@ private:
 	unsigned int collisionIterations;
 	float gravityForce;
 	unsigned int constraintLevel;
+	float cuttingDistanceMultiplier;
 
 	GLuint VAO;
 	GLuint EBO;
@@ -38,8 +39,8 @@ private:
 	float maxForce;
 	bool hole;
 
-	void makeConstraint(Particle *p1, Particle *p2, float rest_distance) {
-		constraints.push_back(Constraint(p1,p2, rest_distance));
+	void makeConstraint(Particle *p1, Particle *p2, float rest_distance, float cuttingMuliplier) {
+		constraints.push_back(Constraint(p1,p2, rest_distance, cuttingDistanceMultiplier));
 	}
 
 	glm::vec3 CalculateNormalTriangle(Particle* p1, Particle* p2, Particle* p3){
@@ -133,6 +134,9 @@ private:
 			glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, shader_force));
 		}
 
+		glEnableVertexAttribArray(3);
+		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, color));
+
 		// Note that this is allowed, the call to glVertexAttribPointer registered VBO as the currently bound vertex buffer object so afterwards we can safely unbind
         glBindBuffer(GL_ARRAY_BUFFER, 0); 
         // Unbind VAO (it's always a good thing to unbind any buffer/array to prevent strange bugs), remember: do NOT unbind the EBO, keep it bound to this VAO
@@ -216,6 +220,9 @@ private:
 			glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, shader_force));
 		}
 
+		glEnableVertexAttribArray(3);
+		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid *)offsetof(Particle, color));
+
 		glBindVertexArray(0);
 	}
 	void freeGPUresources()
@@ -264,7 +271,7 @@ public:
 	float K;
 	float U;
 
-	Cloth(int dim, float particleDistance, glm::vec3 topLeftPosition, Transform *t, bool pinned, ConstraintType usePhysicConstraints, float k, float u, unsigned int contraintIt, float gravity, float m, unsigned int collisionIt, unsigned int constraintLevel){		
+	Cloth(int dim, float particleDistance, glm::vec3 topLeftPosition, Transform *t, bool pinned, ConstraintType usePhysicConstraints, float k, float u, unsigned int contraintIt, float gravity, float m, unsigned int collisionIt, unsigned int constraintLevel, float cuttingMultiplier){
 		this->dim = dim;
 		this->transform = t;
 		this->springsType = usePhysicConstraints;
@@ -274,10 +281,15 @@ public:
 		this->K = k;
 		this->U = u;
 		this->constraintLevel = constraintLevel;
+		this->cuttingDistanceMultiplier = cuttingMultiplier;
 
 		maxForce = 0.0f;
 		particles.resize(dim*dim); //I am essentially using this vector as an array with room for num_particles_width*dim particles
 		
+		const glm::vec3 evenColor (0.812f, 1.0f, 0.0f); 
+		const glm::vec3 oddColor (1.0f, 0.443f, 0.0f); 
+		glm::vec3 color (0.0f);
+
 		// creating particles in a grid of particles from (0,0,0) to (width,-height,0)
 		for(int x=0; x < dim; x++)
 		{
@@ -295,7 +307,12 @@ public:
 								topLeftPosition.y + (y * particleDistance),
 								topLeftPosition.x - (x * particleDistance),
 								topLeftPosition.x - (x * particleDistance));
-				particles[(x*dim) + y] = Particle(pos, m); // Linearization of the index, row = X, col = Y and row dimension = dim
+				if(x % 4 == 0){
+					color = evenColor;
+				} else {
+					color = oddColor;
+				}
+				particles[(x*dim) + y] = Particle(pos, m, color); // Linearization of the index, row = X, col = Y and row dimension = dim
 			}
 		}
 
@@ -310,9 +327,9 @@ public:
 				// |  \
 				*/
 				for(int i = 1; i <= this->constraintLevel; i++){
-					if(y+i < dim) makeConstraint(getParticle(x, y, dim), getParticle(x, y+i, dim), particleDistance * i);
-					if(x+i < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+i, y, dim), particleDistance * i);
-					if(y+i < dim && x+i < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+i, y+i, dim), particleDistance*glm::sqrt(2.0f) * i);
+					if(y+i < dim) makeConstraint(getParticle(x, y, dim), getParticle(x, y+i, dim), particleDistance * i, cuttingDistanceMultiplier);
+					if(x+i < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+i, y, dim), particleDistance * i, cuttingDistanceMultiplier);
+					if(y+i < dim && x+i < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+i, y+i, dim), particleDistance*glm::sqrt(2.0f) * i, cuttingDistanceMultiplier);
 				}
 			}
 		}
@@ -354,9 +371,6 @@ public:
 						break;
 					case PHYSICAL:
 						constraint->satisfyPhysicsConstraint(K); // satisfy constraint.
-						break;
-					case POSITIONAL_ADVANCED:
-						constraint->satisfyAdvancedPositionalConstraint(K, U, FIXED_TIME_STEP);
 						break;
 					case PHYSICAL_ADVANCED:
 						constraint->satisfyAdvancedPhysicalConstraint(K, U, FIXED_TIME_STEP);
@@ -530,10 +544,12 @@ public:
 
 		if(size > 0){
 			hole = true;
+			std::cout << "Capacity: " << size << std::endl;
 
 			for(int i = 0; i < size; i++){
 				Particle* pToCut = ParticlesToCut::GetInstance()->particles[i];
 				CutAHole(pToCut);
+				std::cout << "Cutting " << std::endl;
 			}
 
 			ParticlesToCut::GetInstance()->particles.clear();

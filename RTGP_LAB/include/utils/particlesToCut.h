@@ -30,7 +30,6 @@ ParticlesToCut* ParticlesToCut::instance = nullptr;
 
 ParticlesToCut *ParticlesToCut::GetInstance(){
     if(instance == nullptr){
-        std::cout << "Instancing" << std::endl;
         instance = new ParticlesToCut();
     }
 

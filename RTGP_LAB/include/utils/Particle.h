@@ -31,9 +31,10 @@ public:
 	float mass;
 
 	glm::vec3 shader_force;
+	glm::vec3 color;
 	bool renderable;
 	
-	Particle(glm::vec3 pos, float m) : pos(pos), normal(glm::vec3(1.0f)),  old_pos(pos),force(glm::vec3(0.0f)), mass(m), movable(true){
+	Particle(glm::vec3 pos, float m, glm::vec3 c) : pos(pos), normal(glm::vec3(1.0f)),  old_pos(pos),force(glm::vec3(0.0f)), mass(m), movable(true), color(c){
 		renderable = true;
 	}
 	Particle(){}
