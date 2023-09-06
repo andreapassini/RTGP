@@ -124,7 +124,7 @@ GLboolean wireframe = GL_FALSE;
 
 Camera camera(glm::vec3(0.0f, -2.0f, 7.0f), GL_FALSE);
 
-glm::vec3 lightPosition = glm::vec3(1.0f, 1.0f, 1.0f);
+glm::vec3 lightPosition = glm::vec3(0.0f, 5.0f, 0.0f);
 
 // weights for the diffusive, specular and ambient components
 GLfloat Kd = 3.0f;
@@ -178,8 +178,8 @@ int constraintLevel = 1;
 int collisionIterations = 10;
 float cuttingDistanceMultiplier = 5.0f;
 
-unsigned int windowSize = 10;
-unsigned int overlap = 3;
+unsigned int windowSize = 100;
+unsigned int overlap = 10;
 
 glm::vec3 spherePosition(0.0f, 2.0f, 0.0f);
 glm::vec3 spherePosition1(0.0f, 1.0f, 0.0f);
@@ -413,6 +413,7 @@ int main()
 
     activeScene = scenes[sceneIndex];
 
+
     // Rendering loop: this code is executed at each frame
     while(!glfwWindowShouldClose(window))
     {
@@ -494,10 +495,9 @@ int main()
                 break;
             case 2:
                 // springType = PHYSICAL_ADVANCED;
-                K = 7.5f;
+                K = 10.0f;
                 U = 0.1f;
                 gravity = -9.8f;
-                constraintIterations = 1;
                 constraintIterations = 5;
                 constraintLevel = 2;
                 break;
@@ -687,6 +687,8 @@ int SetupOpenGL(){
     glClearColor(0.26f, 0.46f, 0.98f, 1.0f);
 
     imGuiSetup(window);
+
+    glfwSwapInterval(0);    
 
     return 1;
 }
@@ -1134,8 +1136,8 @@ void SetUpClothShader(Shader shader, Transform clothTransform, glm::mat4 project
 }
 
 void Start1(Scene* scene){
-    glClearColor(0.26f, 0.46f, 0.98f, 1.0f);
-    
+    glClearColor(0.988f, 0.804f, 0.98f, 1.0f);
+
     c->getParticle(c->dim-1, 0, c->dim)->movable = true;
     c->getParticle(c->dim-1, 1, c->dim)->movable = true;
 
@@ -1150,7 +1152,7 @@ void Start1(Scene* scene){
 
 }
 void Start2(Scene* scene){
-    glClearColor(0.702f, 0.929f, 0.655f, 1.0f);
+    glClearColor(0.886f, 0.988f, 0.804f, 1.0f);
     
     c->getParticle(c->dim-1, 0, c->dim)->movable = true;
     c->getParticle(c->dim-1, 1, c->dim)->movable = true;
@@ -1166,7 +1168,7 @@ void Start2(Scene* scene){
 
 }
 void Start3(Scene* scene){
-    glClearColor(0.953f, 0.8f, 1.0f, 1.0f);
+    glClearColor(0.988f, 0.804f, 0.804f, 1.0f);
 
 
     // Init cloth fixed in 4 points

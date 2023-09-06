@@ -286,8 +286,8 @@ public:
 		maxForce = 0.0f;
 		particles.resize(dim*dim); //I am essentially using this vector as an array with room for num_particles_width*dim particles
 		
-		const glm::vec3 evenColor (0.812f, 1.0f, 0.0f); 
-		const glm::vec3 oddColor (1.0f, 0.443f, 0.0f); 
+		const glm::vec3 evenColor (0.467f, 0.259f, 1.0f); 
+		const glm::vec3 oddColor (0.467f, 0.259f, 1.0f); 
 		glm::vec3 color (0.0f);
 
 		// creating particles in a grid of particles from (0,0,0) to (width,-height,0)
