@@ -194,7 +194,7 @@ PerformanceCalculator performanceCalculator(windowSize, overlap);
 bool pausePhysics;
 
 float sphereMinSpeed = 2.0f;
-float sphereMaxSpeed = 15.0f;
+float sphereMaxSpeed = 25.0f;
 float sphereSpeed = sphereMinSpeed;
 float sphereAccel = 3.0f;
 

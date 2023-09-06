@@ -59,8 +59,10 @@ private:
 
 		if(cuttable){
 			if(current_distance >= rest_distance * cuttingDistanceMultiplier){
-				ParticlesToCut::GetInstance()->particles.push_back(p1);
-				ParticlesToCut::GetInstance()->particles.push_back(p2);
+				if(p1->movable)
+					ParticlesToCut::GetInstance()->particles.push_back(p1);
+				if(p2->movable)
+					ParticlesToCut::GetInstance()->particles.push_back(p2);
 			}
 		}
 

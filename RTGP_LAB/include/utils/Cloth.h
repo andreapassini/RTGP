@@ -286,8 +286,10 @@ public:
 		maxForce = 0.0f;
 		particles.resize(dim*dim); //I am essentially using this vector as an array with room for num_particles_width*dim particles
 		
-		const glm::vec3 evenColor (0.467f, 0.259f, 1.0f); 
-		const glm::vec3 oddColor (0.467f, 0.259f, 1.0f); 
+		const glm::vec3 constraintColor (0.259f, 0.541f, 0.259f); 
+		const glm::vec3 springColor (0.259f, 0.651f, 1.0f); 
+		const glm::vec3 springFrictionColor (0.467f, 0.259f, 1.0f); 
+
 		glm::vec3 color (0.0f);
 
 		// creating particles in a grid of particles from (0,0,0) to (width,-height,0)
@@ -307,11 +309,22 @@ public:
 								topLeftPosition.y + (y * particleDistance),
 								topLeftPosition.x - (x * particleDistance),
 								topLeftPosition.x - (x * particleDistance));
-				if(x % 4 == 0){
-					color = evenColor;
-				} else {
-					color = oddColor;
+
+				switch (springsType)
+				{
+				case ConstraintType::POSITIONAL:
+					color = constraintColor;
+					break;
+				case ConstraintType::PHYSICAL:
+					color = springColor;
+					break;
+				case ConstraintType::PHYSICAL_ADVANCED:
+					color = springFrictionColor;
+					break;
+				default:
+					break;
 				}
+
 				particles[(x*dim) + y] = Particle(pos, m, color); // Linearization of the index, row = X, col = Y and row dimension = dim
 			}
 		}
