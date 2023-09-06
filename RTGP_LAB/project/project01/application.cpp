@@ -122,7 +122,7 @@ GLboolean instantiate = GL_FALSE;
 
 GLboolean wireframe = GL_FALSE;
 
-Camera camera(glm::vec3(0.0f, -2.0f, 7.0f), GL_FALSE);
+Camera camera(glm::vec3(6.0f, 0.0f, 7.0f), GL_FALSE);
 
 glm::vec3 lightPosition = glm::vec3(0.0f, 5.0f, 0.0f);
 
