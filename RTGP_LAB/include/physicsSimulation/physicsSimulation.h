@@ -45,7 +45,7 @@ public:
     //     virtualTime += FIXED_TIME_STEP;
     // }
 
-    void FixedTimeStep(float currTime){
+    void FixedTimeStep(){
         if(isPaused) 
             return;
         

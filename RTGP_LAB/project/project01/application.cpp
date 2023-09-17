@@ -573,7 +573,7 @@ int main()
                 cloth.ResetShaderForce();
                 physicsSimulation.AddForceToAll(glm::vec3(0.0f, gravity, 0.0f));
                 cloth.AddGravityForce();
-                physicsSimulation.FixedTimeStep(currentTime);
+                physicsSimulation.FixedTimeStep();
                 cloth.PhysicsSteps(activeScene);
                 physIter++;
                 cloth.CheckForCuts();

@@ -10,7 +10,6 @@
 
 /* Some physics constants */
 #define DAMPING 0.02f // how much to damp the cloth simulation each frame
-#define TIME_STEPSIZE2 (0.5f*0.5f)
 #define COLLISION_OFFSET_MULTIPLIER 1.15f
 
 #define FIXED_TIME_STEP (1.0f / 60.0f)
@@ -54,26 +53,10 @@ public:
 
 		glm::vec3 now_pos = pos;
 		glm::vec3 accel = this->force/mass;
-		//pos = now_pos + (now_pos-old_pos) * (1.0f-DAMPING) + accel * FIXED_TIME_STEP2;	
 		//pos = ((2.0f) * now_pos) - ( old_pos) + (accel * FIXED_TIME_STEP2);
 		pos = ((2.0f - DAMPING) * now_pos) - ( (1.0f - DAMPING) * old_pos) + (accel * FIXED_TIME_STEP2);
 		old_pos = now_pos;
 		this->shader_force = glm::vec3(force.x, force.y, force.z) + glm::vec3(0.1f);
-		this->force = glm::vec3(0.0f);
-	}
-	void PhysicStep(float deltaTime)
-	{
-		if(!movable){
-			this->force = glm::vec3(0.0f);
-			return;	
-		}
-
-		glm::vec3 now_pos = pos;
-		glm::vec3 accel = force/mass;
-		pos = now_pos + ((now_pos-old_pos) * (1.0f-DAMPING) + accel) * (deltaTime) * TIME_STEPSIZE2;	
-		//pos = now_pos + (now_pos-old_pos) * (1.0f-DAMPING) + accel * deltaTime * FIXED_TIME_STEP2;	
-		old_pos = now_pos;
-		this->shader_force = glm::vec3(force.x, force.y, force.z);
 		this->force = glm::vec3(0.0f);
 	}
 
@@ -138,8 +121,8 @@ public:
 		glm::vec3 distance = this->pos - pointOnPlane;
 		float dot = glm::dot(distance, normal);
 
-		if(dot <= 0.0f){
-			// under the plane
+		if(dot <= 0.0f)	// under the plane
+		{
 			glm::vec3 reposition = normal * (-1 * dot * COLLISION_OFFSET_MULTIPLIER);
 			this->offsetPos(reposition);
 		}
