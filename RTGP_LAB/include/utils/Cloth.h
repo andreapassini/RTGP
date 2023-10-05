@@ -180,22 +180,11 @@ private:
 			for(int y=0; y < dim-1; y++)
 			{
 				glm::vec3 normal;
-				// normal = CalculateNormalSquare(x, y);
-				// getParticle(x,   y,   dim)->addToNormal(normal);
-				// getParticle(x+1, y,   dim)->addToNormal(normal);
-				// getParticle(x,   y+1, dim)->addToNormal(normal);
-				// getParticle(x+1, y+1, dim)->addToNormal(normal);
 
 				normal = CalculateNormalTriangle(getParticle(x, y,   dim), getParticle(x+1,   y,   dim), getParticle(x,   y+1, dim));
 				getParticle(x,   y,   dim)->addToNormal(normal);
 				getParticle(x+1, y,   dim)->addToNormal(normal);
 				getParticle(x,   y+1, dim)->addToNormal(normal);
-
-				// normal = CalculateNormalTriangle(getParticle(x+1, y+1,   dim), getParticle(x+1, y,   dim), getParticle(x,   y+1, dim));
-				// getParticle(x+1, y+1, dim)->addToNormal(normal);
-				// getParticle(x+1, y  , dim)->addToNormal(normal);
-				// getParticle(x,   y+1, dim)->addToNormal(normal);
-
 			}
 		}
 	}
@@ -264,12 +253,12 @@ public:
 	int dim; // number of particles in "width" direction
 	// total number of particles is dim*dim
 
-	Transform *transform;
-	
-	std::vector<Constraint> constraints; // alle constraints between particles as part of this cloth
 	std::vector<Particle> particles; // all particles that are part of this cloth
+	std::vector<Constraint> constraints; // alle constraints between particles as part of this cloth
+
 	float K;
 	float U;
+	Transform *transform;
 
 	Cloth(int dim, float particleDistance, glm::vec3 topLeftPosition, Transform *t, bool pinned, ConstraintType usePhysicConstraints, float k, float u, unsigned int contraintIt, float gravity, float m, unsigned int collisionIt, unsigned int constraintLevel, float cuttingMultiplier){
 		this->dim = dim;
@@ -342,7 +331,10 @@ public:
 				for(int i = 1; i <= this->constraintLevel; i++){
 					if(y+i < dim) makeConstraint(getParticle(x, y, dim), getParticle(x, y+i, dim), particleDistance * i, cuttingDistanceMultiplier);
 					if(x+i < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+i, y, dim), particleDistance * i, cuttingDistanceMultiplier);
-					if(y+i < dim && x+i < dim) makeConstraint(getParticle(x, y, dim), getParticle(x+i, y+i, dim), particleDistance*glm::sqrt(2.0f) * i, cuttingDistanceMultiplier);
+					if(y+i < dim && x+i < dim) makeConstraint(getParticle(x, y, dim), 
+																getParticle(x+i, y+i, dim), 
+																particleDistance*glm::sqrt(2.0f) * i, 
+																cuttingDistanceMultiplier);
 				}
 			}
 		}
