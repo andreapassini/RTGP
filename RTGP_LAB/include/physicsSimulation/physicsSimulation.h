@@ -1,13 +1,9 @@
 #pragma once
 
-//#include <utils/cloth.h>
 #include "../utils/Cloth.h"
 #include "physicObject.h"
+#include "physicsParameters.h"
 #include <vector>
-
-#define FIXED_TIME_STEP (1.0f / 60.0f)
-#define FIXED_TIME_STEP2 (FIXED_TIME_STEP * FIXED_TIME_STEP)
-
 
 class PhysicsSimulation
 {
@@ -26,7 +22,7 @@ public:
 
     void StartPhysicsSimulation(double startingTime){
         virtualTime = startingTime;
-    
+        
         isPaused = false;
     }
     void Pause(){ 
@@ -36,21 +32,12 @@ public:
         virtualTime = timeToSync;
     }
 
-    // void TimeStep(Cloth* cloth, SphereCollider sphere, float yLimit){
-    //     if(isPaused) 
-    //         return;
-
-    //     cloth->PhysicsSteps(sphere, yLimit);
-        
-    //     virtualTime += FIXED_TIME_STEP;
-    // }
-
     void FixedTimeStep(){
         if(isPaused) 
             return;
         
         virtualTime += FIXED_TIME_STEP;
-        //std::cout << "Current time: " << currTime << " > Virtual time: " << virtualTime << std::endl;
+
         std::vector<PhysicObject>::iterator physObject;
 		for(physObject = physicWorld.begin(); physObject != physicWorld.end(); physObject++)
 		{
@@ -61,7 +48,7 @@ public:
     double getVirtualTIme(){ return virtualTime; }
 
     void AddObjectToPhysicWorld(Transform* t, float mass, bool isStatic){
-        PhysicObject p(t, mass, isStatic);
+        PhysicObject p(*(t->translation), mass, isStatic);
         this->physicWorld.push_back(p);
     }
 

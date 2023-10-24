@@ -206,8 +206,6 @@ float sphereAngularAccel = 10.0f;
 float sphereRotation = 0.0f;
 
 
-Cloth* c;
-
 Scene* activeScene;
 Scene* previousActiveScene;
 
@@ -255,14 +253,7 @@ int main()
     textureID.push_back(LoadTexture("../../textures/SoilCracked.png"));
 
     std::cout << "Texture load: complete" << std::endl;
-
-    Transform clothTransform(view);
-    Cloth cloth(clothDim, particleOffset, startingPosition, &clothTransform, pinned, springType, K, U, constraintIterations, gravity, mass, collisionIterations, constraintLevel, cuttingDistanceMultiplier);
     
-    std::cout << "Cloth Transform: complete" << std::endl;
-
-    c = &cloth;
-
     PerformanceCalculator performanceCalculator(windowSize, overlap);
 
     int type = 0;   // Used in ImGui display
@@ -284,7 +275,7 @@ int main()
     Transform sphereTransform1;
     sphereTransform1 = Transform(view);
     // sphereTransform1.scale = 1.0f;
-    sphereTransform1.translation = glm::vec3(0.0f, 0.0f, 0.0f);
+    (*sphereTransform1.translation) = glm::vec3(0.0f, 0.0f, 0.0f);
     // sphereTransform1.rotation = &Quaternion();
 
     GameObject* sphere1 = new GameObject(&sphereTransform1, &sphereModel);
@@ -299,7 +290,7 @@ int main()
     Transform plane1_TransformScene1;
     plane1_TransformScene1 = Transform(view);
     plane1_TransformScene1.scale = 2.0f;
-    plane1_TransformScene1.translation = glm::vec3(0.0f, -6.0f, -5.0f); 
+    (*plane1_TransformScene1.translation) = glm::vec3(0.0f, -6.0f, -5.0f); 
     plane1_TransformScene1.rotation = &glm::angleAxis(glm::radians(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     GameObject* plane1_GOScene1 = new GameObject(&plane1_TransformScene1, &planeModel);
@@ -316,98 +307,6 @@ int main()
     scenes.push_back(&scene1);
 
     std::cout << "Scene 1: loading complete" << std::endl;
-
-    // -----------------------------------------------------------------------------
-    // Scene 2
-    std::cout << "Scene 2: Loading... " << std::endl;
-
-    Transform sphere3_transform;
-    sphere3_transform = Transform(view);
-    sphere3_transform.scale = 1.0f;
-    sphere3_transform.translation = glm::vec3(2.0f, -0.05f, -0.5f);
-    sphere3_transform.rotation = &glm::angleAxis(glm::radians(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
-    GameObject* sphere3 = new GameObject(&sphere3_transform, &sphereModel);
-    TextureParameter* sphereTextureParameter3 = new TextureParameter(true, 0, repeat);
-    RenderableObject* renderableSphere3 = new RenderableObject(sphere3, sphereTextureParameter3);
-    scene2.renderableObjects.push_back(renderableSphere3);
-
-    SphereCollider sphereCollider3(&sphere3_transform, sphere3_transform.scale);
-    scene2.spheres.push_back(&sphereCollider3);
-
-    Transform sphere31_transform;
-    sphere31_transform = Transform(view);
-    sphere31_transform.scale = 1.0f;
-    sphere31_transform.translation = glm::vec3(2.0f, -1.55f, -0.5f);
-    sphere31_transform.rotation = &glm::angleAxis(glm::radians(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
-    GameObject* sphere31 = new GameObject(&sphere31_transform, &sphereModel);
-    TextureParameter* sphereTextureParameter31 = new TextureParameter(true, 0, repeat);
-    RenderableObject* renderableSphere31 = new RenderableObject(sphere31, sphereTextureParameter31);
-    scene2.renderableObjects.push_back(renderableSphere31);
-
-    SphereCollider sphereCollider31(&sphere31_transform, sphere31_transform.scale);
-    scene2.spheres.push_back(&sphereCollider31);
-
-
-    Transform plane1_Transform1_scene2;
-    plane1_Transform1_scene2 = Transform(view),
-    plane1_Transform1_scene2.translation = glm::vec3(7.0f, -5.0f, 0.0f);
-    plane1_Transform1_scene2.scale = 10.0f;
-    plane1_Transform1_scene2.rotation = &glm::angleAxis(glm::radians(25.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-
-    GameObject* plane1_GO_scene2 = new GameObject(&plane1_Transform1_scene2, &planeModel);
-    TextureParameter* plane1_TP_scene2 = new TextureParameter(true, 1, 80.0f);
-    RenderableObject* renderablePlane1_scene2 = new RenderableObject(plane1_GO_scene2, plane1_TP_scene2);
-    scene2.renderableObjects.push_back(renderablePlane1_scene2);
-
-    PlaneCollider plane1_collider_scene2(&plane1_Transform1_scene2, glm::rotate(*plane1_Transform1_scene2.rotation, plane1_GO_scene2->model->meshes[0].vertices[0].Normal));
-    scene2.planes.push_back(&plane1_collider_scene2);
-
-    Transform plane2_Transform1_scene2;
-    plane2_Transform1_scene2 = Transform(view),
-    plane2_Transform1_scene2.translation = glm::vec3(-7.0f, -5.0f, 0.0f);
-    plane2_Transform1_scene2.scale = 10.0f;
-    plane2_Transform1_scene2.rotation = &glm::angleAxis(glm::radians(-25.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-
-    GameObject* plane2_GO_scene2 = new GameObject(&plane2_Transform1_scene2, &planeModel);
-    TextureParameter* plane2_TP_scene2 = new TextureParameter(true, 1, 80.0f);
-    RenderableObject* renderablePlane2_scene2 = new RenderableObject(plane2_GO_scene2, plane2_TP_scene2);
-    scene2.renderableObjects.push_back(renderablePlane2_scene2);
-
-    PlaneCollider plane2_collider_scene2(&plane2_Transform1_scene2, glm::rotate(*plane2_Transform1_scene2.rotation, plane2_GO_scene2->model->meshes[0].vertices[0].Normal));
-    scene2.planes.push_back(&plane2_collider_scene2);
-
-    scene2.Start = Start2;
-    scene2.Update = UpdateScene2;
-
-    scenes.push_back(&scene2);
-
-    std::cout << "Scene 2: loading complete" << std::endl;
-
-
-
-    std::cout << "Scene 3: Loading... " << std::endl;
-    // Scene 3
-    
-    Transform sphere4_transform;
-    sphere4_transform = Transform(view);
-    sphere4_transform.scale = 0.5f;
-    sphere4_transform.translation = glm::vec3(2.0f, -3.0f, -3.0f);
-    sphere4_transform.rotation = &glm::angleAxis(glm::radians(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
-    GameObject* sphere4 = new GameObject(&sphere4_transform, &sphereModel);
-    TextureParameter* sphereTextureParameter4 = new TextureParameter(true, 0, repeat);
-    RenderableObject* renderableSphere4 = new RenderableObject(sphere4, sphereTextureParameter4);
-    scene3.renderableObjects.push_back(renderableSphere4);
-
-    SphereCollider sphereCollider4(&sphere4_transform, sphere4_transform.scale);
-    scene3.spheres.push_back(&sphereCollider4);
-
-    scene3.Start = Start3;
-    scene3.Update = UpdateScene3;
-    scenes.push_back(&scene3);
-    std::cout << "Scene 3: loading complete" << std::endl;
 
     int sceneIndex = 0;
 
@@ -435,14 +334,7 @@ int main()
 
         // render your GUI
         ImGui::Begin("Controls");
-
-        ImGui::Text("Cloth simulation:");
-        ImGui::NewLine;
-        ImGui::Text("Framerate (ms): %d", (int)performanceCalculator.framerate);
-        ImGui::NewLine;
-        ImGui::Text("Press P to Update Cloth");
-        ImGui::NewLine;
-        ImGui::SliderInt("Grid dim", &clothDim, 10, 100);
+        ImGui::Text("FPS: %d", (int)performanceCalculator.framerate);
         ImGui::NewLine;
         ImGui::SliderFloat("Particle offset", &particleOffset, 0.05f, 1.0f);
         if(activeScene == &scene3){
@@ -545,7 +437,6 @@ int main()
 
         ImGui::End();
 
-
         // View matrix (=camera): position, view direction, camera "up" vector
         view = camera.GetViewMatrix();
 
@@ -556,71 +447,28 @@ int main()
         else
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-
-        // CLOTH        
-        clothTransform.Transformation(
-            glm::vec3(1.0f, 1.0f, 1.0f),
-            0.0f, glm::vec3(0.0f, 1.0f, 0.0f),
-            startingPosition,
-            view
-        );
-
         unsigned int maxIter = 4U;
         unsigned int physIter = 0U;
 
         if(!pausePhysics){
             while(!physicsSimulation.isPaused &&  currentTime > physicsSimulation.getVirtualTIme()){
-                cloth.ResetShaderForce();
                 physicsSimulation.AddForceToAll(glm::vec3(0.0f, gravity, 0.0f));
-                cloth.AddGravityForce();
                 physicsSimulation.FixedTimeStep();
-                cloth.PhysicsSteps(activeScene);
-                physIter++;
-                cloth.CheckForCuts();
 
+                physIter++;
                 if(physIter > maxIter){
                     std::cout << "Physics Simulation lagging " << std::endl;
                     physicsSimulation.SynchVirtualTime(currentTime);
                     break;
                 }
             }
+        }
         
-        }
-
-        if(shaderNumber == 0){
-            force_BlinnPhong_shader.Use();
-            ForceBlinnPhongShaderSetup(force_BlinnPhong_shader, clothTransform, projection, view);
-
-        } else if(shaderNumber == 1) {
-            force_shader.Use();
-            ForceGGXShaderSetup(force_shader, clothTransform, projection, view);
-            
-        } else if(shaderNumber == 2) {
-            color_shader.Use();
-            ColorGGXShaderSetup(color_shader, clothTransform, projection, view);
-        }
-
-        cloth.Draw();
-        
-        if(!pKeyPressed && once)
-        {
-            cloth.~Cloth();
-            pinned = !pinned;
-            new(&cloth) Cloth(clothDim, particleOffset, startingPosition, &clothTransform, pinned, springType, K, U, constraintIterations, gravity, mass, collisionIterations, constraintLevel, cuttingDistanceMultiplier);
-            once = false;
-            //DebugLogStatus();
-            //cloth.CutAHole(4 + iter, 4 + iter);
-            iter++;
-        } else if(pKeyPressed && !once){
-            once = true; 
-        }
-
         activeScene->Update(activeScene);
         RenderScene(illumination_shader, *activeScene, projection, view);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
 
         glfwSwapBuffers(window);
     }
@@ -751,22 +599,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         // we subtract 48 (= ASCII CODE of "0") to have integers from 1 to 5
         // we subtract 1 to have indices from 0 to 4 in the shaders list
         unsigned int pressedInt = (key-'0'-1);
-
-        // switch (pressedInt)
-        // {
-        // case 1:
-        //     activeScene = &scene1;
-        //     break;
-        // case 2:
-        //     activeScene = &scene2;
-        //     break;
-        // case 3:
-        //     activeScene = &scene3;
-        //     break;            
-        // default:
-        //     activeScene = &scene1;
-        //     break;
-        // }
     }
 
     // if R is pressed, we start/stop the animated rotation of models
@@ -917,80 +749,7 @@ void UpdateScene1 (Scene* scene){
         MoveSphere(scene->renderableObjects[0]->gameObject->transform, -camera.WorldUp, action);
     }
 }
-void UpdateScene2 (Scene* scene){
-    // Coat attached to the sphere
 
-    // // Moving sphere
-    // if(scene->renderableObjects[0]->gameObject->transform->translation.z > 5.0f){
-    //     direction = glm::vec3(0.0f, 0.0f, -1.0f);
-    // } else if(scene->renderableObjects[0]->gameObject->transform->translation.z <= -5.0f){
-    //     direction = glm::vec3(0.0f, 0.0f, 1.0f);
-    // }
-
-    // scene->renderableObjects[0]->gameObject->transform->translation += direction * sphereSpeed * deltaTime;
-    // // scene->renderableObjects[1]->gameObject->transform->translation -= direction * sphereSpeed;
-
-    // MoveClothPinnedParticles(direction * sphereSpeed * deltaTime);
-
-    if(keys[GLFW_KEY_UP])
-    {
-        MoveSphereAndCloth(scene->renderableObjects[0]->gameObject->transform, glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
-        MoveSphere(scene->renderableObjects[1]->gameObject->transform, glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
-    }
-    if(keys[GLFW_KEY_DOWN])
-    {
-        MoveSphereAndCloth(scene->renderableObjects[0]->gameObject->transform, -glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
-        MoveSphere(scene->renderableObjects[1]->gameObject->transform, -glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
-    }
-    if(keys[GLFW_KEY_LEFT])
-    {
-        MoveSphereAndCloth(scene->renderableObjects[0]->gameObject->transform, -camera.Right, action);
-        MoveSphere(scene->renderableObjects[1]->gameObject->transform, -camera.Right, action);
-    }
-    if(keys[GLFW_KEY_RIGHT])
-    {
-        MoveSphereAndCloth(scene->renderableObjects[0]->gameObject->transform, camera.Right, action);
-        MoveSphere(scene->renderableObjects[1]->gameObject->transform, camera.Right, action);
-    }
-    if(keys[GLFW_KEY_SPACE]){
-        MoveSphereAndCloth(scene->renderableObjects[0]->gameObject->transform, camera.WorldUp, action);
-        MoveSphere(scene->renderableObjects[1]->gameObject->transform, camera.WorldUp, action);
-    }
-    if(keys[GLFW_KEY_LEFT_CONTROL]){
-        MoveSphereAndCloth(scene->renderableObjects[0]->gameObject->transform, -camera.WorldUp, action);
-        MoveSphere(scene->renderableObjects[1]->gameObject->transform, -camera.WorldUp, action);
-    }
-
-
-}
-void UpdateScene3 (Scene* scene){
-    if(keys[GLFW_KEY_UP])
-    {
-        MoveSphere(scene->renderableObjects[0]->gameObject->transform, glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
-    }
-    if(keys[GLFW_KEY_DOWN])
-    {
-        MoveSphere(scene->renderableObjects[0]->gameObject->transform, -glm::vec3(camera.Front.x, 0.0f, camera.Front.z), action);
-    }
-    if(keys[GLFW_KEY_LEFT])
-    {
-        MoveSphere(scene->renderableObjects[0]->gameObject->transform, -camera.Right, action);
-    }
-    if(keys[GLFW_KEY_RIGHT])
-    {
-        MoveSphere(scene->renderableObjects[0]->gameObject->transform, camera.Right, action);
-    }
-    if(keys[GLFW_KEY_SPACE]){
-        MoveSphere(scene->renderableObjects[0]->gameObject->transform, camera.WorldUp, action);
-    }
-    if(keys[GLFW_KEY_LEFT_CONTROL]){
-        MoveSphere(scene->renderableObjects[0]->gameObject->transform, -camera.WorldUp, action);
-    }
-
-    // if(keys[GLFW_KEY_E]){
-    //     c->CutAHole(c->dim - 5, c->dim - 5);
-    // }
-}
 void ChangeScene(Scene* sceneToChange){
     previousActiveScene = activeScene;
     activeScene = sceneToChange;
@@ -1004,14 +763,6 @@ void imGuiSetup(GLFWwindow *window)
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 410");
-}
-void DebugLogStatus(){
-    std::cout << "Framerate: " << (int)performanceCalculator.framerate << std::endl;
-    std::cout << std::endl;
-    std::cout << "Cloth: " << std::endl;
-    std::cout << "  - Spring Type: " << springType << std::endl;
-    std::cout << "  - K: " << K << std::endl;
-    std::cout << "  - Constraint Iterations: " << constraintIterations << std::endl;
 }
 void PrintVec3(glm::vec3* vec){
     std::cout << vec->x << ", " << vec->y << ", " << vec->z << std::endl;
@@ -1029,7 +780,7 @@ void MoveSphere(Transform* sphere_transform , glm::vec3 direction, int action){
 
     direction *= sphereSpeed * deltaTime;
 
-    sphere_transform->translation += direction;
+    (*sphere_transform->translation) += direction;
 
     direction = glm::vec3(0.0f);
 }
@@ -1046,24 +797,12 @@ void MoveSphereAndCloth(Transform* sphere_transform , glm::vec3 direction, int a
 
     direction *= sphereSpeed * deltaTime;
 
-    sphere_transform->translation += direction;
+    (*sphere_transform->translation) += direction;
 
     MoveClothPinnedParticles(direction);
 
     // direction = glm::vec3(0.0f);
 }
-void MoveClothPinnedParticles(glm::vec3 direction){
-    // Move pinned particles
-    for(int i = 0; i < clothDim; i++){
-        for(int j = 0; j < clothDim; j++){
-            Particle* p = (*c).getParticle(i, j, clothDim);
-            if(p->movable == false){
-                p->pos += direction;
-            }
-        }
-    }
-}
-
 void RotateSphere(float angle, int action){
     if(action == GLFW_PRESS){
         sphereAngularVelocity = sphereMinAngularVelocity;
@@ -1137,50 +876,10 @@ void SetUpClothShader(Shader shader, Transform clothTransform, glm::mat4 project
 
 void Start1(Scene* scene){
     glClearColor(0.988f, 0.804f, 0.98f, 1.0f);
-
-    c->getParticle(c->dim-1, 0, c->dim)->movable = true;
-    c->getParticle(c->dim-1, 1, c->dim)->movable = true;
-
-    c->getParticle(c->dim-1, c->dim-1, c->dim)->movable = true;
-    c->getParticle(c->dim-1, c->dim-2, c->dim)->movable = true;
-
-
-    int numOfConstraints = c->constraints.capacity();
-    for(int i = 0; i < numOfConstraints; i++){
-        c->constraints[i].cuttable = false;
-    }
-
 }
 void Start2(Scene* scene){
     glClearColor(0.886f, 0.988f, 0.804f, 1.0f);
-    
-    c->getParticle(c->dim-1, 0, c->dim)->movable = true;
-    c->getParticle(c->dim-1, 1, c->dim)->movable = true;
-
-    c->getParticle(c->dim-1, c->dim-1, c->dim)->movable = true;
-    c->getParticle(c->dim-1, c->dim-2, c->dim)->movable = true;
-
-
-    int numOfConstraints = c->constraints.capacity();
-    for(int i = 0; i < numOfConstraints; i++){
-        c->constraints[i].cuttable = false;
-    }
-
 }
 void Start3(Scene* scene){
     glClearColor(0.988f, 0.804f, 0.804f, 1.0f);
-
-
-    // Init cloth fixed in 4 points
-    
-    c->getParticle(c->dim-1, 0, c->dim)->movable = false;
-    c->getParticle(c->dim-1, 1, c->dim)->movable = false;
-
-    c->getParticle(c->dim-1, c->dim-1, c->dim)->movable = false;
-    c->getParticle(c->dim-1, c->dim-2, c->dim)->movable = false;
-
-    int numOfConstraints = c->constraints.capacity();
-    for(int i = 0; i < numOfConstraints; i++){
-        c->constraints[i].cuttable = true;
-    }
 }
